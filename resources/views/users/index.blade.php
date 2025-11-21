@@ -7,25 +7,29 @@
     <!-- HEADER & TOMBOL TAMBAH -->
     <div class="row mb-3">
         <div class="col-12 d-flex justify-content-between align-items-center">
-            <h4 class="m-0 text-dark">Data Pengguna Sistem</h4>
+            <h4 class="m-0 text-dark"><i class="fas fa-users mr-2"></i> Data Pengguna Sistem</h4>
             <div class="btn-group">
-                <a href="{{ route('dashboard.admin') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Kembali
-                </a>
+                <!-- Tombol Kembali ke Dashboard (Hanya untuk Operator/Admin) -->
+                @if(auth()->user()->role->nama_role == 'Operator Sekolah')
+                     <a href="{{ route('dashboard.admin') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Dashboard
+                    </a>
+                @endif
+               
                 <a href="{{ route('users.create') }}" class="btn btn-success">
-                    <i class="fas fa-user-plus"></i> Tambah User Baru
+                    <i class="fas fa-user-plus mr-1"></i> Tambah User Baru
                 </a>
             </div>
         </div>
     </div>
 
     <!-- CARD FILTER (PENCARIAN LANJUTAN) -->
-    <div class="card card-outline card-primary">
+    <div class="card card-outline card-primary collapsed-card">
         <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-filter mr-1"></i> Filter Data</h3>
+            <h3 class="card-title"><i class="fas fa-filter mr-1"></i> Filter & Pencarian</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
+                    <i class="fas fa-plus"></i>
                 </button>
             </div>
         </div>
@@ -53,7 +57,7 @@
                         <div class="form-group">
                             <label>Cari Nama / Username / Email</label>
                             <div class="input-group">
-                                <input type="text" name="cari" class="form-control" placeholder="Ketik kata kunci pencarian..." value="{{ request('cari') }}">
+                                <input type="text" name="cari" class="form-control" placeholder="Ketik kata kunci..." value="{{ request('cari') }}">
                                 <div class="input-group-append">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 </div>
@@ -65,7 +69,7 @@
                     <div class="col-md-2 d-flex align-items-end">
                         <div class="form-group w-100">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-search"></i> Terapkan
+                                <i class="fas fa-filter mr-1"></i> Terapkan
                             </button>
                         </div>
                     </div>
@@ -75,8 +79,8 @@
                 @if(request()->has('cari') || request()->has('role_id'))
                     <div class="row">
                         <div class="col-12 text-right">
-                            <a href="{{ route('users.index') }}" class="text-secondary small">
-                                <i class="fas fa-undo"></i> Reset Filter
+                            <a href="{{ route('users.index') }}" class="text-danger small">
+                                <i class="fas fa-undo mr-1"></i> Reset Filter
                             </a>
                         </div>
                     </div>
@@ -87,29 +91,34 @@
 
     <!-- ALERT SUKSES/ERROR -->
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
             <h5><i class="icon fas fa-check"></i> Berhasil!</h5>
             {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
     @endif
+    
     @if(session('error'))
-        <div class="alert alert-danger alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <h5><i class="icon fas fa-ban"></i> Gagal!</h5>
             {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
     @endif
 
     <!-- CARD TABEL DATA -->
-    <div class="card">
-        <div class="card-header border-0">
-            <h3 class="card-title">Total: <strong>{{ $users->total() }}</strong> Pengguna Terdaftar</h3>
+    <div class="card shadow-sm">
+        <div class="card-header border-0 bg-white">
+            <h3 class="card-title text-muted">Total: <strong>{{ $users->total() }}</strong> Pengguna Terdaftar</h3>
         </div>
         <div class="card-body table-responsive p-0">
             <table class="table table-hover text-nowrap table-striped">
-                <thead>
-                    <tr class="bg-dark">
+                <thead class="bg-light">
+                    <tr>
                         <th style="width: 10px">#</th>
                         <th>Nama Lengkap</th>
                         <th>Username</th>
@@ -135,10 +144,12 @@
                                 <span class="badge badge-danger">Kepsek</span>
                             @elseif($u->role->nama_role == 'Wali Kelas')
                                 <span class="badge badge-warning">Wali Kelas</span>
+                            @elseif($u->role->nama_role == 'Orang Tua')
+                                <span class="badge badge-success" style="background-color: #28a745;">Orang Tua</span>
                             @elseif($u->role->nama_role == 'Guru')
-                                <span class="badge badge-success">Guru</span>
+                                <span class="badge badge-secondary">Guru</span>
                             @else
-                                <span class="badge badge-secondary">{{ $u->role->nama_role }}</span>
+                                <span class="badge badge-light border">{{ $u->role->nama_role }}</span>
                             @endif
                         </td>
                         <td class="text-muted">{{ $u->email }}</td>
@@ -175,7 +186,7 @@
         </div>
         
         <!-- FOOTER PAGINATION -->
-        <div class="card-footer clearfix">
+        <div class="card-footer clearfix bg-white">
             <div class="float-right">
                 <!-- Memaksa pagination menggunakan style Bootstrap 4 agar cocok dengan AdminLTE -->
                 {{ $users->links('pagination::bootstrap-4') }}

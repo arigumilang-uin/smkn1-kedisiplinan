@@ -19,7 +19,6 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    // Kita gunakan $fillable agar lebih aman
     protected $fillable = [
         'role_id',
         'nama',
@@ -83,12 +82,13 @@ class User extends Authenticatable
     }
 
     /**
-     * Relasi Opsional: User (jika dia Ortu) MEMILIKI SATU Siswa.
+     * Relasi Opsional: User (jika dia Ortu) MEMILIKI BANYAK Siswa.
      * (Foreign Key di tabel 'siswa': orang_tua_user_id)
+     * [UPDATED] Menggunakan HasMany agar bisa handle kakak-adik
      */
-    public function anakWali(): HasOne
+    public function anakWali(): HasMany
     {
-        return $this->hasOne(Siswa::class, 'orang_tua_user_id');
+        return $this->hasMany(Siswa::class, 'orang_tua_user_id');
     }
 
     /**

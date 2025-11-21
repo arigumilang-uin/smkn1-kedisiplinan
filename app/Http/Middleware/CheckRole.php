@@ -34,4 +34,4 @@ class CheckRole
         // 4. Jika tidak cocok, tendang balik (Abort 403 Forbidden)
         abort(403, 'AKSES DITOLAK: Anda tidak memiliki izin untuk mengakses halaman ini.');
     }
-}
+}   

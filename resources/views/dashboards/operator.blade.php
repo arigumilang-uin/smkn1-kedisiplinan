@@ -1,81 +1,117 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard Operator</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        
-        /* Grid Menu Besar */
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 30px; }
-        
-        .card-menu { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; transition: transform 0.2s; border-top: 5px solid #ccc; text-decoration: none; color: inherit; display: block; }
-        .card-menu:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        
-        .icon { font-size: 3rem; margin-bottom: 15px; display: block; }
-        .menu-title { font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 10px; }
-        .menu-desc { font-size: 0.9rem; color: #777; }
-        .menu-count { background: #eee; display: inline-block; padding: 5px 10px; border-radius: 15px; margin-top: 10px; font-weight: bold; font-size: 0.8rem; }
+@extends('layouts.app')
 
-        .btn-logout { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; }
-    </style>
-</head>
-<body>
+@section('title', 'Dashboard Operator')
 
-<div class="container">
-    <div class="header">
-        <div>
-            <h1>Panel Operator Sekolah</h1>
-            <small>Selamat Datang, {{ Auth::user()->nama }}</small>
+@section('content')
+
+<div class="container-fluid">
+    
+    <!-- WELCOME MESSAGE -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="callout callout-info shadow-sm">
+                <h5><i class="fas fa-user-cog mr-2"></i> Selamat Datang, {{ Auth::user()->nama }}!</h5>
+                <p>Anda berada di Panel Operator Sekolah. Silakan kelola data induk sistem di bawah ini.</p>
+            </div>
         </div>
-        <form action="{{ route('logout') }}" method="POST"> @csrf <button class="btn-logout">Logout</button> </form>
     </div>
 
-    <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">🔧 Manajemen Data Induk (Master Data)</h3>
-
-    <div class="menu-grid">
-        
-        <a href="{{ route('users.index') }}" class="card-menu" style="border-top-color: #17a2b8;">
-            <span class="icon">👥</span>
-            <div class="menu-title">Data Pengguna</div>
-            <div class="menu-desc">Kelola akun Guru, Wali Kelas, Kaprodi & Staff.</div>
-            <div class="menu-count">{{ $totalUser }} Akun Terdaftar</div>
-        </a>
-
-        <a href="{{ route('siswa.index') }}" class="card-menu" style="border-top-color: #007bff;">
-            <span class="icon">🎓</span>
-            <div class="menu-title">Data Siswa</div>
-            <div class="menu-desc">Kelola data siswa, NISN, dan pemetaan kelas.</div>
-            <div class="menu-count">{{ $totalSiswa }} Siswa Aktif</div>
-        </a>
-
-        <a href="{{ route('jenis-pelanggaran.index') }}" class="card-menu" style="border-top-color: #dc3545;">
-            <span class="icon">⚠️</span>
-            <div class="menu-title">Aturan & Poin</div>
-            <div class="menu-desc">Kelola daftar pelanggaran, bobot poin, dan kategori.</div>
-            <div class="menu-count">{{ $totalAturan }} Aturan</div>
-        </a>
-
-        <div class="card-menu" style="border-top-color: #6c757d; opacity: 0.6; cursor: not-allowed;">
-            <span class="icon">🏫</span>
-            <div class="menu-title">Data Kelas</div>
-            <div class="menu-desc">Fitur pengelolaan kelas belum diaktifkan.</div>
-            <div class="menu-count">{{ $totalKelas }} Kelas</div>
+    <!-- BAGIAN 1: MANAJEMEN DATA INDUK -->
+    <h5 class="mb-3 text-dark font-weight-bold"><i class="fas fa-database text-primary mr-2"></i> Manajemen Data Induk</h5>
+    
+    <div class="row">
+        <!-- CARD USER -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info shadow">
+                <div class="inner">
+                    <h3>{{ $totalUser }}</h3>
+                    <p>Data Pengguna</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <a href="{{ route('users.index') }}" class="small-box-footer">
+                    Kelola User <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
         </div>
 
+        <!-- CARD SISWA -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success shadow">
+                <div class="inner">
+                    <h3>{{ $totalSiswa }}</h3>
+                    <p>Data Siswa</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <a href="{{ route('siswa.index') }}" class="small-box-footer">
+                    Kelola Siswa <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- CARD ATURAN -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger shadow">
+                <div class="inner">
+                    <h3>{{ $totalAturan }}</h3>
+                    <p>Aturan & Poin</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-gavel"></i>
+                </div>
+                <a href="{{ route('jenis-pelanggaran.index') }}" class="small-box-footer">
+                    Kelola Aturan <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- CARD KELAS (DISABLED / COMING SOON) -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-secondary shadow">
+                <div class="overlay dark">
+                    <i class="fas fa-lock fa-3x"></i>
+                </div>
+                <div class="inner">
+                    <h3>{{ $totalKelas }}</h3>
+                    <p>Data Kelas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-school"></i>
+                </div>
+                <a href="#" class="small-box-footer">
+                    Fitur Terkunci <i class="fas fa-ban"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
-    <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">⚙️ Pengaturan Sistem</h3>
-    <div class="menu-grid">
-         <a href="{{ route('users.create') }}" class="card-menu" style="border-top-color: #28a745;">
-            <span class="icon">➕</span>
-            <div class="menu-title">Tambah User Baru</div>
-        </a>
+    <hr>
+
+    <!-- BAGIAN 2: SHORTCUT CEPAT -->
+    <h5 class="mb-3 text-dark font-weight-bold"><i class="fas fa-rocket text-warning mr-2"></i> Aksi Cepat</h5>
+    
+    <div class="row">
+        <div class="col-md-4 col-sm-6 mb-3">
+            <a href="{{ route('users.create') }}" class="btn btn-app bg-white shadow-sm btn-block text-left pl-3 border">
+                <span class="badge bg-purple">Baru</span>
+                <i class="fas fa-user-plus text-purple" style="font-size: 2rem; float: right;"></i>
+                <strong>Tambah User</strong><br>
+                Daftarkan Guru/Ortu baru
+            </a>
+        </div>
+        
+        <!-- Contoh Shortcut Lain jika ada -->
+        <div class="col-md-4 col-sm-6 mb-3">
+            <a href="{{ route('siswa.index') }}" class="btn btn-app bg-white shadow-sm btn-block text-left pl-3 border">
+                <i class="fas fa-id-card text-success" style="font-size: 2rem; float: right;"></i>
+                <strong>Cari Siswa</strong><br>
+                Lihat profil siswa
+            </a>
+        </div>
     </div>
 
 </div>
-
-</body>
-</html>
+@endsection
