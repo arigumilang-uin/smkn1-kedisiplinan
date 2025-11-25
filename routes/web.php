@@ -9,6 +9,8 @@ use App\Http\Controllers\Dashboard\WaliKelasDashboardController;
 use App\Http\Controllers\Dashboard\WaliMuridDashboardController;
 use App\Http\Controllers\Dashboard\ApprovalController;
 use App\Http\Controllers\Dashboard\ReportController;
+use App\Http\Controllers\Dashboard\UserManagementController;
+use App\Http\Controllers\Dashboard\ActivityLogController;
 use App\Http\Controllers\PelanggaranController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\UserController;
@@ -150,5 +152,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/reports/preview', [ReportController::class, 'preview'])->name('reports.preview');
         Route::get('/reports/export-csv', [ReportController::class, 'exportCsv'])->name('reports.export-csv');
         Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+
+        // User Management Module
+        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
+        Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
+        Route::put('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
+
+        // Activity Log Module
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity.index');
+        Route::get('/activity-logs/{activity}', [ActivityLogController::class, 'show'])->name('activity.show');
+        Route::get('/activity-logs/export-csv', [ActivityLogController::class, 'exportCsv'])->name('activity.export-csv');
     });
 });
