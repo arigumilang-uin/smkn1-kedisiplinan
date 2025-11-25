@@ -182,6 +182,46 @@
             @endif
 
             <!-- ================================= -->
+            <!-- MENU KEPALA SEKOLAH -->
+            <!-- ================================= -->
+            @if($role == 'Kepala Sekolah')
+            <li class="nav-header">KEPALA SEKOLAH</li>
+
+            <li class="nav-item">
+                <a href="{{ route('kepala-sekolah.approvals.index') }}" class="nav-link {{ Request::is('kepala-sekolah/approvals*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-file-signature text-primary"></i>
+                    <p>
+                        Persetujuan Kasus
+                        @if($pendingCount = \App\Models\TindakLanjut::where('status', 'Menunggu Persetujuan')->count())
+                            <span class="badge badge-danger right">{{ $pendingCount }}</span>
+                        @endif
+                    </p>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('kepala-sekolah.reports.index') }}" class="nav-link {{ Request::is('kepala-sekolah/reports*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-file-excel text-success"></i>
+                    <p>Laporan & Ekspor</p>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('kepala-sekolah.users.index') }}" class="nav-link {{ Request::is('kepala-sekolah/users*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-users"></i>
+                    <p>Manajemen Pengguna</p>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('kepala-sekolah.activity.index') }}" class="nav-link {{ Request::is('kepala-sekolah/activity*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-history text-info"></i>
+                    <p>Audit & Log</p>
+                </a>
+            </li>
+            @endif
+
+            <!-- ================================= -->
             <!-- MENU PENGATURAN (Semua User) -->
             <!-- ================================= -->
             <li class="nav-header">PENGATURAN</li>
