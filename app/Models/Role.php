@@ -38,4 +38,16 @@ class Role extends Model
     {
         return $this->hasMany(User::class, 'role_id');
     }
+
+    /**
+     * Temukan Role berdasarkan nama_role.
+     * Memudahkan pencarian role tanpa mengulang string kolom.
+     *
+     * @param string $name
+     * @return self|null
+     */
+    public static function findByName(string $name): ?self
+    {
+        return self::where('nama_role', $name)->first();
+    }
 }

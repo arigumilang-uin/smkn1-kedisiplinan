@@ -177,13 +177,13 @@
                                     <span class="badge badge-danger">+{{ $r->jenisPelanggaran->poin }}</span>
                                 </td>
                                 <td>
-                                    @if($r->bukti_foto_path)
-                                        <a href="{{ asset('storage/' . $r->bukti_foto_path) }}" target="_blank" class="text-primary" title="Lihat Bukti">
-                                            <i class="fas fa-image"></i>
-                                        </a>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
+                                        @if($r->bukti_foto_path)
+                                            <a href="{{ route('bukti.show', ['path' => $r->bukti_foto_path]) }}" target="_blank" class="text-primary" title="Lihat Bukti">
+                                                <i class="fas fa-image"></i>
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                 </td>
                             </tr>
                             @empty

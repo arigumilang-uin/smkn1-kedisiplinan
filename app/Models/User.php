@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\Traits\LogsActivity;
+use App\Services\RoleService;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -128,15 +129,27 @@ class User extends Authenticatable
      */
     public function hasRole(string|array $roles): bool
     {
-        if (is_string($roles)) {
-            $roles = [$roles];
-        }
+        return RoleService::hasRole($roles, $this);
+    }
 
-        if (!$this->role) {
-            return false;
-        }
+    /**
+     * Whether this user record is the Developer account (actual role), and allowed in non-production.
+     */
+    public function isDeveloper(): bool
+    {
+        return RoleService::isRealDeveloper($this);
+    }
 
-        return in_array($this->role->nama_role, $roles, true);
+    /**
+     * Return the effective role name for this user considering developer impersonation override.
+     * If the user is Developer and an override is set in session, return the override.
+     * Otherwise return the actual role name (or null if none).
+     *
+     * @return string|null
+     */
+    public function effectiveRoleName(): ?string
+    {
+        return RoleService::effectiveRoleName($this);
     }
 
     /**

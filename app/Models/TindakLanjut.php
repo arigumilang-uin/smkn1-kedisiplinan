@@ -92,4 +92,96 @@ class TindakLanjut extends Model
     {
         return $this->hasOne(SuratPanggilan::class, 'tindak_lanjut_id');
     }
+
+    // =====================================================================
+    // ----------------------- QUERY SCOPES -----------------------
+    // =====================================================================
+
+    /**
+     * Scope: Filter kasus yang sedang menunggu persetujuan Kepala Sekolah.
+     */
+    public function scopePendingApproval($query)
+    {
+        return $query->where('status', 'Menunggu Persetujuan');
+    }
+
+    /**
+     * Scope: Filter kasus yang sudah disetujui.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'Disetujui');
+    }
+
+    /**
+     * Scope: Filter kasus yang sedang ditangani.
+     */
+    public function scopeInProgress($query)
+    {
+        return $query->where('status', 'Ditangani');
+    }
+
+    /**
+     * Scope: Filter kasus yang sudah selesai.
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'Selesai');
+    }
+
+    /**
+     * Scope: Filter kasus berdasarkan status tertentu.
+     */
+    public function scopeByStatus($query, $status)
+    {
+        if ($status) {
+            $query->where('status', $status);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter kasus untuk siswa tertentu.
+     */
+    public function scopeBySiswa($query, $siswaId)
+    {
+        if ($siswaId) {
+            $query->where('siswa_id', $siswaId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter kasus untuk siswa dalam kelas tertentu.
+     */
+    public function scopeInKelas($query, $kelasId)
+    {
+        if ($kelasId) {
+            $query->whereHas('siswa', function ($q) use ($kelasId) {
+                $q->where('kelas_id', $kelasId);
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter kasus untuk siswa dalam jurusan tertentu.
+     */
+    public function scopeInJurusan($query, $jurusanId)
+    {
+        if ($jurusanId) {
+            $query->whereHas('siswa.kelas', function ($q) use ($jurusanId) {
+                $q->where('jurusan_id', $jurusanId);
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter kasus aktif (belum selesai).
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['Baru', 'Menunggu Persetujuan', 'Disetujui', 'Ditangani']);
+    }
 }

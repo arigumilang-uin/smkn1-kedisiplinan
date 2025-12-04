@@ -11,7 +11,7 @@
                 <h3 class="text-dark font-weight-bold">
                     <i class="fas fa-info-circle mr-2"></i> Detail Log Aktivitas
                 </h3>
-                <a href="{{ route('kepala-sekolah.activity.index') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ route('audit.activity.index') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-arrow-left mr-1"></i> Kembali
                 </a>
             </div>

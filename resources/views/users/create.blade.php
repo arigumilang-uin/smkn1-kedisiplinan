@@ -36,10 +36,11 @@
                                         <option value="">-- Pilih Role --</option>
                                         @foreach($roles as $role)
                                             @php
-                                                $isKepsek = $role->nama_role === 'Kepala Sekolah';
+                                                $roleName = $role->nama_role ?? 'N/A';
+                                                $isKepsek = $roleName === 'Kepala Sekolah';
                                                 $disabled = ($isKepsek && isset($kepsekExists) && $kepsekExists) ? 'disabled' : '';
                                             @endphp
-                                            <option value="{{ $role->id }}" data-role-name="{{ $role->nama_role }}" {{ old('role_id') == $role->id ? 'selected' : '' }} {{ $disabled }}>{{ $role->nama_role }}@if($isKepsek && isset($kepsekExists) && $kepsekExists) — (dipegang oleh: {{ $kepsekUsername ?? '—' }})@endif</option>
+                                            <option value="{{ $role->id }}" data-role-name="{{ $roleName }}" {{ old('role_id') == $role->id ? 'selected' : '' }} {{ $disabled }}>{{ $roleName }}@if($isKepsek && isset($kepsekExists) && $kepsekExists) — (dipegang oleh: {{ $kepsekUsername ?? '—' }})@endif</option>
                                         @endforeach
                                     </select>
                                     @error('role_id') <span class="invalid-feedback">{{ $message }}</span> @enderror

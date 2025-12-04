@@ -8,7 +8,19 @@
 
 @section('content')
 <div class="container-fluid">
-    
+    @if(session('success'))
+        <div class="row mb-2">
+            <div class="col-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        @endif
+
     <!-- HEADER & BREADCRUMB -->
     <div class="row mb-3">
         <div class="col-12 d-flex justify-content-between align-items-center">
@@ -16,7 +28,7 @@
                 <i class="fas fa-edit text-primary mr-2"></i> Input Pelanggaran
             </h4>
             @php
-                $role = auth()->user()->role->nama_role;
+                $role = auth()->user()->effectiveRoleName() ?? auth()->user()->role?->nama_role;
                 $backRoute = match($role) {
                     'Wali Kelas' => route('dashboard.walikelas'),
                     'Kaprodi' => route('dashboard.kaprodi'),
@@ -85,7 +97,7 @@
 
                         <!-- LIST SISWA -->
                         <div class="scroll-area bg-white border rounded p-2" id="studentListContainer">
-                            @foreach($daftarSiswa as $siswa)
+                                @foreach($daftarSiswa as $siswa)
                                 @php
                                     $tingkat = explode(' ', $siswa->kelas->nama_kelas ?? '')[0];
                                     $jurusanId = $siswa->kelas->jurusan_id ?? '';
@@ -108,7 +120,7 @@
                                             <small class="text-muted badge badge-light border">{{ $siswa->nisn }}</small>
                                         </div>
                                     </div>
-                                    <input type="radio" name="siswa_id" value="{{ $siswa->id }}" required>
+                                    <input type="checkbox" name="siswa_id[]" value="{{ $siswa->id }}" class="siswa-checkbox">
                                 </div>
                             @endforeach
                             
@@ -164,7 +176,7 @@
 
                         <!-- LIST PELANGGARAN -->
                         <div class="scroll-area bg-white border rounded p-2 mb-3" style="height: 300px;">
-                            @foreach($daftarPelanggaran as $jp)
+                                @foreach($daftarPelanggaran as $jp)
                                 @php
                                     $kategoriLower = strtolower($jp->kategoriPelanggaran->nama_kategori);
                                     $namaLower = strtolower($jp->nama_pelanggaran);
@@ -183,7 +195,7 @@
                                     </div>
                                     
                                     <span class="point-badge">{{ $jp->poin }} Poin</span>
-                                    <input type="radio" name="jenis_pelanggaran_id" value="{{ $jp->id }}" required>
+                                    <input type="checkbox" name="jenis_pelanggaran_id[]" value="{{ $jp->id }}" class="pelanggaran-checkbox">
                                 </div>
                             @endforeach
                             
@@ -199,7 +211,14 @@
                                 <div class="col-md-6">
                                     <div class="form-group mb-2">
                                         <label class="small font-weight-bold">Tanggal Kejadian</label>
-                                        <input type="date" name="tanggal_kejadian" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
+                                           <div class="form-row">
+                                               <div class="col">
+                                                   <input type="date" name="tanggal_kejadian" class="form-control form-control-sm" value="{{ date('Y-m-d') }}" required>
+                                               </div>
+                                            <div class="col" style="max-width:120px;">
+                                                <input type="time" id="jamKejadian" name="jam_kejadian" class="form-control form-control-sm" value="{{ old('jam_kejadian', date('H:i')) }}" data-has-old="{{ old('jam_kejadian') ? '1' : '0' }}">
+                                            </div>
+                                           </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -217,9 +236,37 @@
                                 <textarea name="keterangan" class="form-control form-control-sm" rows="2" placeholder="Opsional..."></textarea>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-block font-weight-bold shadow-sm">
-                                <i class="fas fa-save mr-1"></i> SIMPAN DATA
-                            </button>
+                                                        <button type="submit" id="btnSubmitPreview" class="btn btn-primary btn-block font-weight-bold shadow-sm">
+                                                            <i class="fas fa-save mr-1"></i> SIMPAN DATA
+                                                        </button>
+                        
+                                                <!-- Konfirmasi Modal -->
+                                                <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog modal-lg" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="confirmModalLabel">Konfirmasi Pencatatan Pelanggaran</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div>
+                                                                        <p><strong>Siswa terpilih:</strong></p>
+                                                                        <ul id="confirmStudents"></ul>
+                                                                        <p><strong>Pelanggaran terpilih:</strong></p>
+                                                                        <ul id="confirmViolations"></ul>
+                                                                        <p><strong>Waktu kejadian:</strong> <span id="confirmTime"></span></p>
+                                                                        <p><strong>Keterangan:</strong> <span id="confirmKeterangan"></span></p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                                                <button type="button" id="btnConfirmSubmit" class="btn btn-primary">Konfirmasi & Simpan</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                         </div>
 
                     </div>

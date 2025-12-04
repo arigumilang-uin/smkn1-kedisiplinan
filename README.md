@@ -57,3 +57,39 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Developer role (development only)
+
+This project includes a convenience `Developer` role to help development and QA. Use it carefully:
+
+- To create/assign a developer account set these in your `.env` (optional):
+
+```
+DEV_ADMIN_EMAIL=dev@yourdomain.test
+DEV_ADMIN_PASSWORD=strongpassword
+```
+
+Then run:
+
+```bash
+php artisan db:seed --class=Database\\Seeders\\DeveloperRoleSeeder
+```
+
+The seeder is safe and will not overwrite existing users' roles. If `DEV_ADMIN_EMAIL` is not set, a local account `developer@local` will be created.
+
+- Developer bypass is only allowed in non-production environments (middleware enforces `APP_ENV != production`).
+
+- Before deploying to production, remove developer accounts and/or the Developer role using the artisan cleanup command:
+
+```bash
+# Unassign Developer role from users
+php artisan developer:cleanup --unassign
+
+# Or delete developer users (use with caution)
+php artisan developer:cleanup --delete-users
+
+# After unassigning/deleting users, optionally remove the role record
+php artisan developer:cleanup --remove-role
+```
+
+Keep this workflow in your project notes and ensure `Developer` role is not present in production.

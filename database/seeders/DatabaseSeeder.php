@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
 
             // --- SEEDER RAKSASA KITA ---
             MassSeeder::class, 
+            DeveloperRoleSeeder::class,
         ]);
 
         // Aktifkan kembali Foreign Key Checks

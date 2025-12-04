@@ -80,7 +80,7 @@
                                     <td><small class="badge badge-info">{{ $row->siswa->kelas->nama_kelas ?? '-' }}</small></td>
                                     <td><small class="badge badge-secondary">{{ $row->siswa->kelas->jurusan->nama_jurusan ?? '-' }}</small></td>
                                     <td>{{ $row->jenisPelanggaran->nama ?? '-' }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($row->tanggal_kejadian)->format('d M Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($row->tanggal_kejadian)->format('d M Y H:i') }}</td>
                                     <td><small class="text-muted">{{ $row->user->nama ?? '-' }}</small></td>
                                 </tr>
                                 @endforeach

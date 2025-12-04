@@ -89,4 +89,89 @@ class RiwayatPelanggaran extends Model
     {
         return $this->belongsTo(User::class, 'guru_pencatat_user_id');
     }
+
+    // =====================================================================
+    // ----------------------- QUERY SCOPES -----------------------
+    // =====================================================================
+
+    /**
+     * Scope: Filter riwayat pelanggaran by tanggal kejadian mulai.
+     */
+    public function scopeFromDate($query, $date)
+    {
+        if ($date) {
+            $query->whereDate('tanggal_kejadian', '>=', $date);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter riwayat pelanggaran by tanggal kejadian akhir.
+     */
+    public function scopeToDate($query, $date)
+    {
+        if ($date) {
+            $query->whereDate('tanggal_kejadian', '<=', $date);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter riwayat pelanggaran by jenis pelanggaran.
+     */
+    public function scopeByJenisPelanggaran($query, $jenisPelanggaranId)
+    {
+        if ($jenisPelanggaranId) {
+            $query->where('jenis_pelanggaran_id', $jenisPelanggaranId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter riwayat pelanggaran by guru pencatat.
+     */
+    public function scopeByGuruPencatat($query, $guruId)
+    {
+        if ($guruId) {
+            $query->where('guru_pencatat_user_id', $guruId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter riwayat pelanggaran by siswa.
+     */
+    public function scopeBySiswa($query, $siswaId)
+    {
+        if ($siswaId) {
+            $query->where('siswa_id', $siswaId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter riwayat pelanggaran untuk siswa dalam kelas tertentu.
+     */
+    public function scopeInKelas($query, $kelasId)
+    {
+        if ($kelasId) {
+            $query->whereHas('siswa', function ($q) use ($kelasId) {
+                $q->where('kelas_id', $kelasId);
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter riwayat pelanggaran untuk siswa dalam jurusan tertentu.
+     */
+    public function scopeInJurusan($query, $jurusanId)
+    {
+        if ($jurusanId) {
+            $query->whereHas('siswa.kelas', function ($q) use ($jurusanId) {
+                $q->where('jurusan_id', $jurusanId);
+            });
+        }
+        return $query;
+    }
 }

@@ -92,7 +92,7 @@
             <label for="denda_deskripsi">Denda / Catatan Tambahan (Opsional):</label>
             <textarea name="denda_deskripsi" rows="3" placeholder="Contoh: Siswa diminta membawa 2 pot bunga.">{{ $kasus->denda_deskripsi }}</textarea>
     
-            @if(Auth::user()->role->nama_role == 'Kepala Sekolah')
+            @if(Auth::user()->hasRole('Kepala Sekolah'))
                 <div class="approval-area">
                     <p>Area Persetujuan Kepala Sekolah</p>
                     <label>

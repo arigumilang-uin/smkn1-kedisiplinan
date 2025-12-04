@@ -13,6 +13,14 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+
+        // Deny access for Kepala Sekolah — audit & logs are for Operator/System maintenance only
+        if ($user->hasRole('Kepala Sekolah')) {
+            return redirect()->route('dashboard.kepsek')->with('error', 'Akses fitur Audit & Log dibatasi untuk Kepala Sekolah.');
+        }
+
+        // Default: full activity log access (Operator / Admin flows use different routes)
         $query = Activity::query();
 
         // Filter by log name (cacat, approval, etc)
@@ -56,6 +64,11 @@ class ActivityLogController extends Controller
      */
     public function show(Activity $activity)
     {
+        $user = auth()->user();
+        if ($user->hasRole('Kepala Sekolah')) {
+            return redirect()->route('dashboard.kepsek')->with('error', 'Akses fitur Audit & Log dibatasi untuk Kepala Sekolah.');
+        }
+
         return view('kepala_sekolah.activity.show', [
             'log' => $activity,
         ]);
@@ -66,6 +79,11 @@ class ActivityLogController extends Controller
      */
     public function exportCsv(Request $request)
     {
+        $user = auth()->user();
+        if ($user->hasRole('Kepala Sekolah')) {
+            return redirect()->route('dashboard.kepsek')->with('error', 'Akses fitur Audit & Log dibatasi untuk Kepala Sekolah.');
+        }
+
         $query = Activity::query();
 
         // Apply same filters as index

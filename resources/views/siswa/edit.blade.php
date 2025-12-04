@@ -14,7 +14,7 @@
     <div class="row mb-3 pt-2">
         <div class="col-sm-6">
             <h4 class="m-0 text-dark font-weight-bold">
-                @if(Auth::user()->role->nama_role == 'Wali Kelas')
+                @if(Auth::user()->hasRole('Wali Kelas'))
                     <i class="fas fa-phone-alt text-info mr-2"></i> Update Kontak
                 @else
                     <i class="fas fa-user-edit text-warning mr-2"></i> Edit Data Siswa
@@ -32,7 +32,7 @@
         <div class="col-lg-8 col-md-10">
             
             @php 
-                $isWaliKelas = (Auth::user()->role->nama_role == 'Wali Kelas');
+                $isWaliKelas = Auth::user()->hasRole('Wali Kelas');
                 // Warna Card: Info (Biru Muda) untuk Wali, Warning (Kuning) untuk Admin
                 $cardClass = $isWaliKelas ? 'card-info' : 'card-warning'; 
                 $readOnlyAttr = $isWaliKelas ? 'readonly' : '';

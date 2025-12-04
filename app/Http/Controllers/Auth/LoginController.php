@@ -7,9 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Services\RoleService;
 
 class LoginController extends Controller
 {
+    /**
+     * Controller untuk autentikasi (login/logout).
+     * Komentar dan pengalihan disesuaikan berdasarkan role efektif pengguna.
+     */
     /**
      * 1. Menampilkan halaman formulir login.
      * (Menangani: GET / )
@@ -53,6 +58,11 @@ class LoginController extends Controller
             if (!$user->role) {
                 Auth::logout();
                 return redirect('/')->withErrors(['username' => 'Role tidak valid.']);
+            }
+
+            // Jika user adalah role Developer yang sesungguhnya, arahkan ke dashboard Developer khusus
+            if (RoleService::isRealDeveloper($user)) {
+                return redirect()->intended('/dashboard/developer');
             }
 
             if ($user->hasAnyRole(['Waka Kesiswaan', 'Operator Sekolah'])) {

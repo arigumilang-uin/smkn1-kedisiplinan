@@ -72,7 +72,7 @@
                                 </div>
                                 @if($r->bukti_foto_path)
                                 <div class="timeline-footer">
-                                    <a href="{{ asset('storage/' . $r->bukti_foto_path) }}" target="_blank" class="btn btn-sm btn-primary">Lihat Foto Bukti</a>
+                                    <a href="{{ route('bukti.show', ['path' => $r->bukti_foto_path]) }}" target="_blank" class="btn btn-sm btn-primary">Lihat Foto Bukti</a>
                                 </div>
                                 @endif
                             </div>

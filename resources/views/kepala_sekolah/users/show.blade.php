@@ -46,7 +46,7 @@
 
                     <div class="form-group">
                         <label class="font-weight-bold">Role</label>
-                        <p><span class="badge badge-secondary p-2">{{ $user->role->nama_role ?? 'N/A' }}</span></p>
+                        <p><span class="badge badge-secondary p-2">{{ $user->role?->nama_role ?? 'N/A' }}</span></p>
                     </div>
 
                     <div class="form-group">

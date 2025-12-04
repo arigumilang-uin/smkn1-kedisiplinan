@@ -135,7 +135,7 @@ class SiswaController extends Controller
 
             // Password standardized: smkn1.walimurid.{nisn}
             $password = 'smkn1.walimurid.' . $nisnClean;
-            $role = Role::where('nama_role', 'Wali Murid')->first();
+            $role = Role::findByName('Wali Murid');
 
             $user = User::create([
                 'role_id' => $role?->id,
@@ -343,7 +343,7 @@ class SiswaController extends Controller
 
                     // Password standardized for bulk-created wali: smkn1.walimurid.{nisn}
                     $password = 'smkn1.walimurid.' . $nisn;
-                    $role = Role::where('nama_role', 'Wali Murid')->first();
+                    $role = Role::findByName('Wali Murid');
                     $user = User::create([
                         'role_id' => $role?->id,
                         'nama' => 'Wali dari ' . $nama,

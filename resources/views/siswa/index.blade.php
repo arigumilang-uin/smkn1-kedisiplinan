@@ -10,11 +10,11 @@
 @section('content')
 
     @php
-        $userRole = Auth::user()->role->nama_role;
-        $isOperator = ($userRole == 'Operator Sekolah');
-        $isWaliKelas = ($userRole == 'Wali Kelas');
-        $isWaka = ($userRole == 'Waka Kesiswaan');
-        $isKaprodi = ($userRole == 'Kaprodi');
+        $userRole = Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role;
+        $isOperator = Auth::user()->hasRole('Operator Sekolah');
+        $isWaliKelas = Auth::user()->hasRole('Wali Kelas');
+        $isWaka = Auth::user()->hasRole('Waka Kesiswaan');
+        $isKaprodi = Auth::user()->hasRole('Kaprodi');
     @endphp
 
     <div class="container-fluid">

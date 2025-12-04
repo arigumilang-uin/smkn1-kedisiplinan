@@ -43,7 +43,7 @@
                 <td>{{ $row->siswa->kelas->nama_kelas ?? '-' }}</td>
                 <td>{{ $row->siswa->kelas->jurusan->nama_jurusan ?? '-' }}</td>
                 <td>{{ $row->jenisPelanggaran->nama ?? '-' }}</td>
-                <td>{{ \Carbon\Carbon::parse($row->tanggal_kejadian)->format('d M Y') }}</td>
+                <td>{{ \Carbon\Carbon::parse($row->tanggal_kejadian)->format('d M Y H:i') }}</td>
             </tr>
             @endforeach
         </tbody>

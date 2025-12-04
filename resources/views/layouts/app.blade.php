@@ -84,8 +84,8 @@
         </div>
         <div class="info">
           <a href="#" class="d-block font-weight-bold text-white">{{ Str::limit(Auth::user()->nama, 18) }}</a>
-          <!-- PERBAIKAN: Menggunakan badge-info agar teks terlihat jelas di background gelap -->
-          <span class="badge badge-info mt-1">{{ Auth::user()->role->nama_role }}</span>
+          <!-- Tampilkan role efektif (memperhitungkan impersonation untuk Developer) -->
+          <span class="badge badge-info mt-1">{{ Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role }}</span>
         </div>
       </div>
       @endauth
@@ -94,15 +94,105 @@
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
           
-            @php $role = Auth::user()->role->nama_role; @endphp
+            @php
+              // Determine impersonation/Developer flags for UI:
+              // - $realIsDeveloper: user actually has Developer role (independent of override)
+              // - $override: current impersonation override (if any)
+              // - $isDev: developer quick-mode (only when real Developer AND NOT impersonating)
+              $realIsDeveloper = Auth::user()->isDeveloper();
+              $override = session('developer_role_override');
+              $isDev = $realIsDeveloper && ! $override;
 
+              // $role is the effective role name used to decide which menus to show.
+              $role = Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role;
+            @endphp
+
+            <!-- ================================= -->
+            <!-- DEVELOPER QUICK TOOLS (Non-Production Only) -->
+            <!-- ================================= -->
+            @if($realIsDeveloper)
+            <li class="nav-header">DEVELOPER</li>
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-user-secret text-muted"></i>
+                <p>
+                  @if($override)
+                    Impersonate Role <span class="badge badge-warning ml-2" style="font-size:10px">Impersonating: {{ $override }}</span>
+                  @else
+                    Impersonate Role
+                  @endif
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{{ route('dashboard.developer') }}" class="nav-link">
+                    <i class="fas fa-home nav-icon"></i>
+                    <p>Developer Home</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Operator Sekolah']) }}" class="nav-link">
+                    <i class="fas fa-user-shield nav-icon"></i>
+                    <p>Operator Sekolah</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Kepala Sekolah']) }}" class="nav-link">
+                    <i class="fas fa-chalkboard-teacher nav-icon"></i>
+                    <p>Kepala Sekolah</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Wali Kelas']) }}" class="nav-link">
+                    <i class="fas fa-user-graduate nav-icon"></i>
+                    <p>Wali Kelas</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Kaprodi']) }}" class="nav-link">
+                    <i class="fas fa-layer-group nav-icon"></i>
+                    <p>Kaprodi</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Wali Murid']) }}" class="nav-link">
+                    <i class="fas fa-user-friends nav-icon"></i>
+                    <p>Wali Murid</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Waka Kesiswaan']) }}" class="nav-link">
+                    <i class="fas fa-users nav-icon"></i>
+                    <p>Waka Kesiswaan</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Guru']) }}" class="nav-link">
+                    <i class="fas fa-chalkboard nav-icon"></i>
+                    <p>Guru</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate.clear') }}" class="nav-link text-danger">
+                    <i class="fas fa-times nav-icon"></i>
+                    <p>Clear Impersonation</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            @endif
+
+            @unless($realIsDeveloper && ! $override)
             <!-- ================================= -->
             <!-- MENU DASHBOARD -->
             <!-- ================================= -->
             <li class="nav-item">
                 @php
                     $dashboardRoute = '#';
-                    if($role == 'Operator Sekolah' || $role == 'Waka Kesiswaan') $dashboardRoute = route('dashboard.admin');
+                    if(($realIsDeveloper && ! $override) || $role == 'Developer') {
+                      $dashboardRoute = route('dashboard.developer');
+                    } elseif($isDev || $role == 'Operator Sekolah' || $role == 'Waka Kesiswaan') $dashboardRoute = route('dashboard.admin');
                     elseif($role == 'Kepala Sekolah') $dashboardRoute = route('dashboard.kepsek');
                     elseif($role == 'Wali Kelas') $dashboardRoute = route('dashboard.walikelas');
                     elseif($role == 'Kaprodi') $dashboardRoute = route('dashboard.kaprodi');
@@ -117,7 +207,7 @@
             <!-- ================================= -->
             <!-- MENU OPERASIONAL (Guru/Waka/Wali) -->
             <!-- ================================= -->
-            @if(in_array($role, ['Guru', 'Wali Kelas', 'Waka Kesiswaan', 'Kaprodi']))
+            @if($isDev || in_array($role, ['Guru', 'Wali Kelas', 'Waka Kesiswaan', 'Kaprodi']))
             <li class="nav-header">OPERASIONAL</li>
             <li class="nav-item">
                 <a href="{{ route('pelanggaran.create') }}" class="nav-link {{ Request::is('pelanggaran*') ? 'active' : '' }}">
@@ -125,12 +215,18 @@
                     <p>Catat Pelanggaran</p>
                 </a>
             </li>
+            <li class="nav-item">
+              <a href="{{ route('my-riwayat.index') }}" class="nav-link {{ Request::is('riwayat/saya*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-user-edit text-primary"></i>
+                <p>Riwayat Saya</p>
+              </a>
+            </li>
             @endif
 
             <!-- ================================= -->
             <!-- MENU DATA (Waka/Operator/Wali/Kaprodi) -->
             <!-- ================================= -->
-            @if(in_array($role, ['Operator Sekolah', 'Waka Kesiswaan', 'Wali Kelas', 'Kaprodi']))
+            @if($isDev || in_array($role, ['Operator Sekolah', 'Waka Kesiswaan', 'Wali Kelas', 'Kaprodi']))
             <li class="nav-header">MONITORING DATA</li>
             
             <li class="nav-item">
@@ -153,7 +249,7 @@
             <!-- ================================= -->
             <!-- MENU ADMIN (Operator Only) -->
             <!-- ================================= -->
-            @if($role == 'Operator Sekolah')
+            @if($isDev || $role == 'Operator Sekolah')
             <li class="nav-header">ADMINISTRASI</li>
             <li class="nav-item">
                 <a href="{{ route('users.index') }}" class="nav-link {{ Request::is('users*') ? 'active' : '' }}">
@@ -166,6 +262,12 @@
                     <i class="nav-icon fas fa-gavel"></i>
                     <p>Aturan & Poin</p>
                 </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ route('audit.activity.index') }}" class="nav-link {{ Request::is('audit/activity*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-history text-info"></i>
+                <p>Audit & Log</p>
+              </a>
             </li>
             <li class="nav-item">
               <a href="{{ route('jurusan.index') }}" class="nav-link {{ Request::is('jurusan*') ? 'active' : '' }}">
@@ -184,7 +286,7 @@
             <!-- ================================= -->
             <!-- MENU KEPALA SEKOLAH -->
             <!-- ================================= -->
-            @if($role == 'Kepala Sekolah')
+            @if($isDev || $role == 'Kepala Sekolah')
             <li class="nav-header">KEPALA SEKOLAH</li>
 
             <li class="nav-item">
@@ -213,17 +315,83 @@
                 </a>
             </li>
 
-            <li class="nav-item">
-                <a href="{{ route('kepala-sekolah.activity.index') }}" class="nav-link {{ Request::is('kepala-sekolah/activity*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-history text-info"></i>
-                    <p>Audit & Log</p>
-                </a>
+            <!-- Audit & Log removed for Kepala Sekolah (moved to Operator area) -->
+            @endif
+
+            <!-- ================================= -->
+            <!-- DEVELOPER QUICK TOOLS (Non-Production Only) -->
+            <!-- ================================= -->
+            @if($realIsDeveloper)
+            <li class="nav-header">DEVELOPER</li>
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-user-secret text-muted"></i>
+                <p>
+                  @if($override)
+                    Impersonate Role <span class="badge badge-warning ml-2" style="font-size:10px">Impersonating: {{ $override }}</span>
+                  @else
+                    Impersonate Role
+                  @endif
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Operator Sekolah']) }}" class="nav-link">
+                    <i class="fas fa-user-shield nav-icon"></i>
+                    <p>Operator Sekolah</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Kepala Sekolah']) }}" class="nav-link">
+                    <i class="fas fa-chalkboard-teacher nav-icon"></i>
+                    <p>Kepala Sekolah</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Wali Kelas']) }}" class="nav-link">
+                    <i class="fas fa-user-graduate nav-icon"></i>
+                    <p>Wali Kelas</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Kaprodi']) }}" class="nav-link">
+                    <i class="fas fa-layer-group nav-icon"></i>
+                    <p>Kaprodi</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Wali Murid']) }}" class="nav-link">
+                    <i class="fas fa-user-friends nav-icon"></i>
+                    <p>Wali Murid</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Waka Kesiswaan']) }}" class="nav-link">
+                    <i class="fas fa-users nav-icon"></i>
+                    <p>Waka Kesiswaan</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate', ['role' => 'Guru']) }}" class="nav-link">
+                    <i class="fas fa-chalkboard nav-icon"></i>
+                    <p>Guru</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('developer.impersonate.clear') }}" class="nav-link text-danger">
+                    <i class="fas fa-times nav-icon"></i>
+                    <p>Clear Impersonation</p>
+                  </a>
+                </li>
+              </ul>
             </li>
             @endif
 
             <!-- ================================= -->
             <!-- MENU PENGATURAN (Semua User) -->
             <!-- ================================= -->
+            @endunless
             <li class="nav-header">PENGATURAN</li>
             <li class="nav-item">
                 <!-- Link ini bisa diarahkan ke fitur ganti password nanti -->

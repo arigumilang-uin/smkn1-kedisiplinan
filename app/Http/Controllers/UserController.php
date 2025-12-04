@@ -5,14 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Siswa;
-use App\Models\Jurusan; // <-- WAJIB ADA
-use App\Models\Kelas;   // <-- WAJIB ADA
+use App\Models\Jurusan;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * UserController
+ *
+ * Controller untuk pengelolaan user (CRUD) dengan role assignment.
+ * Fitur: index dengan filter role/pencarian, create/edit user dengan role dropdown, assign wali kelas/kaprodi.
+ */
 class UserController extends Controller
 {
+    /**
+     * Tampilkan daftar user dengan fitur filter by role dan pencarian nama/username/email.
+     */
     public function index(Request $request)
     {
         $roles = Role::all();
@@ -73,7 +82,7 @@ class UserController extends Controller
         ]);
 
         // Jika role Kaprodi dan jurusan dipilih, pastikan jurusan belum punya Kaprodi.
-        $roleKaprodi = Role::where('nama_role', 'Kaprodi')->first();
+        $roleKaprodi = Role::findByName('Kaprodi');
         if ($roleKaprodi && $request->role_id == $roleKaprodi->id && $request->filled('jurusan_id')) {
             $jur = Jurusan::find($request->jurusan_id);
             if ($jur && $jur->kaprodi_user_id) {
@@ -82,7 +91,7 @@ class UserController extends Controller
         }
 
         // Jika role Wali Kelas dan kelas dipilih, pastikan kelas belum punya wali
-        $roleWali = Role::where('nama_role', 'Wali Kelas')->first();
+        $roleWali = Role::findByName('Wali Kelas');
         if ($roleWali && $request->role_id == $roleWali->id && $request->filled('kelas_id')) {
             $kel = Kelas::find($request->kelas_id);
             if ($kel && $kel->wali_kelas_user_id) {
@@ -91,7 +100,7 @@ class UserController extends Controller
         }
 
         // Jika role Kepala Sekolah, pastikan belum ada Kepala Sekolah lain di sistem
-        $roleKepsek = Role::where('nama_role', 'Kepala Sekolah')->first();
+        $roleKepsek = Role::findByName('Kepala Sekolah');
         if ($roleKepsek && $request->role_id == $roleKepsek->id) {
             $exists = User::where('role_id', $roleKepsek->id)->exists();
             if ($exists) {
@@ -108,7 +117,7 @@ class UserController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            $roleOrtu = Role::where('nama_role', 'Wali Murid')->first();
+            $roleOrtu = Role::findByName('Wali Murid');
             
             if ($roleOrtu && $request->role_id == $roleOrtu->id) {
                 if ($request->filled('siswa_ids')) {
@@ -168,7 +177,7 @@ class UserController extends Controller
         ]);
 
         // Jika role Kaprodi dan jurusan dipilih, pastikan jurusan belum punya Kaprodi yang bukan user ini
-        $roleKaprodi = Role::where('nama_role', 'Kaprodi')->first();
+            $roleKaprodi = Role::findByName('Kaprodi');
         if ($roleKaprodi && $request->role_id == $roleKaprodi->id && $request->filled('jurusan_id')) {
             $jur = Jurusan::find($request->jurusan_id);
             if ($jur && $jur->kaprodi_user_id && $jur->kaprodi_user_id != $user->id) {
@@ -177,7 +186,7 @@ class UserController extends Controller
         }
 
         // Jika role Wali Kelas dan kelas dipilih, pastikan kelas belum punya wali yang bukan user ini
-        $roleWali = Role::where('nama_role', 'Wali Kelas')->first();
+        $roleWali = Role::findByName('Wali Kelas');
         if ($roleWali && $request->role_id == $roleWali->id && $request->filled('kelas_id')) {
             $kel = Kelas::find($request->kelas_id);
             if ($kel && $kel->wali_kelas_user_id && $kel->wali_kelas_user_id != $user->id) {
@@ -186,7 +195,7 @@ class UserController extends Controller
         }
 
         // Jika role Kepala Sekolah, pastikan belum ada Kepala Sekolah lain di sistem
-        $roleKepsek = Role::where('nama_role', 'Kepala Sekolah')->first();
+        $roleKepsek = Role::findByName('Kepala Sekolah');
         if ($roleKepsek && $request->role_id == $roleKepsek->id) {
             $exists = User::where('role_id', $roleKepsek->id)->where('id', '!=', $user->id)->exists();
             if ($exists) {
@@ -208,7 +217,7 @@ class UserController extends Controller
 
             $user->update($data);
 
-            $roleOrtu = Role::where('nama_role', 'Wali Murid')->first();
+            $roleOrtu = Role::findByName('Wali Murid');
 
             if ($roleOrtu && $request->role_id == $roleOrtu->id) {
                 // Reset anak lama
@@ -223,7 +232,7 @@ class UserController extends Controller
             }
 
             // --- Kaprodi assignment handling ---
-            $roleKaprodi = Role::where('nama_role', 'Kaprodi')->first();
+            $roleKaprodi = Role::findByName('Kaprodi');
 
             // If user should be Kaprodi now
             if ($roleKaprodi && $request->role_id == $roleKaprodi->id) {
@@ -240,7 +249,7 @@ class UserController extends Controller
             }
 
             // --- Wali Kelas assignment handling ---
-            $roleWali = Role::where('nama_role', 'Wali Kelas')->first();
+            $roleWali = Role::findByName('Wali Kelas');
 
             if ($roleWali && $request->role_id == $roleWali->id) {
                 // Unset any kelas previously pointing to this user (defensive)

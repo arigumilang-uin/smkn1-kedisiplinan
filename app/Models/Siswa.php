@@ -88,4 +88,75 @@ class Siswa extends Model
     {
         return $this->hasMany(TindakLanjut::class, 'siswa_id')->latest();
     }
+
+    // =====================================================================
+    // ----------------------- QUERY SCOPES -----------------------
+    // =====================================================================
+
+    /**
+     * Scope: Filter siswa berdasarkan kelas.
+     */
+    public function scopeInKelas($query, $kelasId)
+    {
+        if ($kelasId) {
+            $query->where('kelas_id', $kelasId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter siswa berdasarkan jurusan (via kelas).
+     */
+    public function scopeInJurusan($query, $jurusanId)
+    {
+        if ($jurusanId) {
+            $query->whereHas('kelas', function ($q) use ($jurusanId) {
+                $q->where('jurusan_id', $jurusanId);
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter siswa berdasarkan wali murid.
+     */
+    public function scopeByWaliMurid($query, $waliMuridId)
+    {
+        if ($waliMuridId) {
+            $query->where('wali_murid_user_id', $waliMuridId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Cari siswa berdasarkan nama atau NISN.
+     */
+    public function scopeSearch($query, $keyword)
+    {
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('nama_siswa', 'like', "%{$keyword}%")
+                  ->orWhere('nisn', 'like', "%{$keyword}%");
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Filter siswa yang memiliki riwayat pelanggaran.
+     */
+    public function scopeWithViolations($query)
+    {
+        return $query->whereHas('riwayatPelanggaran');
+    }
+
+    /**
+     * Scope: Filter siswa yang memiliki kasus tindak lanjut aktif.
+     */
+    public function scopeWithActiveCases($query)
+    {
+        return $query->whereHas('tindakLanjut', function ($q) {
+            $q->whereIn('status', ['Baru', 'Menunggu Persetujuan', 'Disetujui', 'Ditangani']);
+        });
+    }
 }

@@ -15,7 +15,7 @@
             <h4 class="m-0 text-dark"><i class="fas fa-users mr-2"></i> Data Pengguna Sistem</h4>
             <div class="btn-group">
                 <!-- Tombol Kembali ke Dashboard (Hanya untuk Operator/Admin) -->
-                @if(auth()->user()->role->nama_role == 'Operator Sekolah')
+                @if(auth()->user()->hasRole('Operator Sekolah'))
                      <a href="{{ route('dashboard.admin') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left mr-1"></i> Dashboard
                     </a>
@@ -90,20 +90,21 @@
                         </td>
                         <td><code>{{ $u->username }}</code></td>
                         <td>
-                            @if($u->role->nama_role == 'Operator Sekolah')
+                            @php $roleName = $u->role?->nama_role ?? 'N/A'; @endphp
+                            @if($roleName == 'Operator Sekolah')
                                 <span class="badge badge-primary">Operator</span>
-                            @elseif($u->role->nama_role == 'Waka Kesiswaan')
+                            @elseif($roleName == 'Waka Kesiswaan')
                                 <span class="badge badge-info">Waka</span>
-                            @elseif($u->role->nama_role == 'Kepala Sekolah')
+                            @elseif($roleName == 'Kepala Sekolah')
                                 <span class="badge badge-danger">Kepsek</span>
-                            @elseif($u->role->nama_role == 'Wali Kelas')
+                            @elseif($roleName == 'Wali Kelas')
                                 <span class="badge badge-warning">Wali Kelas</span>
-                            @elseif($u->role->nama_role == 'Wali Murid')
+                            @elseif($roleName == 'Wali Murid')
                                 <span class="badge badge-success" style="background-color: #28a745;">Wali Murid</span>
-                            @elseif($u->role->nama_role == 'Guru')
+                            @elseif($roleName == 'Guru')
                                 <span class="badge badge-secondary">Guru</span>
                             @else
-                                <span class="badge badge-light border">{{ $u->role->nama_role }}</span>
+                                <span class="badge badge-light border">{{ $roleName }}</span>
                             @endif
                         </td>
                         <td class="text-muted">{{ $u->email }}</td>

@@ -109,7 +109,7 @@ class KelasController extends Controller
 
             // Password standardized: smkn1.walikelas.{tingkat}{kode}{nomor}
             $password = 'smkn1.walikelas.' . $tingkat . $kodeSafe . $nomor;
-            $role = Role::where('nama_role', 'Wali Kelas')->first();
+            $role = Role::findByName('Wali Kelas');
             $user = User::create([
                 'role_id' => $role?->id,
                 'nama' => 'Wali Kelas ' . $kelas->nama_kelas,

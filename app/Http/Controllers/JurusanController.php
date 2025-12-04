@@ -69,7 +69,7 @@ class JurusanController extends Controller
 
             $password = Str::random(10);
 
-            $role = Role::where('nama_role', 'Kaprodi')->first();
+            $role = Role::findByName('Kaprodi');
             $user = User::create([
                 'role_id' => $role?->id,
                 'nama' => 'Kaprodi ' . $jurusan->nama_jurusan,
@@ -204,7 +204,7 @@ class JurusanController extends Controller
 
                     // Password standardized: smkn1.kaprodi.{kode_jurusan}
                     $password = 'smkn1.kaprodi.' . $cleanKode;
-                    $role = Role::where('nama_role', 'Kaprodi')->first();
+                    $role = Role::findByName('Kaprodi');
                     $user = User::create([
                         'role_id' => $role?->id,
                         'nama' => 'Kaprodi ' . $jurusan->nama_jurusan,

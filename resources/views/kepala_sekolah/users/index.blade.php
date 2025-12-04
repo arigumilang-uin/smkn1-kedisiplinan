@@ -88,7 +88,7 @@
                                     <td><code>{{ $user->username }}</code></td>
                                     <td><small class="text-muted">{{ $user->email }}</small></td>
                                     <td>
-                                        <span class="badge badge-secondary">{{ $user->role->nama_role ?? 'N/A' }}</span>
+                                        <span class="badge badge-secondary">{{ $user->role?->nama_role ?? 'N/A' }}</span>
                                     </td>
                                     <td class="text-center">
                                         @if($user->is_active ?? true)

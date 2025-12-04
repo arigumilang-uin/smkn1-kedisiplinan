@@ -33,7 +33,7 @@
         </div>
 
         {{-- Filter Kelas (Admin Only) --}}
-        @if(Auth::user()->role->nama_role != 'Wali Kelas')
+        @if(! Auth::user()->hasRole('Wali Kelas'))
         <div class="col-md-2 mb-2">
             <label class="filter-label">
                 <i class="fas fa-layer-group mr-1"></i> Kelas

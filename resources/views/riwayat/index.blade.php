@@ -20,7 +20,7 @@
         </div>
         <div class="col-sm-6 text-right">
              @php
-                $role = auth()->user()->role->nama_role;
+                $role = auth()->user()->effectiveRoleName() ?? auth()->user()->role?->nama_role;
                 $backRoute = match($role) {
                     'Wali Kelas' => route('dashboard.walikelas'),
                     'Kaprodi' => route('dashboard.kaprodi'),
@@ -146,13 +146,13 @@
 
                             <!-- 6. BUKTI -->
                             <td class="text-center">
-                                @if($r->bukti_foto_path)
-                                    <a href="{{ asset('storage/' . $r->bukti_foto_path) }}" target="_blank" class="btn btn-light btn-sm border rounded-circle shadow-sm" style="width: 35px; height: 35px; padding: 0; line-height: 33px;" title="Lihat Foto">
-                                        <i class="fas fa-image text-info"></i>
-                                    </a>
-                                @else
-                                    <span class="text-muted text-xs">-</span>
-                                @endif
+                                    @if($r->bukti_foto_path)
+                                        <a href="{{ route('bukti.show', ['path' => $r->bukti_foto_path]) }}" target="_blank" class="btn btn-light btn-sm border rounded-circle shadow-sm" style="width: 35px; height: 35px; padding: 0; line-height: 33px;" title="Lihat Foto">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </a>
+                                    @else
+                                        <span class="text-muted text-xs">-</span>
+                                    @endif
                             </td>
                         </tr>
                         @empty
