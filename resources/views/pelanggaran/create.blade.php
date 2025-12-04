@@ -185,6 +185,8 @@
                                 <div class="selection-card violation-item" 
                                      data-nama="{{ $namaLower }}"
                                      data-kategori="{{ $kategoriLower }}"
+                                     data-keywords="{{ strtolower($jp->keywords ?? '') }}"
+                                     data-filter-category="{{ $jp->filter_category ?? '' }}"
                                      onclick="selectViolation(this)">
                                     
                                     <div style="flex-grow: 1;">

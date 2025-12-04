@@ -50,9 +50,20 @@ class JenisPelanggaranController extends Controller
             'nama_pelanggaran' => 'required|string|max:255',
             'kategori_id' => 'required|exists:kategori_pelanggaran,id',
             'poin' => 'required|integer|min:0',
+            'filter_category' => 'nullable|in:atribut,absensi,kerapian,ibadah,berat',
+            'keywords' => 'nullable|array',
+            'keywords.*' => 'nullable|string|max:255',
         ]);
 
-        JenisPelanggaran::create($request->all());
+        $data = $request->only(['nama_pelanggaran', 'kategori_id', 'poin', 'filter_category']);
+
+        // Proses keywords: array akan dikonversi ke string dengan separator |
+        if ($request->filled('keywords')) {
+            $keywords = array_filter($request->keywords); // Hapus yang kosong
+            $data['keywords'] = implode('|', $keywords);
+        }
+
+        JenisPelanggaran::create($data);
 
         return redirect()->route('jenis-pelanggaran.index')
             ->with('success', 'Aturan pelanggaran berhasil ditambahkan!');
@@ -77,10 +88,24 @@ class JenisPelanggaranController extends Controller
             'nama_pelanggaran' => 'required|string|max:255',
             'kategori_id' => 'required|exists:kategori_pelanggaran,id',
             'poin' => 'required|integer|min:0',
+            'filter_category' => 'nullable|in:atribut,absensi,kerapian,ibadah,berat',
+            'keywords' => 'nullable|array',
+            'keywords.*' => 'nullable|string|max:255',
         ]);
 
         $jenisPelanggaran = JenisPelanggaran::findOrFail($id);
-        $jenisPelanggaran->update($request->all());
+        
+        $data = $request->only(['nama_pelanggaran', 'kategori_id', 'poin', 'filter_category']);
+
+        // Proses keywords: array akan dikonversi ke string dengan separator |
+        if ($request->filled('keywords')) {
+            $keywords = array_filter($request->keywords); // Hapus yang kosong
+            $data['keywords'] = implode('|', $keywords);
+        } else {
+            $data['keywords'] = null;
+        }
+
+        $jenisPelanggaran->update($data);
 
         return redirect()->route('jenis-pelanggaran.index')
             ->with('success', 'Aturan pelanggaran berhasil diperbarui!');
