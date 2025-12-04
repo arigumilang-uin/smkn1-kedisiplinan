@@ -81,18 +81,20 @@ class UserController extends Controller
             'siswa_ids.*' => 'exists:siswa,id',
         ]);
 
-        // Jika role Kaprodi dan jurusan dipilih, pastikan jurusan belum punya Kaprodi.
+        // Jika role Kaprodi atau Developer dan jurusan dipilih, pastikan jurusan belum punya Kaprodi.
         $roleKaprodi = Role::findByName('Kaprodi');
-        if ($roleKaprodi && $request->role_id == $roleKaprodi->id && $request->filled('jurusan_id')) {
+        $roleDev = Role::findByName('Developer');
+        
+        if (($roleKaprodi && $request->role_id == $roleKaprodi->id || $roleDev && $request->role_id == $roleDev->id) && $request->filled('jurusan_id')) {
             $jur = Jurusan::find($request->jurusan_id);
             if ($jur && $jur->kaprodi_user_id) {
                 return back()->withInput()->withErrors(['jurusan_id' => 'Jurusan ini sudah memiliki Kaprodi: ' . (optional($jur->kaprodi)->nama ?? '—') . '. Pilih jurusan lain atau lepaskan role Kaprodi pada akun yang bersangkutan.']);
             }
         }
 
-        // Jika role Wali Kelas dan kelas dipilih, pastikan kelas belum punya wali
+        // Jika role Wali Kelas atau Developer dan kelas dipilih, pastikan kelas belum punya wali
         $roleWali = Role::findByName('Wali Kelas');
-        if ($roleWali && $request->role_id == $roleWali->id && $request->filled('kelas_id')) {
+        if (($roleWali && $request->role_id == $roleWali->id || $roleDev && $request->role_id == $roleDev->id) && $request->filled('kelas_id')) {
             $kel = Kelas::find($request->kelas_id);
             if ($kel && $kel->wali_kelas_user_id) {
                 return back()->withInput()->withErrors(['kelas_id' => 'Kelas ini sudah memiliki Wali Kelas: ' . (optional($kel->waliKelas)->nama ?? '—') . '. Pilih kelas lain atau lepaskan role Wali Kelas pada akun yang bersangkutan.']);
@@ -118,8 +120,10 @@ class UserController extends Controller
             ]);
 
             $roleOrtu = Role::findByName('Wali Murid');
+            $roleDev = Role::findByName('Developer');
             
-            if ($roleOrtu && $request->role_id == $roleOrtu->id) {
+            // Wali Murid atau Developer bisa assign siswa
+            if (($roleOrtu && $request->role_id == $roleOrtu->id) || ($roleDev && $request->role_id == $roleDev->id)) {
                 if ($request->filled('siswa_ids')) {
                     Siswa::whereIn('id', $request->siswa_ids)->update([
                         'wali_murid_user_id' => $user->id
@@ -127,14 +131,19 @@ class UserController extends Controller
                 }
             }
 
-            // Jika role adalah Kaprodi, link ke jurusan yang dipilih (jika ada)
-            if ($roleKaprodi && $request->role_id == $roleKaprodi->id && $request->filled('jurusan_id')) {
-                Jurusan::where('id', $request->jurusan_id)->update(['kaprodi_user_id' => $user->id]);
+            // Jika role adalah Kaprodi atau Developer, link ke jurusan yang dipilih (jika ada)
+            if (($roleKaprodi && $request->role_id == $roleKaprodi->id) || ($roleDev && $request->role_id == $roleDev->id)) {
+                if ($request->filled('jurusan_id')) {
+                    Jurusan::where('id', $request->jurusan_id)->update(['kaprodi_user_id' => $user->id]);
+                }
             }
 
-            // Jika role adalah Wali Kelas, link ke kelas yang dipilih (jika ada)
-            if ($roleWali && $request->role_id == $roleWali->id && $request->filled('kelas_id')) {
-                Kelas::where('id', $request->kelas_id)->update(['wali_kelas_user_id' => $user->id]);
+            // Jika role adalah Wali Kelas atau Developer, link ke kelas yang dipilih (jika ada)
+            $roleWali = Role::findByName('Wali Kelas');
+            if (($roleWali && $request->role_id == $roleWali->id) || ($roleDev && $request->role_id == $roleDev->id)) {
+                if ($request->filled('kelas_id')) {
+                    Kelas::where('id', $request->kelas_id)->update(['wali_kelas_user_id' => $user->id]);
+                }
             }
         });
 
@@ -176,18 +185,20 @@ class UserController extends Controller
             'siswa_ids.*' => 'exists:siswa,id',
         ]);
 
-        // Jika role Kaprodi dan jurusan dipilih, pastikan jurusan belum punya Kaprodi yang bukan user ini
-            $roleKaprodi = Role::findByName('Kaprodi');
-        if ($roleKaprodi && $request->role_id == $roleKaprodi->id && $request->filled('jurusan_id')) {
+        // Jika role Kaprodi atau Developer dan jurusan dipilih, pastikan jurusan belum punya Kaprodi yang bukan user ini
+        $roleKaprodi = Role::findByName('Kaprodi');
+        $roleDev = Role::findByName('Developer');
+        
+        if (($roleKaprodi && $request->role_id == $roleKaprodi->id || $roleDev && $request->role_id == $roleDev->id) && $request->filled('jurusan_id')) {
             $jur = Jurusan::find($request->jurusan_id);
             if ($jur && $jur->kaprodi_user_id && $jur->kaprodi_user_id != $user->id) {
                 return back()->withInput()->withErrors(['jurusan_id' => 'Jurusan ini sudah dimiliki oleh Kaprodi lain: ' . (optional($jur->kaprodi)->nama ?? '—') . '. Pilih jurusan lain atau lepaskan role Kaprodi pada akun yang bersangkutan.']);
             }
         }
 
-        // Jika role Wali Kelas dan kelas dipilih, pastikan kelas belum punya wali yang bukan user ini
+        // Jika role Wali Kelas atau Developer dan kelas dipilih, pastikan kelas belum punya wali yang bukan user ini
         $roleWali = Role::findByName('Wali Kelas');
-        if ($roleWali && $request->role_id == $roleWali->id && $request->filled('kelas_id')) {
+        if (($roleWali && $request->role_id == $roleWali->id || $roleDev && $request->role_id == $roleDev->id) && $request->filled('kelas_id')) {
             $kel = Kelas::find($request->kelas_id);
             if ($kel && $kel->wali_kelas_user_id && $kel->wali_kelas_user_id != $user->id) {
                 return back()->withInput()->withErrors(['kelas_id' => 'Kelas ini sudah dimiliki oleh Wali Kelas lain: ' . (optional($kel->waliKelas)->nama ?? '—') . '. Pilih kelas lain atau lepaskan role Wali Kelas pada akun yang bersangkutan.']);
@@ -218,8 +229,10 @@ class UserController extends Controller
             $user->update($data);
 
             $roleOrtu = Role::findByName('Wali Murid');
+            $roleDev = Role::findByName('Developer');
 
-            if ($roleOrtu && $request->role_id == $roleOrtu->id) {
+            // Wali Murid atau Developer bisa assign siswa
+            if (($roleOrtu && $request->role_id == $roleOrtu->id) || ($roleDev && $request->role_id == $roleDev->id)) {
                 // Reset anak lama
                 Siswa::where('wali_murid_user_id', $user->id)->update(['wali_murid_user_id' => null]);
 
@@ -229,13 +242,15 @@ class UserController extends Controller
                         'wali_murid_user_id' => $user->id
                     ]);
                 }
+            } elseif ($roleOrtu) {
+                // If user is no longer Wali Murid, remove any siswa assignment they had
+                Siswa::where('wali_murid_user_id', $user->id)->update(['wali_murid_user_id' => null]);
             }
 
-            // --- Kaprodi assignment handling ---
+            // --- Kaprodi assignment handling (Kaprodi atau Developer) ---
             $roleKaprodi = Role::findByName('Kaprodi');
 
-            // If user should be Kaprodi now
-            if ($roleKaprodi && $request->role_id == $roleKaprodi->id) {
+            if (($roleKaprodi && $request->role_id == $roleKaprodi->id) || ($roleDev && $request->role_id == $roleDev->id)) {
                 // Unset any jurusan previously pointing to this user (defensive)
                 Jurusan::where('kaprodi_user_id', $user->id)->update(['kaprodi_user_id' => null]);
 
@@ -243,15 +258,15 @@ class UserController extends Controller
                 if ($request->filled('jurusan_id')) {
                     Jurusan::where('id', $request->jurusan_id)->update(['kaprodi_user_id' => $user->id]);
                 }
-            } else {
+            } elseif ($roleKaprodi) {
                 // If user is no longer Kaprodi, remove any jurusan assignment they had
                 Jurusan::where('kaprodi_user_id', $user->id)->update(['kaprodi_user_id' => null]);
             }
 
-            // --- Wali Kelas assignment handling ---
+            // --- Wali Kelas assignment handling (Wali Kelas atau Developer) ---
             $roleWali = Role::findByName('Wali Kelas');
 
-            if ($roleWali && $request->role_id == $roleWali->id) {
+            if (($roleWali && $request->role_id == $roleWali->id) || ($roleDev && $request->role_id == $roleDev->id)) {
                 // Unset any kelas previously pointing to this user (defensive)
                 Kelas::where('wali_kelas_user_id', $user->id)->update(['wali_kelas_user_id' => null]);
 
@@ -259,7 +274,7 @@ class UserController extends Controller
                 if ($request->filled('kelas_id')) {
                     Kelas::where('id', $request->kelas_id)->update(['wali_kelas_user_id' => $user->id]);
                 }
-            } else {
+            } elseif ($roleWali) {
                 // If user is no longer Wali Kelas, remove any kelas assignment they had
                 Kelas::where('wali_kelas_user_id', $user->id)->update(['wali_kelas_user_id' => null]);
             }

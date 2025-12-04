@@ -123,12 +123,17 @@ function applyViolationSearch() {
     violations.forEach(violation => {
         const nama = violation.dataset.nama || '';
         const kategori = violation.dataset.kategori || '';
+        const keywords = (violation.dataset.keywords || '').toLowerCase(); // keywords dalam format "key1|key2|key3"
         
-        let show = !search || nama.includes(search) || kategori.includes(search);
+        // Pencarian: check nama, kategori, atau keywords
+        let show = !search || 
+                   nama.includes(search) || 
+                   kategori.includes(search) ||
+                   keywords.includes(search);
         
         // Apply category filter if active
         if (currentFilterTopic !== 'all' && currentFilterTopic !== 'berat') {
-            show = show && kategori === currentFilterTopic;
+            show = show && (violation.dataset.filterCategory === currentFilterTopic || kategori === currentFilterTopic);
         } else if (currentFilterTopic === 'berat') {
             show = show && kategori === 'berat';
         }

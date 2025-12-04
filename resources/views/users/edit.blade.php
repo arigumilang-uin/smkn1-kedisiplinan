@@ -19,20 +19,28 @@
             function toggleSections() {
                 const opt = roleSelect.options[roleSelect.selectedIndex];
                 const roleName = opt ? opt.dataset.roleName : '';
-                // Kaprodi
-                if (roleName === 'Kaprodi') {
+                // Kaprodi atau Developer
+                if (roleName === 'Kaprodi' || roleName === 'Developer') {
                     kaprodiSection.style.display = '';
                 } else {
                     kaprodiSection.style.display = 'none';
                     if (jurusanSelect) jurusanSelect.value = '';
                 }
 
-                // Wali Kelas
-                if (roleName === 'Wali Kelas') {
+                // Wali Kelas atau Developer
+                if (roleName === 'Wali Kelas' || roleName === 'Developer') {
                     waliSection.style.display = '';
                 } else {
                     waliSection.style.display = 'none';
                     if (kelasSelect) kelasSelect.value = '';
+                }
+
+                // Wali Murid atau Developer
+                const siswaSection = document.getElementById('siswaSection');
+                if (roleName === 'Wali Murid' || roleName === 'Developer') {
+                    siswaSection.style.display = '';
+                } else {
+                    siswaSection.style.display = 'none';
                 }
             }
 
@@ -140,10 +148,10 @@
                 <hr>
 
                 <!-- BAGIAN 2: HUBUNGKAN SISWA (KHUSUS WALI MURID) -->
-                <!-- BAGIAN KAPRODI: pilih jurusan jika user adalah Kaprodi -->
+                <!-- BAGIAN KAPRODI/DEVELOPER: pilih jurusan jika user adalah Kaprodi atau Developer -->
                 <div id="kaprodiSection" style="display:none; margin-bottom: 1rem;">
                     <div class="form-group">
-                        <label>Jurusan yang diampu (Kaprodi)</label>
+                        <label>Jurusan yang diampu (Kaprodi/Developer)</label>
                         <select name="jurusan_id" id="jurusanSelect" class="form-control @error('jurusan_id') is-invalid @enderror">
                             <option value="">-- Pilih Jurusan --</option>
                                 @foreach($jurusan as $j)
@@ -151,14 +159,14 @@
                             @endforeach
                         </select>
                         @error('jurusan_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                        <small class="text-muted d-block mt-1">Pilih jurusan jika akun ini adalah Kaprodi. Jurusan yang sudah mempunyai Kaprodi lain dinonaktifkan.</small>
+                        <small class="text-muted d-block mt-1">Pilih jurusan jika akun ini adalah Kaprodi atau Developer. Jurusan yang sudah mempunyai Kaprodi lain dinonaktifkan.</small>
                     </div>
                 </div>
 
-                <!-- AREA KHUSUS WALI KELAS -->
+                <!-- AREA KHUSUS WALI KELAS/DEVELOPER -->
                 <div id="waliSection" style="display:none; margin-top: 1rem;">
                     <div class="form-group">
-                        <label>Kelas yang diampu (Wali Kelas)</label>
+                        <label>Kelas yang diampu (Wali Kelas/Developer)</label>
                         <select name="kelas_id" id="kelasSelect" class="form-control @error('kelas_id') is-invalid @enderror">
                             <option value="">-- Pilih Kelas --</option>
                             @foreach($kelas as $k)
@@ -166,14 +174,14 @@
                             @endforeach
                         </select>
                         @error('kelas_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                        <small class="text-muted d-block mt-1">Pilih kelas jika akun ini adalah Wali Kelas. Kelas yang sudah mempunyai wali lain dinonaktifkan.</small>
+                        <small class="text-muted d-block mt-1">Pilih kelas jika akun ini adalah Wali Kelas atau Developer. Kelas yang sudah mempunyai wali lain dinonaktifkan.</small>
                     </div>
                 </div>
 
                 <div id="siswaSection" style="display: none;">
                     <div class="card border-warning">
                         <div class="card-header bg-warning text-dark py-2">
-                            <h3 class="card-title" style="font-size: 1rem;"><i class="fas fa-child mr-1"></i> Hubungkan Wali Murid dengan Siswa</h3>
+                            <h3 class="card-title" style="font-size: 1rem;"><i class="fas fa-child mr-1"></i> Hubungkan dengan Siswa (Wali Murid/Developer)</h3>
                         </div>
                         <div class="card-body bg-light">
                             
@@ -300,24 +308,47 @@
 
 @push('scripts')
     <script>
-        (function(){
-            const roleSelect = document.getElementById('roleSelect');
-            const kaprodiSection = document.getElementById('kaprodiSection');
+        // Filtering functions untuk daftar siswa
+        function resetFilters() {
+            document.getElementById('filterTingkat').value = '';
+            document.getElementById('filterJurusan').value = '';
+            document.getElementById('filterKelas').value = '';
+            document.getElementById('searchSiswa').value = '';
+            filterStudents();
+        }
 
-            function toggleKaprodi() {
-                const opt = roleSelect.options[roleSelect.selectedIndex];
-                const roleName = opt ? opt.dataset.roleName : '';
-                if (roleName === 'Kaprodi') {
-                    kaprodiSection.style.display = '';
-                } else {
-                    kaprodiSection.style.display = 'none';
-                    const sel = document.getElementById('jurusanSelect');
-                    if (sel) sel.value = '';
-                }
+        function filterStudents() {
+            const tingkat = document.getElementById('filterTingkat')?.value || '';
+            const jurusan = document.getElementById('filterJurusan')?.value || '';
+            const kelas = document.getElementById('filterKelas')?.value || '';
+            const search = document.getElementById('searchSiswa')?.value?.toLowerCase() || '';
+
+            const items = document.querySelectorAll('.student-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                let show = true;
+                if (tingkat && item.dataset.tingkat !== tingkat) show = false;
+                if (jurusan && item.dataset.jurusan !== jurusan) show = false;
+                if (kelas && item.dataset.kelas !== kelas) show = false;
+                if (search && !item.dataset.search.includes(search)) show = false;
+
+                item.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            const noResultMsg = document.getElementById('noResultMsg');
+            if (noResultMsg) {
+                noResultMsg.style.display = visibleCount === 0 ? 'block' : 'none';
             }
+        }
 
-            roleSelect.addEventListener('change', toggleKaprodi);
-            document.addEventListener('DOMContentLoaded', toggleKaprodi);
-        })();
+        // Event listeners untuk filter
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('filterTingkat')?.addEventListener('change', filterStudents);
+            document.getElementById('filterJurusan')?.addEventListener('change', filterStudents);
+            document.getElementById('filterKelas')?.addEventListener('change', filterStudents);
+            document.getElementById('searchSiswa')?.addEventListener('keyup', filterStudents);
+        });
     </script>
 @endpush
