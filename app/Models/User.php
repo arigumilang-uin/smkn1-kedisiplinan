@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Spatie\Activitylog\Traits\LogsActivity;
 use App\Services\RoleService;
 use Spatie\Activitylog\LogOptions;
@@ -13,9 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, LogsActivity;
+    use HasFactory, Notifiable, LogsActivity, MustVerifyEmailTrait;
 
     /**
      * Configure activity log options for User model.
@@ -38,7 +39,10 @@ class User extends Authenticatable
         'nama',
         'username',
         'email',
+        'phone',
         'password',
+        'username_changed_at',
+        'password_changed_at',
     ];
 
     /**
@@ -58,6 +62,9 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'profile_completed_at' => 'datetime',
+        'username_changed_at' => 'datetime',
+        'password_changed_at' => 'datetime',
         'password' => 'hashed',
     ];
 
@@ -203,6 +210,31 @@ class User extends Authenticatable
     public function isWaliMurid(): bool
     {
         return $this->hasRole('Wali Murid');
+    }
+
+    /**
+     * Cek apakah user sudah melengkapi profil minimal (email dan, untuk sebagian role,
+     * kontak) saat login pertama.
+     */
+    public function hasCompletedProfile(): bool
+    {
+        return $this->profile_completed_at !== null;
+    }
+
+    /**
+     * Cek apakah username sudah pernah diubah oleh user.
+     */
+    public function hasChangedUsername(): bool
+    {
+        return $this->username_changed_at !== null;
+    }
+
+    /**
+     * Cek apakah password sudah pernah diubah oleh user.
+     */
+    public function hasChangedPassword(): bool
+    {
+        return $this->password_changed_at !== null;
     }
 
     /**

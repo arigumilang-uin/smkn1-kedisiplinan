@@ -78,6 +78,7 @@
                         <th>Username</th>
                         <th>Role</th>
                         <th>Email</th>
+                        <th>Kontak</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -108,6 +109,20 @@
                             @endif
                         </td>
                         <td class="text-muted">{{ $u->email }}</td>
+                        <td class="text-muted">
+                            @php
+                                // Untuk Wali Murid, ambil kontak dari data siswa (nomor_hp_wali_murid)
+                                if ($u->isWaliMurid()) {
+                                    $kontak = $u->anakWali
+                                        ->whereNotNull('nomor_hp_wali_murid')
+                                        ->pluck('nomor_hp_wali_murid')
+                                        ->first();
+                                } else {
+                                    $kontak = $u->phone;
+                                }
+                            @endphp
+                            {{ $kontak ?? '-' }}
+                        </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ route('users.edit', $u->id) }}" class="btn btn-warning" title="Edit User">

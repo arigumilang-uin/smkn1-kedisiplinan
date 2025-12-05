@@ -21,14 +21,12 @@
                     <div class="card-body">
                         
                         <!-- DATA AKUN -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>Informasi:</strong> Nama, Username, dan Password akan di-generate otomatis oleh sistem berdasarkan role dan konfigurasi yang Anda pilih.
+                        </div>
+
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Nama Lengkap <span class="text-danger">*</span></label>
-                                    <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" placeholder="Masukkan nama lengkap" value="{{ old('nama') }}" required>
-                                    @error('nama') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Role (Jabatan) <span class="text-danger">*</span></label>
@@ -46,24 +44,30 @@
                                     @error('role_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Username <span class="text-danger">*</span></label>
-                                    <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" placeholder="Username login" value="{{ old('username') }}" required>
-                                    @error('username') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Email <span class="text-danger">*</span></label>
                                     <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="Alamat Email" value="{{ old('email') }}" required>
                                     @error('email') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                                    <small class="text-muted d-block">
+                                        Email ini dapat diubah oleh user nantinya di halaman "Akun Saya".
+                                    </small>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Nomor HP / Kontak (Opsional)</label>
+                                    <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" placeholder="Contoh: 0812xxxxxxx" value="{{ old('phone') }}">
+                                    @error('phone') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                                    <small class="text-muted d-block">
+                                        Untuk Wali Murid, kontak utama tetap diambil dari data siswa (nomor HP wali murid).
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Password <span class="text-danger">*</span></label>
                                     <input type="text" name="password" class="form-control" value="123456" required>

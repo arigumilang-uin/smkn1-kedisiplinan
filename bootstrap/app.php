@@ -11,11 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // --- TAMBAHKAN INI ---
+        // Aliases middleware kustom aplikasi
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'profile.completed' => \App\Http\Middleware\EnsureProfileCompleted::class,
         ]);
-        // ---------------------
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -89,13 +89,22 @@
                 <!-- BAGIAN 1: DATA AKUN -->
                 <h5 class="text-muted mb-3"><i class="fas fa-id-card mr-1"></i> Data Akun</h5>
 
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    <strong>Informasi:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Nama</strong> akan di-generate otomatis berdasarkan role dan konfigurasi (selalu update saat konfigurasi berubah).</li>
+                        <li><strong>Username</strong> akan di-generate otomatis hanya jika user belum pernah mengubahnya sendiri.</li>
+                        <li><strong>Password</strong> akan di-generate otomatis hanya jika user belum pernah mengubahnya sendiri.</li>
+                    </ul>
+                </div>
+
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Nama Lengkap <span class="text-danger">*</span></label>
-                            <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" 
-                                   value="{{ old('nama', $user->nama) }}" required>
-                            @error('nama') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            <label>Nama (Auto-generate)</label>
+                            <input type="text" class="form-control" value="{{ $user->nama }}" disabled>
+                            <small class="text-muted">Nama di-generate otomatis berdasarkan role dan konfigurasi. Akan berubah otomatis saat role/konfigurasi diubah.</small>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -121,10 +130,16 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Username <span class="text-danger">*</span></label>
-                            <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" 
-                                   value="{{ old('username', $user->username) }}" required>
-                            @error('username') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            <label>Username</label>
+                            @if($user->hasChangedUsername())
+                                <input type="text" class="form-control" value="{{ $user->username }}" disabled>
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i> Username sudah diubah oleh user, tidak akan di-generate ulang.
+                                </small>
+                            @else
+                                <input type="text" class="form-control" value="{{ $user->username }}" disabled>
+                                <small class="text-muted">Username akan di-generate otomatis saat konfigurasi berubah (jika user belum pernah mengubahnya).</small>
+                            @endif
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -137,10 +152,34 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Password Baru</label>
-                            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Kosongkan jika tidak ganti">
-                            <small class="text-muted">Isi hanya jika ingin mengubah password.</small>
-                            @error('password') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            <label>Nomor HP / Kontak (Opsional)</label>
+                            <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" 
+                                   value="{{ old('phone', $user->phone) }}" {{ $user->isWaliMurid() ? 'readonly' : '' }}>
+                            @error('phone') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            <small class="text-muted d-block">
+                                @if($user->isWaliMurid())
+                                    Kontak utama wali murid diambil dari data siswa (nomor HP wali murid).
+                                @else
+                                    Opsional, hanya untuk keperluan kontak internal.
+                                @endif
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Password</label>
+                            @if($user->hasChangedPassword())
+                                <input type="text" class="form-control" value="••••••••" disabled>
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i> Password sudah diubah oleh user, tidak akan di-generate ulang.
+                                </small>
+                            @else
+                                <input type="text" class="form-control" value="••••••••" disabled>
+                                <small class="text-muted">Password akan di-generate otomatis saat konfigurasi berubah (jika user belum pernah mengubahnya).</small>
+                            @endif
                         </div>
                     </div>
                 </div>

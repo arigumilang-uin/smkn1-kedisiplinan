@@ -98,8 +98,9 @@
             @enderror
 
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus>
+                <label for="username">Username atau Email</label>
+                <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus placeholder="Masukkan username atau email Anda">
+                <small style="color: #777; font-size: 0.85rem; display: block; margin-top: 0.25rem;">Anda bisa login menggunakan username atau email yang terdaftar</small>
             </div>
 
             <div class="form-group">

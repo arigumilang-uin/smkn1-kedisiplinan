@@ -83,7 +83,7 @@
           <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->nama) }}&background=random&color=fff" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="#" class="d-block font-weight-bold text-white">{{ Str::limit(Auth::user()->nama, 18) }}</a>
+          <a href="{{ route('account.edit') }}" class="d-block font-weight-bold text-white">{{ Str::limit(Auth::user()->nama, 18) }}</a>
           <!-- Tampilkan role efektif (memperhitungkan impersonation untuk Developer) -->
           <span class="badge badge-info mt-1">{{ Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role }}</span>
         </div>
@@ -394,8 +394,7 @@
             @endunless
             <li class="nav-header">PENGATURAN</li>
             <li class="nav-item">
-                <!-- Link ini bisa diarahkan ke fitur ganti password nanti -->
-                <a href="#" class="nav-link">
+                <a href="{{ route('account.edit') }}" class="nav-link {{ Request::is('akun') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-cog"></i>
                     <p>Akun Saya</p>
                 </a>

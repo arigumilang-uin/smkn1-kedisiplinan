@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\Jurusan;
 use App\Models\Kelas;
+use App\Services\UserNamingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $roles = Role::all();
-        $query = User::with('role');
+        $query = User::with(['role', 'anakWali']);
 
         if ($request->filled('cari')) {
             $query->where(function($q) use ($request) {
@@ -70,13 +71,11 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama' => 'required|string|max:255',
-            'username' => 'required|string|unique:users,username',
             'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:30',
             'role_id' => 'required|exists:roles,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
-            'password' => 'required|min:6',
             'siswa_ids' => 'nullable|array',
             'siswa_ids.*' => 'exists:siswa,id',
         ]);
@@ -111,12 +110,20 @@ class UserController extends Controller
         }
 
         DB::transaction(function() use ($request, $roleKaprodi) {
+            // Buat user sementara dengan role_id dulu untuk bisa generate nama/username/password
             $user = User::create([
-                'nama' => $request->nama,
-                'username' => $request->username,
-                'email' => $request->email,
                 'role_id' => $request->role_id,
-                'password' => Hash::make($request->password),
+                'nama' => '', // Temporary, akan di-update setelah relasi dibuat
+                'username' => '', // Temporary, akan di-update setelah relasi dibuat
+                'email' => $request->email,
+                'phone' => (function () use ($request) {
+                    $roleOrtu = Role::findByName('Wali Murid');
+                    if ($roleOrtu && (int) $request->role_id === (int) $roleOrtu->id) {
+                        return null;
+                    }
+                    return $request->phone ?: null;
+                })(),
+                'password' => '', // Temporary, akan di-update setelah relasi dibuat
             ]);
 
             $roleOrtu = Role::findByName('Wali Murid');
@@ -145,6 +152,16 @@ class UserController extends Controller
                     Kelas::where('id', $request->kelas_id)->update(['wali_kelas_user_id' => $user->id]);
                 }
             }
+
+            // Reload user dengan relasi untuk generate nama/username/password
+            $user->refresh();
+            $user->load(['role', 'jurusanDiampu', 'kelasDiampu', 'anakWali']);
+
+            // Generate nama, username, dan password otomatis
+            $user->nama = UserNamingService::generateNama($user);
+            $user->username = UserNamingService::generateUsername($user);
+            $user->password = Hash::make(UserNamingService::generatePassword($user));
+            $user->save();
         });
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan!');
@@ -174,13 +191,11 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'nama' => 'required|string|max:255',
-            'username' => 'required|unique:users,username,' . $user->id,
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:30',
             'role_id' => 'required|exists:roles,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
-            'password' => 'nullable|min:6',
             'siswa_ids' => 'nullable|array',
             'siswa_ids.*' => 'exists:siswa,id',
         ]);
@@ -215,18 +230,20 @@ class UserController extends Controller
         }
 
         DB::transaction(function() use ($request, $user) {
-            $data = [
-                'nama' => $request->nama,
-                'username' => $request->username,
-                'email' => $request->email,
-                'role_id' => $request->role_id,
-            ];
-
-            if ($request->filled('password')) {
-                $data['password'] = Hash::make($request->password);
+            // Update role dulu agar relasi bisa di-generate dengan benar
+            $user->role_id = $request->role_id;
+            $user->email = $request->email;
+            
+            // Untuk Wali Murid, tetap gunakan kontak dari data siswa (nomor_hp_wali_murid),
+            // sehingga kolom phone pada user diset null agar tidak membingungkan.
+            $roleOrtu = Role::findByName('Wali Murid');
+            if ($roleOrtu && (int) $request->role_id === (int) $roleOrtu->id) {
+                $user->phone = null;
+            } else {
+                $user->phone = $request->phone ?: null;
             }
-
-            $user->update($data);
+            
+            $user->save();
 
             $roleOrtu = Role::findByName('Wali Murid');
             $roleDev = Role::findByName('Developer');
@@ -278,6 +295,25 @@ class UserController extends Controller
                 // If user is no longer Wali Kelas, remove any kelas assignment they had
                 Kelas::where('wali_kelas_user_id', $user->id)->update(['wali_kelas_user_id' => null]);
             }
+
+            // Reload user dengan relasi untuk generate nama/username/password
+            $user->refresh();
+            $user->load(['role', 'jurusanDiampu', 'kelasDiampu', 'anakWali']);
+
+            // Nama selalu di-generate otomatis (fleksibel mengikuti konfigurasi)
+            $user->nama = UserNamingService::generateNama($user);
+
+            // Username hanya di-generate jika belum pernah diubah oleh user
+            if (!$user->hasChangedUsername()) {
+                $user->username = UserNamingService::generateUsername($user);
+            }
+
+            // Password hanya di-generate jika belum pernah diubah oleh user
+            if (!$user->hasChangedPassword()) {
+                $user->password = Hash::make(UserNamingService::generatePassword($user));
+            }
+
+            $user->save();
         });
 
         return redirect()->route('users.index')->with('success', 'Data user berhasil diperbarui!');

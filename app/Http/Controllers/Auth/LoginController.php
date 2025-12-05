@@ -29,6 +29,10 @@ class LoginController extends Controller
     /**
      * 2. Memproses upaya login.
      * (Menangani: POST / )
+     * 
+     * User bisa login dengan:
+     * - Username + Password, atau
+     * - Email + Password
      */
     public function login(Request $request): RedirectResponse
     {
@@ -41,10 +45,29 @@ class LoginController extends Controller
         // Cek apakah user mencentang "Ingat Saya"
         $remember = $request->has('remember');
 
+        $loginField = $request->username;
+        $password = $request->password;
+
+        // --- Tentukan apakah input adalah email atau username ---
+        // Cek apakah input mengandung karakter '@' (indikator email)
+        $isEmail = filter_var($loginField, FILTER_VALIDATE_EMAIL) !== false;
+
         // --- Coba Login ---
-        // Kita login menggunakan 'username', BUKAN 'email'
-        if (Auth::attempt(['username' => $request->username, 'password' => $request->password], $remember)) {
-            
+        // Jika input adalah email, coba login dengan email
+        // Jika bukan email, coba login dengan username
+        $attempted = false;
+        
+        if ($isEmail) {
+            // Coba login dengan email
+            $attempted = Auth::attempt(['email' => $loginField, 'password' => $password], $remember);
+        }
+        
+        // Jika login dengan email gagal, atau input bukan email, coba dengan username
+        if (!$attempted) {
+            $attempted = Auth::attempt(['username' => $loginField, 'password' => $password], $remember);
+        }
+
+        if ($attempted) {
             // --- BERHASIL LOGIN ---
             
             // 1. Regenerasi session untuk keamanan
@@ -86,8 +109,8 @@ class LoginController extends Controller
 
         // --- GAGAL LOGIN ---
         return back()->withErrors([
-            'username' => 'Username atau password salah.',
-        ])->onlyInput('username'); // Kembalikan ke form dengan data username
+            'username' => 'Username/Email atau password salah.',
+        ])->onlyInput('username'); // Kembalikan ke form dengan data username/email
     }
 
     /**

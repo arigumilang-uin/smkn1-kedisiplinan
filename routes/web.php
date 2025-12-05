@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Dashboard\KepsekDashboardController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Dashboard\ApprovalController;
 use App\Http\Controllers\Dashboard\ReportController;
 use App\Http\Controllers\Dashboard\UserManagementController;
 use App\Http\Controllers\Dashboard\ActivityLogController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PelanggaranController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\UserController;
@@ -45,12 +48,41 @@ Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// a) Rute yang hanya butuh user login (belum wajib lengkapi profil)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profil/lengkapi', [ProfileController::class, 'showCompleteForm'])
+        ->name('profile.complete.show');
+    Route::post('/profil/lengkapi', [ProfileController::class, 'storeCompleteForm'])
+        ->name('profile.complete.store');
+
+    // Halaman "Akun Saya" untuk mengedit email & kontak sendiri
+    Route::get('/akun', [ProfileController::class, 'editAccount'])
+        ->name('account.edit');
+    Route::put('/akun', [ProfileController::class, 'updateAccount'])
+        ->name('account.update');
+
+    // Verifikasi email - bersifat opsional (tidak mengunci akses fitur)
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->intended('/');
+    })->middleware('signed')->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('status', 'verification-link-sent');
+    })->middleware('throttle:6,1')->name('verification.send');
+});
+
+// b) Rute yang membutuhkan user login DAN profil sudah lengkap
+Route::middleware(['auth', 'profile.completed'])->group(function () {
+
 // ====================================================================
 // 2. PROTECTED AREA (Login Required)
 // ====================================================================
-
-Route::middleware(['auth'])->group(function () {
-
     // ================================================================
     // A. DASHBOARDS - Role-based Landing Pages
     // ================================================================
