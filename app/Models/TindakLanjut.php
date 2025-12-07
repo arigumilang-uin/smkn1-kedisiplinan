@@ -7,22 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
+use App\Traits\LogsActivity;
 
 class TindakLanjut extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
     /**
-     * Configure activity log options for TindakLanjut model.
+     * Get attributes to log for activity tracking
      */
-    public function getActivitylogOptions(): LogOptions
+    protected function getLogAttributes(): array
     {
-        return LogOptions::defaults()
-            ->logOnly(['siswa_id', 'status', 'pemicu', 'tanggal_tindak_lanjut'])
-            ->useLogName('tindak_lanjut')
-            ->logOnlyDirty();
+        return ['siswa_id', 'status', 'pemicu', 'tanggal_tindak_lanjut'];
+    }
+
+    /**
+     * Get custom activity description
+     */
+    protected function getActivityDescription(string $eventName): string
+    {
+        $userName = auth()->user()?->nama ?? 'System';
+        $siswaName = $this->siswa?->nama_siswa ?? 'Siswa';
+        
+        return match($eventName) {
+            'created' => "{$userName} membuat tindak lanjut untuk {$siswaName}",
+            'updated' => "{$userName} mengubah tindak lanjut {$siswaName} (Status: {$this->status})",
+            'deleted' => "{$userName} menghapus tindak lanjut {$siswaName}",
+            default => parent::getActivityDescription($eventName),
+        };
     }
 
     /**

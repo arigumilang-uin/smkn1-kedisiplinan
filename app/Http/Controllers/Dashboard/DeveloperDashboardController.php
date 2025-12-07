@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Services\RoleService;
+use App\Services\User\RoleService;
 
 class DeveloperDashboardController extends Controller
 {
@@ -21,3 +21,4 @@ class DeveloperDashboardController extends Controller
         return view('dashboards.developer');
     }
 }
+

@@ -59,8 +59,8 @@
                             @forelse($logs as $log)
                             <tr>
                                 <td>
-                                    <small>{{ $log->created_at->format('d M Y') }}</small>
-                                    <br><small class="text-muted">{{ $log->created_at->format('H:i') }}</small>
+                                    <small>{{ formatDate($log->created_at) }}</small>
+                                    <br><small class="text-muted">{{ formatTime($log->created_at) }}</small>
                                 </td>
                                 <td>
                                     <span class="badge badge-info">{{ $log->log_name }}</span>

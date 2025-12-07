@@ -7,22 +7,33 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
+use App\Traits\LogsActivity;
 
 class Siswa extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
     /**
-     * Configure activity log options for Siswa model.
+     * Get attributes to log for activity tracking
      */
-    public function getActivitylogOptions(): LogOptions
+    protected function getLogAttributes(): array
     {
-        return LogOptions::defaults()
-            ->logOnly(['nama_siswa', 'nisn', 'kelas_id', 'wali_murid_user_id'])
-            ->useLogName('siswa')
-            ->logOnlyDirty();
+        return ['nama_siswa', 'nisn', 'kelas_id', 'wali_murid_user_id'];
+    }
+
+    /**
+     * Get custom activity description
+     */
+    protected function getActivityDescription(string $eventName): string
+    {
+        $userName = auth()->user()?->nama ?? 'System';
+        
+        return match($eventName) {
+            'created' => "{$userName} menambahkan siswa {$this->nama_siswa}",
+            'updated' => "{$userName} mengubah data siswa {$this->nama_siswa}",
+            'deleted' => "{$userName} menghapus siswa {$this->nama_siswa}",
+            default => parent::getActivityDescription($eventName),
+        };
     }
 
     /**

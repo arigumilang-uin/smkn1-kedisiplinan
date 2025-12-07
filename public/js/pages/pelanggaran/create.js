@@ -224,6 +224,162 @@ function initFileInput() {
     }
 }
 
+// ----- Preview Functionality -----
+document.addEventListener('DOMContentLoaded', function () {
+    const btnPreview = document.getElementById('btnPreview');
+
+    if (btnPreview) {
+        btnPreview.addEventListener('click', function () {
+            handlePreview();
+        });
+    }
+});
+
+/**
+ * Handle preview button click
+ */
+function handlePreview() {
+    const form = document.getElementById('formPelanggaran');
+    const formData = new FormData(form);
+
+    // Validate selection
+    const siswaIds = formData.getAll('siswa_id[]');
+    const pelanggaranIds = formData.getAll('jenis_pelanggaran_id[]');
+
+    if (siswaIds.length === 0) {
+        alert('Pilih minimal satu siswa untuk preview.');
+        return;
+    }
+
+    if (pelanggaranIds.length === 0) {
+        alert('Pilih minimal satu jenis pelanggaran untuk preview.');
+        return;
+    }
+
+    // Show loading state
+    const btnPreview = document.getElementById('btnPreview');
+    const originalHtml = btnPreview.innerHTML;
+    btnPreview.disabled = true;
+    btnPreview.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memuat Preview...';
+
+    // Make AJAX request
+    fetch('/pelanggaran/preview', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token')
+        }
+    })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Response error:', text);
+                    throw new Error('Network response was not ok: ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (!data.success) {
+                throw new Error('Preview failed: ' + (data.message || 'Unknown error'));
+            }
+
+            // Load content into modal
+            const modalContent = document.getElementById('previewModalContent');
+            if (!modalContent) {
+                console.error('Modal content container not found!');
+                alert('Error: Modal container tidak ditemukan. Refresh halaman dan coba lagi.');
+                btnPreview.disabled = false;
+                btnPreview.innerHTML = originalHtml;
+                return;
+            }
+
+            modalContent.innerHTML = data.html;
+            console.log('Modal content loaded');
+
+            // Show modal - try jQuery first, then Bootstrap 5 native
+            const modalElement = document.getElementById('previewModal');
+            if (!modalElement) {
+                console.error('Modal element not found!');
+                alert('Error: Modal element tidak ditemukan. Refresh halaman dan coba lagi.');
+                btnPreview.disabled = false;
+                btnPreview.innerHTML = originalHtml;
+                return;
+            }
+
+            console.log('Attempting to show modal...');
+            console.log('jQuery available:', typeof $ !== 'undefined');
+            console.log('$.fn available:', typeof $.fn !== 'undefined');
+            console.log('$.fn.modal available:', typeof $.fn !== 'undefined' && typeof $.fn.modal !== 'undefined');
+
+            // Wait a bit for Bootstrap to load, then show modal
+            setTimeout(function () {
+                console.log('After timeout - $.fn.modal available:', typeof $.fn !== 'undefined' && typeof $.fn.modal !== 'undefined');
+
+                if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined' && typeof $.fn.modal === 'function') {
+                    console.log('Using jQuery/Bootstrap 4 to show modal');
+                    $('#previewModal').modal('show');
+                } else {
+                    console.error('Bootstrap modal still not available, trying manual show');
+                    // Fallback: manually show modal
+                    modalElement.classList.add('show');
+                    modalElement.style.display = 'block';
+                    document.body.classList.add('modal-open');
+
+                    // Add backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'previewModalBackdrop';
+                    document.body.appendChild(backdrop);
+                }
+            }, 100);
+
+            // Handle confirm button in preview modal (with delay to ensure modal is shown)
+            setTimeout(function () {
+                const btnConfirmFromPreview = document.getElementById('btn-confirm-submit');
+                if (btnConfirmFromPreview) {
+                    console.log('Confirm button found, attaching handler');
+                    btnConfirmFromPreview.addEventListener('click', function () {
+                        console.log('Confirm button clicked');
+
+                        // Close modal - try jQuery first, then manual
+                        if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined' && typeof $.fn.modal === 'function') {
+                            $('#previewModal').modal('hide');
+                        } else {
+                            // Manual close
+                            modalElement.classList.remove('show');
+                            modalElement.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('previewModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+
+                        // Trigger form submission with confirmation flag
+                        window.__pelanggaranConfirmed = true;
+                        form.submit();
+                    });
+                } else {
+                    console.warn('Confirm button not found in modal content');
+                }
+            }, 150);
+
+            // Reset button state
+            btnPreview.disabled = false;
+            btnPreview.innerHTML = originalHtml;
+        })
+        .catch(error => {
+            console.error('Preview error:', error);
+            alert('Gagal memuat preview. Error: ' + error.message + '\n\nCek browser console (F12) untuk detail.');
+
+            // Reset button state
+            btnPreview.disabled = false;
+            btnPreview.innerHTML = originalHtml;
+        });
+}
+
 // ----- Confirmation + Submit handling -----
 // Intercept form submit (covers Enter key and button)
 document.addEventListener('DOMContentLoaded', function () {

@@ -238,10 +238,38 @@
                                 <textarea name="keterangan" class="form-control form-control-sm" rows="2" placeholder="Opsional..."></textarea>
                             </div>
 
-                                                        <button type="submit" id="btnSubmitPreview" class="btn btn-primary btn-block font-weight-bold shadow-sm">
-                                                            <i class="fas fa-save mr-1"></i> SIMPAN DATA
-                                                        </button>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <button type="button" id="btnPreview" class="btn btn-info btn-block font-weight-bold shadow-sm">
+                                                                    <i class="fas fa-eye mr-1"></i> PREVIEW DAMPAK
+                                                                </button>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <button type="submit" id="btnSubmitPreview" class="btn btn-primary btn-block font-weight-bold shadow-sm">
+                                                                    <i class="fas fa-save mr-1"></i> SIMPAN DATA
+                                                                </button>
+                                                            </div>
+                                                        </div>
                         
+                                                <!-- Preview Modal -->
+                                                <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog modal-lg" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-info text-white">
+                                                                <h5 class="modal-title" id="previewModalLabel">
+                                                                    <i class="fas fa-eye mr-2"></i> Preview Dampak Pelanggaran
+                                                                </h5>
+                                                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div id="previewModalContent">
+                                                                <!-- Content will be loaded via AJAX -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <!-- Konfirmasi Modal -->
                                                 <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
                                                     <div class="modal-dialog modal-lg" role="document">

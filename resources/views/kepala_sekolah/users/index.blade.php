@@ -99,7 +99,7 @@
                                     </td>
                                     <td class="text-center">
                                         <small class="text-muted">
-                                            {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Belum login' }}
+                                            {{ $user->last_login_at ? formatRelative($user->last_login_at) : 'Belum login' }}
                                         </small>
                                     </td>
                                     <td class="text-center">

@@ -8,7 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Spatie\Activitylog\Traits\LogsActivity;
-use App\Services\RoleService;
+use App\Services\User\RoleService;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -69,7 +69,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_completed_at' => 'datetime',
         'username_changed_at' => 'datetime',
         'password_changed_at' => 'datetime',
+        'last_login_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * The attributes that should have default values.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
     ];
 
     // =====================================================================

@@ -43,11 +43,8 @@
                     <a href="{{ route('siswa.create') }}" class="btn btn-primary btn-sm shadow-sm mr-2">
                         <i class="fas fa-plus mr-1"></i> Tambah Siswa
                     </a>
-                    <a href="{{ route('siswa.bulk.create') }}" class="btn btn-outline-primary btn-sm shadow-sm mr-2">
+                    <a href="{{ route('siswa.bulk.create') }}" class="btn btn-outline-primary btn-sm shadow-sm">
                         <i class="fas fa-copy mr-1"></i> Tambah Banyak
-                    </a>
-                    <a href="{{ route('audit.siswa') }}" class="btn btn-danger btn-sm shadow-sm">
-                        <i class="fas fa-shield-alt mr-1"></i> Audit & Hapus
                     </a>
                     @endif
                 </div>

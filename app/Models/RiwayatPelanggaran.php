@@ -6,22 +6,34 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
+use App\Traits\LogsActivity;
 
 class RiwayatPelanggaran extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
     /**
-     * Configure activity log options for RiwayatPelanggaran model.
+     * Get attributes to log for activity tracking
      */
-    public function getActivitylogOptions(): LogOptions
+    protected function getLogAttributes(): array
     {
-        return LogOptions::defaults()
-            ->logOnly(['siswa_id', 'jenis_pelanggaran_id', 'guru_pencatat_user_id', 'tanggal_kejadian'])
-            ->useLogName('riwayat_pelanggaran')
-            ->logOnlyDirty();
+        return ['siswa_id', 'jenis_pelanggaran_id', 'guru_pencatat_user_id', 'tanggal_kejadian'];
+    }
+
+    /**
+     * Get custom activity description
+     */
+    protected function getActivityDescription(string $eventName): string
+    {
+        $userName = auth()->user()?->nama ?? 'System';
+        $siswaName = $this->siswa?->nama_siswa ?? 'Siswa';
+        
+        return match($eventName) {
+            'created' => "{$userName} mencatat pelanggaran untuk {$siswaName}",
+            'updated' => "{$userName} mengubah riwayat pelanggaran {$siswaName}",
+            'deleted' => "{$userName} menghapus riwayat pelanggaran {$siswaName}",
+            default => parent::getActivityDescription($eventName),
+        };
     }
 
     /**

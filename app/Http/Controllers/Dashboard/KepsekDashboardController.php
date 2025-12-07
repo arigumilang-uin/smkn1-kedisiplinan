@@ -3,17 +3,20 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Traits\HasStatistics;
 use Illuminate\View\View;
 use App\Models\TindakLanjut;
 use App\Models\RiwayatPelanggaran;
 use App\Models\Siswa;
 use App\Models\Jurusan;
 use App\Models\JenisPelanggaran;
-use App\Services\PelanggaranRulesEngine;
+use App\Services\Pelanggaran\PelanggaranRulesEngine;
 use Illuminate\Support\Facades\DB;
 
 class KepsekDashboardController extends Controller
 {
+    use HasStatistics;
+
     protected $rulesEngine;
 
     public function __construct(PelanggaranRulesEngine $rulesEngine)

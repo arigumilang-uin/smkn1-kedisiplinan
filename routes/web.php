@@ -9,18 +9,17 @@ use App\Http\Controllers\Dashboard\KepsekDashboardController;
 use App\Http\Controllers\Dashboard\KaprodiDashboardController;
 use App\Http\Controllers\Dashboard\WaliKelasDashboardController;
 use App\Http\Controllers\Dashboard\WaliMuridDashboardController;
-use App\Http\Controllers\Dashboard\ApprovalController;
-use App\Http\Controllers\Dashboard\ReportController;
-use App\Http\Controllers\Dashboard\UserManagementController;
-use App\Http\Controllers\Dashboard\ActivityLogController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PelanggaranController;
-use App\Http\Controllers\SiswaController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\JenisPelanggaranController;
-use App\Http\Controllers\TindakLanjutController;
-use App\Http\Controllers\RiwayatController;
-use App\Http\Controllers\JurusanController;
+use App\Http\Controllers\Report\ApprovalController;
+use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Audit\ActivityLogController;
+use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\Pelanggaran\PelanggaranController;
+use App\Http\Controllers\MasterData\SiswaController;
+use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\MasterData\JenisPelanggaranController;
+use App\Http\Controllers\Pelanggaran\TindakLanjutController;
+use App\Http\Controllers\Pelanggaran\RiwayatController;
+use App\Http\Controllers\MasterData\JurusanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -208,17 +207,19 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
      */
     Route::middleware(['role:Guru,Wali Kelas,Waka Kesiswaan,Kaprodi,Waka Sarana'])->group(function () {
         Route::get('/pelanggaran/catat', [PelanggaranController::class, 'create'])->name('pelanggaran.create');
+        Route::post('/pelanggaran/preview', [PelanggaranController::class, 'preview'])->name('pelanggaran.preview');
         Route::post('/pelanggaran/store', [PelanggaranController::class, 'store'])->name('pelanggaran.store');
     });
 
     // ====== RIWAYAT SAYA (Per-Pencatat) ======
     // Halaman khusus bagi pencatat untuk melihat / mengelola catatan yang DIA catat sendiri.
+    // My Riwayat: Guru dapat mengelola riwayat yang mereka catat (max 3 hari)
     // Operator Sekolah dapat melihat dan mengelola SEMUA riwayat pelanggaran tanpa batasan.
     Route::middleware(['role:Guru,Wali Kelas,Waka Kesiswaan,Kaprodi,Waka Sarana,Operator Sekolah'])->group(function () {
-        Route::get('/riwayat/saya', [\App\Http\Controllers\MyRiwayatController::class, 'index'])->name('my-riwayat.index');
-        Route::get('/riwayat/saya/{riwayat}/edit', [\App\Http\Controllers\MyRiwayatController::class, 'edit'])->name('my-riwayat.edit');
-        Route::put('/riwayat/saya/{riwayat}', [\App\Http\Controllers\MyRiwayatController::class, 'update'])->name('my-riwayat.update');
-        Route::delete('/riwayat/saya/{riwayat}', [\App\Http\Controllers\MyRiwayatController::class, 'destroy'])->name('my-riwayat.destroy');
+        Route::get('/riwayat/saya', [\App\Http\Controllers\Pelanggaran\RiwayatController::class, 'myIndex'])->name('my-riwayat.index');
+        Route::get('/riwayat/saya/{riwayat}/edit', [\App\Http\Controllers\Pelanggaran\RiwayatController::class, 'edit'])->name('my-riwayat.edit');
+        Route::put('/riwayat/saya/{riwayat}', [\App\Http\Controllers\Pelanggaran\RiwayatController::class, 'update'])->name('my-riwayat.update');
+        Route::delete('/riwayat/saya/{riwayat}', [\App\Http\Controllers\Pelanggaran\RiwayatController::class, 'destroy'])->name('my-riwayat.destroy');
     });
 
     /**
@@ -235,7 +236,7 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
      * Rute ini menghindari 403 ketika public/storage symlink tidak tersedia
      * Akses: User yang terautentikasi saja
      */
-    Route::get('/bukti/{path}', [\App\Http\Controllers\FileController::class, 'show'])
+    Route::get('/bukti/{path}', [\App\Http\Controllers\Utility\FileController::class, 'show'])
         ->where('path', '.*')
         ->name('bukti.show');
 
@@ -265,7 +266,7 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
         Route::resource('users', UserController::class);
         Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
         Route::resource('jenis-pelanggaran', JenisPelanggaranController::class);
-        Route::resource('kelas', App\Http\Controllers\KelasController::class)->parameters(['kelas' => 'kelas']);
+        Route::resource('kelas', \App\Http\Controllers\MasterData\KelasController::class)->parameters(['kelas' => 'kelas']);
         Route::resource('jurusan', JurusanController::class)->parameters(['jurusan' => 'jurusan']);
     });
 
@@ -274,28 +275,28 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
      */
     Route::middleware(['role:Operator Sekolah,Waka Kesiswaan'])->group(function () {
         // Frequency Rules Management
-        Route::get('/frequency-rules', [\App\Http\Controllers\FrequencyRulesController::class, 'index'])->name('frequency-rules.index');
-        Route::get('/frequency-rules/{jenisPelanggaran}', [\App\Http\Controllers\FrequencyRulesController::class, 'show'])->name('frequency-rules.show');
-        Route::post('/frequency-rules/{jenisPelanggaran}/toggle-active', [\App\Http\Controllers\FrequencyRulesController::class, 'toggleActive'])->name('frequency-rules.toggle-active');
-        Route::post('/frequency-rules/{jenisPelanggaran}', [\App\Http\Controllers\FrequencyRulesController::class, 'store'])->name('frequency-rules.store');
-        Route::put('/frequency-rules/rule/{rule}', [\App\Http\Controllers\FrequencyRulesController::class, 'update'])->name('frequency-rules.update');
-        Route::delete('/frequency-rules/rule/{rule}', [\App\Http\Controllers\FrequencyRulesController::class, 'destroy'])->name('frequency-rules.destroy');
+        Route::get('/frequency-rules', [\App\Http\Controllers\Rules\FrequencyRulesController::class, 'index'])->name('frequency-rules.index');
+        Route::get('/frequency-rules/{jenisPelanggaran}', [\App\Http\Controllers\Rules\FrequencyRulesController::class, 'show'])->name('frequency-rules.show');
+        Route::post('/frequency-rules/{jenisPelanggaran}/toggle-active', [\App\Http\Controllers\Rules\FrequencyRulesController::class, 'toggleActive'])->name('frequency-rules.toggle-active');
+        Route::post('/frequency-rules/{jenisPelanggaran}', [\App\Http\Controllers\Rules\FrequencyRulesController::class, 'store'])->name('frequency-rules.store');
+        Route::put('/frequency-rules/rule/{rule}', [\App\Http\Controllers\Rules\FrequencyRulesController::class, 'update'])->name('frequency-rules.update');
+        Route::delete('/frequency-rules/rule/{rule}', [\App\Http\Controllers\Rules\FrequencyRulesController::class, 'destroy'])->name('frequency-rules.destroy');
         
         // Pembinaan Internal Rules Management
-        Route::get('/pembinaan-internal-rules', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'index'])->name('pembinaan-internal-rules.index');
-        Route::post('/pembinaan-internal-rules', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'store'])->name('pembinaan-internal-rules.store');
-        Route::put('/pembinaan-internal-rules/{rule}', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'update'])->name('pembinaan-internal-rules.update');
-        Route::delete('/pembinaan-internal-rules/{rule}', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'destroy'])->name('pembinaan-internal-rules.destroy');
+        Route::get('/pembinaan-internal-rules', [\App\Http\Controllers\Rules\PembinaanInternalRulesController::class, 'index'])->name('pembinaan-internal-rules.index');
+        Route::post('/pembinaan-internal-rules', [\App\Http\Controllers\Rules\PembinaanInternalRulesController::class, 'store'])->name('pembinaan-internal-rules.store');
+        Route::put('/pembinaan-internal-rules/{rule}', [\App\Http\Controllers\Rules\PembinaanInternalRulesController::class, 'update'])->name('pembinaan-internal-rules.update');
+        Route::delete('/pembinaan-internal-rules/{rule}', [\App\Http\Controllers\Rules\PembinaanInternalRulesController::class, 'destroy'])->name('pembinaan-internal-rules.destroy');
     });
 
     /**
      * WAKA KESISWAAN & KEPALA SEKOLAH - View Data Jurusan & Kelas (Read-only with stats)
      */
     Route::middleware(['role:Waka Kesiswaan,Kepala Sekolah'])->group(function () {
-        Route::get('/data-jurusan', [\App\Http\Controllers\DataJurusanController::class, 'index'])->name('data-jurusan.index');
-        Route::get('/data-jurusan/{jurusan}', [\App\Http\Controllers\DataJurusanController::class, 'show'])->name('data-jurusan.show');
-        Route::get('/data-kelas', [\App\Http\Controllers\DataKelasController::class, 'index'])->name('data-kelas.index');
-        Route::get('/data-kelas/{kelas}', [\App\Http\Controllers\DataKelasController::class, 'show'])->name('data-kelas.show');
+        Route::get('/data-jurusan', [\App\Http\Controllers\Data\JurusanController::class, 'index'])->name('data-jurusan.index');
+        Route::get('/data-jurusan/{jurusan}', [\App\Http\Controllers\Data\JurusanController::class, 'show'])->name('data-jurusan.show');
+        Route::get('/data-kelas', [\App\Http\Controllers\Data\KelasController::class, 'index'])->name('data-kelas.index');
+        Route::get('/data-kelas/{kelas}', [\App\Http\Controllers\Data\KelasController::class, 'show'])->name('data-kelas.show');
     });
 
 
@@ -308,23 +309,24 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
         /**
          * SISWA AUDIT - Bulk delete dengan safety checks & confirmation
          * Flow: Show → Preview → Confirm → Execute
+         * TODO: Implement SiswaAuditController
          */
-        Route::get('/siswa', [\App\Http\Controllers\AuditController::class, 'show'])->name('siswa');
-        Route::post('/siswa/preview', [\App\Http\Controllers\AuditController::class, 'preview'])->name('siswa.preview');
-        Route::get('/siswa/summary', function() {
-            return view('audit.siswa.summary', session()->all());
-        })->name('siswa.summary');
-        Route::get('/siswa/export', [\App\Http\Controllers\AuditController::class, 'export'])->name('siswa.export');
-        Route::get('/siswa/confirm-delete', [\App\Http\Controllers\AuditController::class, 'confirmDelete'])->name('siswa.confirm-delete');
-        Route::delete('/siswa', [\App\Http\Controllers\AuditController::class, 'destroy'])->name('siswa.destroy');
+        // Route::get('/siswa', [\App\Http\Controllers\Audit\SiswaAuditController::class, 'show'])->name('siswa');
+        // Route::post('/siswa/preview', [\App\Http\Controllers\Audit\SiswaAuditController::class, 'preview'])->name('siswa.preview');
+        // Route::get('/siswa/summary', function() {
+        //     return view('audit.siswa.summary', session()->all());
+        // })->name('siswa.summary');
+        // Route::get('/siswa/export', [\App\Http\Controllers\Audit\SiswaAuditController::class, 'export'])->name('siswa.export');
+        // Route::get('/siswa/confirm-delete', [\App\Http\Controllers\Audit\SiswaAuditController::class, 'confirmDelete'])->name('siswa.confirm-delete');
+        // Route::delete('/siswa', [\App\Http\Controllers\Audit\SiswaAuditController::class, 'destroy'])->name('siswa.destroy');
 
         /**
          * ACTIVITY LOG - Audit trail dari semua perubahan data di sistem
          * Tracked: User login, logout, siswa create/update, pelanggaran create, etc
          */
-        Route::get('/activity-logs', [\App\Http\Controllers\Dashboard\ActivityLogController::class, 'index'])->name('activity.index');
-        Route::get('/activity-logs/{activity}', [\App\Http\Controllers\Dashboard\ActivityLogController::class, 'show'])->name('activity.show');
-        Route::get('/activity-logs/export-csv', [\App\Http\Controllers\Dashboard\ActivityLogController::class, 'exportCsv'])->name('activity.export-csv');
+        Route::get('/activity-logs', [\App\Http\Controllers\Audit\ActivityLogController::class, 'index'])->name('activity.index');
+        Route::get('/activity-logs/{activity}', [\App\Http\Controllers\Audit\ActivityLogController::class, 'show'])->name('activity.show');
+        Route::get('/activity-logs/export-csv', [\App\Http\Controllers\Audit\ActivityLogController::class, 'exportCsv'])->name('activity.export-csv');
     });
 
 
@@ -355,9 +357,9 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
          * SISWA PERLU PEMBINAAN - Monitoring siswa berdasarkan akumulasi poin
          * Menampilkan siswa yang perlu pembinaan internal, filter by range poin
          */
-        Route::get('/siswa-perlu-pembinaan', [\App\Http\Controllers\Dashboard\SiswaPerluPembinaanController::class, 'index'])->name('siswa-perlu-pembinaan.index');
-        Route::get('/siswa-perlu-pembinaan/export-csv', [\App\Http\Controllers\Dashboard\SiswaPerluPembinaanController::class, 'exportCsv'])->name('siswa-perlu-pembinaan.export-csv');
-        Route::get('/siswa-perlu-pembinaan/export-pdf', [\App\Http\Controllers\Dashboard\SiswaPerluPembinaanController::class, 'exportPdf'])->name('siswa-perlu-pembinaan.export-pdf');
+        Route::get('/siswa-perlu-pembinaan', [\App\Http\Controllers\Report\SiswaPerluPembinaanController::class, 'index'])->name('siswa-perlu-pembinaan.index');
+        Route::get('/siswa-perlu-pembinaan/export-csv', [\App\Http\Controllers\Report\SiswaPerluPembinaanController::class, 'exportCsv'])->name('siswa-perlu-pembinaan.export-csv');
+        Route::get('/siswa-perlu-pembinaan/export-pdf', [\App\Http\Controllers\Report\SiswaPerluPembinaanController::class, 'exportPdf'])->name('siswa-perlu-pembinaan.export-pdf');
     });
 
 
@@ -372,9 +374,9 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
      * Non-production feature, disabled di production
      */
     Route::prefix('developer')->group(function () {
-        Route::get('/impersonate/{role}', [\App\Http\Controllers\DeveloperController::class, 'impersonate'])->name('developer.impersonate');
-        Route::get('/impersonate/clear', [\App\Http\Controllers\DeveloperController::class, 'clear'])->name('developer.impersonate.clear');
-        Route::get('/status', [\App\Http\Controllers\DeveloperController::class, 'status'])->name('developer.status');
+        Route::get('/impersonate/{role}', [\App\Http\Controllers\Utility\DeveloperController::class, 'impersonate'])->name('developer.impersonate');
+        Route::get('/impersonate/clear', [\App\Http\Controllers\Utility\DeveloperController::class, 'clear'])->name('developer.impersonate.clear');
+        Route::get('/status', [\App\Http\Controllers\Utility\DeveloperController::class, 'status'])->name('developer.status');
     });
 
 });

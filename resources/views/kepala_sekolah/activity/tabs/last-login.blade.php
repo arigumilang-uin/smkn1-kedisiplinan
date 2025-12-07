@@ -63,8 +63,8 @@
                                 <td>{{ $user->email }}</td>
                                 <td>
                                     @if($user->last_login_at)
-                                        <strong>{{ \Carbon\Carbon::parse($user->last_login_at)->diffForHumans() }}</strong>
-                                        <br><small class="text-muted">{{ \Carbon\Carbon::parse($user->last_login_at)->format('d M Y, H:i') }}</small>
+                                        <strong>{{ formatRelative($user->last_login_at) }}</strong>
+                                        <br><small class="text-muted">{{ formatDateTime($user->last_login_at, 'd M Y, H:i:s') }}</small>
                                     @else
                                         <span class="text-muted">Belum pernah login</span>
                                     @endif

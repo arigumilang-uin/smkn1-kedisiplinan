@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use App\Services\RoleService;
+use App\Services\User\RoleService;
 
 class LoginController extends Controller
 {
@@ -76,10 +76,18 @@ class LoginController extends Controller
             // 2. Ambil data user yang login
             $user = Auth::user();
             
-            // 3. Update last login timestamp
+            // 3. CEK APAKAH AKUN AKTIF
+            if (!$user->is_active) {
+                Auth::logout();
+                return back()->withErrors([
+                    'username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi administrator.',
+                ])->onlyInput('username');
+            }
+            
+            // 4. Update last login timestamp
             $user->update(['last_login_at' => now()]);
 
-            // 4. LOGIKA PENGALIHAN (REDIRECT) BERDASARKAN PERAN
+            // 5. LOGIKA PENGALIHAN (REDIRECT) BERDASARKAN PERAN
             // Gunakan helper hasRole/hasAnyRole untuk keputusan
             if (!$user->role) {
                 Auth::logout();

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@yield('title', 'Sistem Kedisiplinan') | SMKN 1 Siak</title>
 
   <!-- Google Font: Source Sans Pro -->
@@ -50,6 +51,39 @@
     </ul>
 
     <ul class="navbar-nav ml-auto">
+      <!-- Notification Bell (Kepala Sekolah only) -->
+      @if(auth()->check() && auth()->user()->hasRole('Kepala Sekolah'))
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
+          <i class="far fa-bell"></i>
+          @php
+            $unreadCount = auth()->user()->unreadNotifications()->count();
+          @endphp
+          @if($unreadCount > 0)
+            <span class="badge badge-danger navbar-badge">{{ $unreadCount }}</span>
+          @endif
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <span class="dropdown-item dropdown-header">{{ $unreadCount }} Notifikasi Baru</span>
+          <div class="dropdown-divider"></div>
+          
+          @forelse(auth()->user()->unreadNotifications()->limit(5)->get() as $notification)
+            <a href="{{ $notification->data['url'] ?? '#' }}" class="dropdown-item">
+              <i class="fas fa-exclamation-circle mr-2 text-warning"></i> 
+              <span class="text-sm">{{ $notification->data['siswa_nama'] ?? 'Kasus Baru' }}</span>
+              <span class="float-right text-muted text-xs">{{ $notification->created_at->diffForHumans() }}</span>
+            </a>
+            <div class="dropdown-divider"></div>
+          @empty
+            <span class="dropdown-item text-muted text-sm">Tidak ada notifikasi baru</span>
+            <div class="dropdown-divider"></div>
+          @endforelse
+          
+          <a href="{{ route('kepala-sekolah.approvals.index') }}" class="dropdown-item dropdown-footer">Lihat Semua</a>
+        </div>
+      </li>
+      @endif
+      
       <!-- Tombol Logout di Navbar Kanan -->
       <li class="nav-item">
         <form action="{{ route('logout') }}" method="POST">

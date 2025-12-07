@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Traits\HasStatistics;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,9 @@ use App\Models\JenisPelanggaran;
 
 class AdminDashboardController extends Controller
 {
-        public function index(Request $request): View
+    use HasStatistics;
+
+    public function index(Request $request): View
         {
             $user = Auth::user();
 

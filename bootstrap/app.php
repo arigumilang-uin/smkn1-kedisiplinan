@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'profile.completed' => \App\Http\Middleware\EnsureProfileCompleted::class,
+            'account.active' => \App\Http\Middleware\CheckAccountActive::class,
+        ]);
+        
+        // Apply CheckAccountActive to all authenticated routes
+        $middleware->appendToGroup('web', [
+            \App\Http\Middleware\CheckAccountActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
