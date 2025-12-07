@@ -263,11 +263,17 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
      */
     Route::middleware(['role:Operator Sekolah'])->group(function () {
         Route::resource('users', UserController::class);
+        Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
         Route::resource('jenis-pelanggaran', JenisPelanggaranController::class);
         Route::resource('kelas', App\Http\Controllers\KelasController::class)->parameters(['kelas' => 'kelas']);
         Route::resource('jurusan', JurusanController::class)->parameters(['jurusan' => 'jurusan']);
-        
-        // Frequency Rules Management (NEW - Replaces Rules Engine Settings)
+    });
+
+    /**
+     * OPERATOR & WAKA KESISWAAN - Manage Rules & Settings
+     */
+    Route::middleware(['role:Operator Sekolah,Waka Kesiswaan'])->group(function () {
+        // Frequency Rules Management
         Route::get('/frequency-rules', [\App\Http\Controllers\FrequencyRulesController::class, 'index'])->name('frequency-rules.index');
         Route::get('/frequency-rules/{jenisPelanggaran}', [\App\Http\Controllers\FrequencyRulesController::class, 'show'])->name('frequency-rules.show');
         Route::post('/frequency-rules/{jenisPelanggaran}/toggle-active', [\App\Http\Controllers\FrequencyRulesController::class, 'toggleActive'])->name('frequency-rules.toggle-active');
@@ -275,14 +281,21 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
         Route::put('/frequency-rules/rule/{rule}', [\App\Http\Controllers\FrequencyRulesController::class, 'update'])->name('frequency-rules.update');
         Route::delete('/frequency-rules/rule/{rule}', [\App\Http\Controllers\FrequencyRulesController::class, 'destroy'])->name('frequency-rules.destroy');
         
-        // Rules Engine Settings Management (OLD - DEPRECATED)
-        // Digantikan dengan Frequency Rules Management
-        // Route::get('/rules-engine-settings', [App\Http\Controllers\RulesEngineSettingsController::class, 'index'])->name('rules-engine-settings.index');
-        // Route::post('/rules-engine-settings', [App\Http\Controllers\RulesEngineSettingsController::class, 'update'])->name('rules-engine-settings.update');
-        // Route::post('/rules-engine-settings/reset-all', [App\Http\Controllers\RulesEngineSettingsController::class, 'resetAll'])->name('rules-engine-settings.reset-all');
-        // Route::post('/rules-engine-settings/{key}/reset', [App\Http\Controllers\RulesEngineSettingsController::class, 'reset'])->name('rules-engine-settings.reset');
-        // Route::get('/rules-engine-settings/{key}/history', [App\Http\Controllers\RulesEngineSettingsController::class, 'history'])->name('rules-engine-settings.history');
-        // Route::post('/rules-engine-settings/preview', [App\Http\Controllers\RulesEngineSettingsController::class, 'preview'])->name('rules-engine-settings.preview');
+        // Pembinaan Internal Rules Management
+        Route::get('/pembinaan-internal-rules', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'index'])->name('pembinaan-internal-rules.index');
+        Route::post('/pembinaan-internal-rules', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'store'])->name('pembinaan-internal-rules.store');
+        Route::put('/pembinaan-internal-rules/{rule}', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'update'])->name('pembinaan-internal-rules.update');
+        Route::delete('/pembinaan-internal-rules/{rule}', [\App\Http\Controllers\PembinaanInternalRulesController::class, 'destroy'])->name('pembinaan-internal-rules.destroy');
+    });
+
+    /**
+     * WAKA KESISWAAN & KEPALA SEKOLAH - View Data Jurusan & Kelas (Read-only with stats)
+     */
+    Route::middleware(['role:Waka Kesiswaan,Kepala Sekolah'])->group(function () {
+        Route::get('/data-jurusan', [\App\Http\Controllers\DataJurusanController::class, 'index'])->name('data-jurusan.index');
+        Route::get('/data-jurusan/{jurusan}', [\App\Http\Controllers\DataJurusanController::class, 'show'])->name('data-jurusan.show');
+        Route::get('/data-kelas', [\App\Http\Controllers\DataKelasController::class, 'index'])->name('data-kelas.index');
+        Route::get('/data-kelas/{kelas}', [\App\Http\Controllers\DataKelasController::class, 'show'])->name('data-kelas.show');
     });
 
 
@@ -339,13 +352,12 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
         Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
         /**
-         * USER MANAGEMENT MODULE - Manajemen akun staff (reset password, toggle status)
-         * Kepsek bisa monitor status staff & reset password jika lupa
+         * SISWA PERLU PEMBINAAN - Monitoring siswa berdasarkan akumulasi poin
+         * Menampilkan siswa yang perlu pembinaan internal, filter by range poin
          */
-        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
-        Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
-        Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
-        Route::put('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::get('/siswa-perlu-pembinaan', [\App\Http\Controllers\Dashboard\SiswaPerluPembinaanController::class, 'index'])->name('siswa-perlu-pembinaan.index');
+        Route::get('/siswa-perlu-pembinaan/export-csv', [\App\Http\Controllers\Dashboard\SiswaPerluPembinaanController::class, 'exportCsv'])->name('siswa-perlu-pembinaan.export-csv');
+        Route::get('/siswa-perlu-pembinaan/export-pdf', [\App\Http\Controllers\Dashboard\SiswaPerluPembinaanController::class, 'exportPdf'])->name('siswa-perlu-pembinaan.export-pdf');
     });
 
 

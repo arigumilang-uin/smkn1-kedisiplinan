@@ -49,6 +49,7 @@ class PelanggaranRulesEngine
         $totalPoinBaru = 0;
         $suratTypes = [];
         $sanksiList = [];
+        $pembinaRolesForSurat = [];
 
         // Evaluasi setiap pelanggaran
         foreach ($pelanggaranObjs as $pelanggaran) {
@@ -59,6 +60,8 @@ class PelanggaranRulesEngine
 
                 if ($result['surat_type']) {
                     $suratTypes[] = $result['surat_type'];
+                    // Simpan pembina roles dari rule yang trigger surat
+                    $pembinaRolesForSurat = $result['pembina_roles'] ?? [];
                 }
 
                 $sanksiList[] = $result['sanksi'];
@@ -90,7 +93,7 @@ class PelanggaranRulesEngine
                 ? 'Menunggu Persetujuan'
                 : 'Baru';
 
-            $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, $pemicu, $status);
+            $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, $pemicu, $status, $pembinaRolesForSurat);
         }
     }
 
@@ -99,7 +102,7 @@ class PelanggaranRulesEngine
      *
      * @param int $siswaId
      * @param JenisPelanggaran $pelanggaran
-     * @return array ['poin_ditambahkan' => int, 'surat_type' => string|null, 'sanksi' => string]
+     * @return array ['poin_ditambahkan' => int, 'surat_type' => string|null, 'sanksi' => string, 'pembina_roles' => array]
      */
     private function evaluateFrequencyRules(int $siswaId, JenisPelanggaran $pelanggaran): array
     {
@@ -117,6 +120,7 @@ class PelanggaranRulesEngine
                 'poin_ditambahkan' => $pelanggaran->poin,
                 'surat_type' => null,
                 'sanksi' => 'Pembinaan',
+                'pembina_roles' => [],
             ];
         }
 
@@ -131,6 +135,7 @@ class PelanggaranRulesEngine
                 'poin_ditambahkan' => 0,
                 'surat_type' => null,
                 'sanksi' => 'Belum mencapai threshold',
+                'pembina_roles' => [],
             ];
         }
 
@@ -147,6 +152,7 @@ class PelanggaranRulesEngine
                 'poin_ditambahkan' => 0,
                 'surat_type' => null,
                 'sanksi' => $matchedRule->sanksi_description,
+                'pembina_roles' => [],
             ];
         }
 
@@ -155,6 +161,7 @@ class PelanggaranRulesEngine
             'poin_ditambahkan' => $matchedRule->poin,
             'surat_type' => $matchedRule->getSuratType(),
             'sanksi' => $matchedRule->sanksi_description,
+            'pembina_roles' => $matchedRule->pembina_roles ?? [],
         ];
     }
 
@@ -188,55 +195,72 @@ class PelanggaranRulesEngine
     /**
      * Tentukan rekomendasi pembina untuk pembinaan internal berdasarkan akumulasi poin.
      * CATATAN: Ini HANYA rekomendasi konseling, TIDAK trigger surat pemanggilan.
+     * 
+     * LOGIC GAP HANDLING:
+     * - UI menampilkan gap (0-50, 55-100, 105-300, 305-500) sesuai tata tertib
+     * - Sistem otomatis isi gap dengan rule sebelumnya
+     * - Contoh: Poin 53 → Masuk rule "0-50" (karena belum sampai 55)
+     * - Contoh: Poin 303 → Masuk rule "105-300" (karena belum sampai 305)
      *
      * @param int $totalPoin Total poin akumulasi siswa
-     * @return array ['pembina_roles' => array, 'keterangan' => string]
+     * @return array ['pembina_roles' => array, 'keterangan' => string, 'range_text' => string]
      */
-    private function getPembinaanInternalRekomendasi(int $totalPoin): array
+    public function getPembinaanInternalRekomendasi(int $totalPoin): array
     {
-        // 0-50: Wali Kelas (konseling ringan)
-        if ($totalPoin >= 0 && $totalPoin <= 50) {
+        // Query rules dari database (ordered by display_order)
+        $rules = \App\Models\PembinaanInternalRule::orderBy('display_order')->get();
+
+        if ($rules->isEmpty()) {
             return [
-                'pembina_roles' => ['Wali Kelas'],
-                'keterangan' => 'Pembinaan ringan, konseling',
+                'pembina_roles' => [],
+                'keterangan' => 'Tidak ada pembinaan',
+                'range_text' => 'N/A',
             ];
         }
 
-        // 55-100: Wali Kelas + Kaprodi (monitoring ketat)
-        if ($totalPoin >= 55 && $totalPoin <= 100) {
-            return [
-                'pembina_roles' => ['Wali Kelas', 'Kaprodi'],
-                'keterangan' => 'Pembinaan sedang, monitoring ketat',
-            ];
+        // Cari rule yang match dengan total poin
+        // Logic: Cari rule terakhir yang poin_min <= totalPoin
+        $matchedRule = null;
+        
+        foreach ($rules as $rule) {
+            // Jika poin siswa >= poin_min rule ini
+            if ($totalPoin >= $rule->poin_min) {
+                // Jika rule ini punya poin_max dan poin siswa <= poin_max, match!
+                if ($rule->poin_max !== null && $totalPoin <= $rule->poin_max) {
+                    $matchedRule = $rule;
+                    break;
+                }
+                
+                // Jika rule ini open-ended (poin_max = null), match!
+                if ($rule->poin_max === null) {
+                    $matchedRule = $rule;
+                    break;
+                }
+                
+                // Jika poin siswa > poin_max rule ini, cek apakah ada rule berikutnya
+                $nextRule = $rules->where('display_order', '>', $rule->display_order)->first();
+                
+                // Jika tidak ada rule berikutnya, atau poin siswa < poin_min rule berikutnya
+                // Maka gunakan rule ini (untuk handle gap)
+                if (!$nextRule || $totalPoin < $nextRule->poin_min) {
+                    $matchedRule = $rule;
+                    break;
+                }
+            }
         }
 
-        // 105-300: Wali Kelas + Kaprodi + Waka (pembinaan intensif)
-        if ($totalPoin >= 105 && $totalPoin <= 300) {
+        if (!$matchedRule) {
             return [
-                'pembina_roles' => ['Wali Kelas', 'Kaprodi', 'Waka Kesiswaan'],
-                'keterangan' => 'Pembinaan intensif, evaluasi berkala',
-            ];
-        }
-
-        // 305-500: Wali Kelas + Kaprodi + Waka + Kepsek (pembinaan kritis)
-        if ($totalPoin >= 305 && $totalPoin <= 500) {
-            return [
-                'pembina_roles' => ['Wali Kelas', 'Kaprodi', 'Waka Kesiswaan', 'Kepala Sekolah'],
-                'keterangan' => 'Pembinaan kritis, pertemuan dengan orang tua',
-            ];
-        }
-
-        // >500: Dikembalikan kepada orang tua
-        if ($totalPoin > 500) {
-            return [
-                'pembina_roles' => ['Kepala Sekolah'],
-                'keterangan' => 'Dikembalikan kepada orang tua, siswa tidak dapat melanjutkan',
+                'pembina_roles' => [],
+                'keterangan' => 'Tidak ada pembinaan',
+                'range_text' => 'N/A',
             ];
         }
 
         return [
-            'pembina_roles' => [],
-            'keterangan' => 'Tidak ada pembinaan',
+            'pembina_roles' => $matchedRule->pembina_roles,
+            'keterangan' => $matchedRule->keterangan,
+            'range_text' => $matchedRule->getRangeText(),
         ];
     }
 
@@ -246,11 +270,50 @@ class PelanggaranRulesEngine
      * @param int $siswaId
      * @return int
      */
-    private function hitungTotalPoinAkumulasi(int $siswaId): int
+    public function hitungTotalPoinAkumulasi(int $siswaId): int
     {
         return RiwayatPelanggaran::where('siswa_id', $siswaId)
             ->join('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
             ->sum('jenis_pelanggaran.poin');
+    }
+
+    /**
+     * Get siswa yang perlu pembinaan berdasarkan akumulasi poin.
+     * 
+     * @param int|null $poinMin Filter minimum poin (optional)
+     * @param int|null $poinMax Filter maximum poin (optional)
+     * @return \Illuminate\Support\Collection
+     */
+    public function getSiswaPerluPembinaan(?int $poinMin = null, ?int $poinMax = null)
+    {
+        // Get all siswa with their total poin
+        $siswaList = Siswa::with(['kelas', 'kelas.jurusan'])
+            ->get()
+            ->map(function ($siswa) {
+                $totalPoin = $this->hitungTotalPoinAkumulasi($siswa->id);
+                $rekomendasi = $this->getPembinaanInternalRekomendasi($totalPoin);
+                
+                return [
+                    'siswa' => $siswa,
+                    'total_poin' => $totalPoin,
+                    'rekomendasi' => $rekomendasi,
+                ];
+            })
+            ->filter(function ($item) use ($poinMin, $poinMax) {
+                // Filter by poin range if provided
+                if ($poinMin !== null && $item['total_poin'] < $poinMin) {
+                    return false;
+                }
+                if ($poinMax !== null && $item['total_poin'] > $poinMax) {
+                    return false;
+                }
+                // Only include siswa with poin > 0
+                return $item['total_poin'] > 0;
+            })
+            ->sortByDesc('total_poin')
+            ->values();
+
+        return $siswaList;
     }
 
     /**
@@ -260,13 +323,15 @@ class PelanggaranRulesEngine
      * @param string $tipeSurat
      * @param string $pemicu
      * @param string $status
+     * @param array $pembinaRoles Array of pembina roles from frequency rule
      * @return void
      */
     private function buatAtauUpdateTindakLanjut(
         int $siswaId,
         string $tipeSurat,
         string $pemicu,
-        string $status
+        string $status,
+        array $pembinaRoles = []
     ): void {
         $sanksi = "Pemanggilan Wali Murid ({$tipeSurat})";
 
@@ -286,15 +351,25 @@ class PelanggaranRulesEngine
                 'status' => $status,
             ]);
 
-            // Buat SuratPanggilan
+            // Build pembina data menggunakan service
+            $siswa = Siswa::with(['kelas.waliKelas', 'kelas.jurusan.kaprodi'])->find($siswaId);
+            $suratService = new SuratPanggilanService();
+            $pembinaData = $suratService->buildPembinaData($pembinaRoles, $siswa);
+            $meetingSchedule = $suratService->setDefaultMeetingSchedule();
+
+            // Buat SuratPanggilan dengan pembina data
             $tl->suratPanggilan()->create([
-                'nomor_surat' => 'DRAFT/' . rand(100, 999),
+                'nomor_surat' => $suratService->generateNomorSurat(),
                 'tipe_surat' => $tipeSurat,
                 'tanggal_surat' => now(),
+                'pembina_data' => $pembinaData,
+                'tanggal_pertemuan' => $meetingSchedule['tanggal_pertemuan'],
+                'waktu_pertemuan' => $meetingSchedule['waktu_pertemuan'],
+                'keperluan' => $pemicu,
             ]);
         } else {
             // Update jika eskalasi diperlukan
-            $this->eskalasiBilaPerluan($kasusAktif, $tipeSurat, $pemicu, $status);
+            $this->eskalasiBilaPerluan($kasusAktif, $tipeSurat, $pemicu, $status, $pembinaRoles);
         }
     }
 
@@ -325,6 +400,7 @@ class PelanggaranRulesEngine
             ->get();
 
         $suratTypes = [];
+        $pembinaRolesForSurat = [];
 
         // Re-evaluasi setiap pelanggaran
         foreach ($pelanggaranObjs as $pelanggaran) {
@@ -332,6 +408,7 @@ class PelanggaranRulesEngine
                 $result = $this->evaluateFrequencyRules($siswaId, $pelanggaran);
                 if ($result['surat_type']) {
                     $suratTypes[] = $result['surat_type'];
+                    $pembinaRolesForSurat = $result['pembina_roles'] ?? [];
                 }
             } else {
                 // Backward compatibility
@@ -359,7 +436,7 @@ class PelanggaranRulesEngine
         if ($tipeSurat) {
             // Jika masih perlu tindak lanjut: buat baru atau update kasus yang ada
             if (!$kasusAktif) {
-                $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, 'Rekonsiliasi', 'Baru');
+                $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, 'Rekonsiliasi', 'Baru', $pembinaRolesForSurat);
                 return;
             }
 
@@ -371,13 +448,29 @@ class PelanggaranRulesEngine
             ]);
 
             if ($kasusAktif->suratPanggilan) {
-                $kasusAktif->suratPanggilan()->update(['tipe_surat' => $tipeSurat]);
+                // Update pembina data
+                $suratService = new SuratPanggilanService();
+                $pembinaData = $suratService->buildPembinaData($pembinaRolesForSurat, $siswa);
+                
+                $kasusAktif->suratPanggilan()->update([
+                    'tipe_surat' => $tipeSurat,
+                    'pembina_data' => $pembinaData,
+                    'keperluan' => 'Rekonsiliasi',
+                ]);
             } else {
                 // jika sebelumnya tidak ada surat, buat satu
+                $suratService = new SuratPanggilanService();
+                $pembinaData = $suratService->buildPembinaData($pembinaRolesForSurat, $siswa);
+                $meetingSchedule = $suratService->setDefaultMeetingSchedule();
+
                 $kasusAktif->suratPanggilan()->create([
-                    'nomor_surat' => 'DRAFT/' . rand(100, 999),
+                    'nomor_surat' => $suratService->generateNomorSurat(),
                     'tipe_surat' => $tipeSurat,
                     'tanggal_surat' => now(),
+                    'pembina_data' => $pembinaData,
+                    'tanggal_pertemuan' => $meetingSchedule['tanggal_pertemuan'],
+                    'waktu_pertemuan' => $meetingSchedule['waktu_pertemuan'],
+                    'keperluan' => 'Rekonsiliasi',
                 ]);
             }
 
@@ -412,13 +505,15 @@ class PelanggaranRulesEngine
      * @param string $tipeSuratBaru
      * @param string $pemicuBaru
      * @param string $statusBaru
+     * @param array $pembinaRoles
      * @return void
      */
     private function eskalasiBilaPerluan(
         TindakLanjut $kasusAktif,
         string $tipeSuratBaru,
         string $pemicuBaru,
-        string $statusBaru
+        string $statusBaru,
+        array $pembinaRoles = []
     ): void {
         $existingTipe = $kasusAktif->suratPanggilan?->tipe_surat ?? '0';
         $levelLama = (int) filter_var($existingTipe, FILTER_SANITIZE_NUMBER_INT);
@@ -432,7 +527,16 @@ class PelanggaranRulesEngine
             ]);
 
             if ($kasusAktif->suratPanggilan) {
-                $kasusAktif->suratPanggilan()->update(['tipe_surat' => $tipeSuratBaru]);
+                // Update pembina data untuk eskalasi
+                $siswa = $kasusAktif->siswa;
+                $suratService = new SuratPanggilanService();
+                $pembinaData = $suratService->buildPembinaData($pembinaRoles, $siswa);
+
+                $kasusAktif->suratPanggilan()->update([
+                    'tipe_surat' => $tipeSuratBaru,
+                    'pembina_data' => $pembinaData,
+                    'keperluan' => $pemicuBaru,
+                ]);
             }
         }
     }

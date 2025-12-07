@@ -30,7 +30,11 @@ class SuratPanggilan extends Model
         'tindak_lanjut_id',
         'nomor_surat',
         'tipe_surat',
+        'pembina_data',
         'tanggal_surat',
+        'tanggal_pertemuan',
+        'waktu_pertemuan',
+        'keperluan',
         'file_path_pdf',
     ];
 
@@ -41,6 +45,8 @@ class SuratPanggilan extends Model
      */
     protected $casts = [
         'tanggal_surat' => 'date',
+        'tanggal_pertemuan' => 'date',
+        'pembina_data' => 'array',
     ];
 
     // =====================================================================

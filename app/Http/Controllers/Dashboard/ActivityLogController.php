@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class ActivityLogController extends Controller
 {
     /**
-     * List activity logs dengan filter
+     * List activity logs dengan filter dan tabs
      */
     public function index(Request $request)
     {
@@ -20,7 +20,20 @@ class ActivityLogController extends Controller
             return redirect()->route('dashboard.kepsek')->with('error', 'Akses fitur Audit & Log dibatasi untuk Kepala Sekolah.');
         }
 
-        // Default: full activity log access (Operator / Admin flows use different routes)
+        // Determine active tab
+        $tab = $request->get('tab', 'activity'); // activity, last-login, status
+
+        // Tab: Last Login
+        if ($tab === 'last-login') {
+            return $this->lastLoginTab($request);
+        }
+
+        // Tab: Status Akun
+        if ($tab === 'status') {
+            return $this->statusTab($request);
+        }
+
+        // Default Tab: Activity Logs
         $query = Activity::query();
 
         // Filter by log name (cacat, approval, etc)
@@ -123,6 +136,81 @@ class ActivityLogController extends Controller
         return response()->stream($callback, 200, [
             'Content-Type' => 'text/csv; charset=UTF-16LE',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Tab: Last Login Users
+     */
+    private function lastLoginTab(Request $request)
+    {
+        $query = \App\Models\User::with('role');
+
+        // Filter by role
+        if ($request->filled('role_id')) {
+            $query->where('role_id', $request->role_id);
+        }
+
+        // Search by name/username/email
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%')
+                  ->orWhere('username', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $users = $query->orderBy('last_login_at', 'desc')
+                       ->paginate(20)
+                       ->withQueryString();
+
+        $roles = \App\Models\Role::all();
+
+        return view('kepala_sekolah.activity.index', [
+            'tab' => 'last-login',
+            'users' => $users,
+            'roles' => $roles,
+        ]);
+    }
+
+    /**
+     * Tab: Status Akun
+     */
+    private function statusTab(Request $request)
+    {
+        $query = \App\Models\User::with('role');
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $isActive = $request->status === 'active';
+            $query->where('is_active', $isActive);
+        }
+
+        // Filter by role
+        if ($request->filled('role_id')) {
+            $query->where('role_id', $request->role_id);
+        }
+
+        // Search by name/username/email
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%')
+                  ->orWhere('username', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $users = $query->orderBy('is_active', 'desc')
+                       ->orderBy('nama')
+                       ->paginate(20)
+                       ->withQueryString();
+
+        $roles = \App\Models\Role::all();
+
+        return view('kepala_sekolah.activity.index', [
+            'tab' => 'status',
+            'users' => $users,
+            'roles' => $roles,
         ]);
     }
 }

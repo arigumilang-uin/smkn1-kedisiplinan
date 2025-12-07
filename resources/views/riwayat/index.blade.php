@@ -61,6 +61,9 @@
                             <th class="text-center">Poin</th>
                             <th>Dicatat Oleh</th>
                             <th class="text-center">Bukti</th>
+                            @if(auth()->user()->hasRole('Operator Sekolah'))
+                            <th class="text-center">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -154,10 +157,29 @@
                                         <span class="text-muted text-xs">-</span>
                                     @endif
                             </td>
+
+                            <!-- 7. AKSI (Operator Only) -->
+                            @if(auth()->user()->hasRole('Operator Sekolah'))
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('my-riwayat.edit', ['riwayat' => $r->id, 'return_url' => url()->full()]) }}" class="btn btn-warning btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('my-riwayat.destroy', $r->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus riwayat ini? Poin siswa akan direcalculate.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="return_url" value="{{ url()->full() }}">
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            @endif
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="{{ auth()->user()->hasRole('Operator Sekolah') ? '7' : '6' }}" class="text-center py-5">
                                 <div class="py-4">
                                     <i class="fas fa-search fa-3x text-gray-200 mb-3"></i>
                                     <h6 class="text-muted font-weight-normal">Data tidak ditemukan.</h6>

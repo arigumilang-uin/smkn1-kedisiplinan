@@ -1,5 +1,68 @@
 # Changelog: Frequency-Based Point System
 
+## Version 2.1.0 - Extended Access for Waka & Kepsek (2025-12-07)
+
+### 🎯 New Features
+
+#### 1. Extended Access for Waka Kesiswaan
+**Access to Rules Management:**
+- Can manage Frequency Rules (same as Operator)
+- Can manage Pembinaan Internal Rules (same as Operator)
+
+**Access to Data with Graphs:**
+- Can view Data Jurusan with pelanggaran statistics and charts
+- Can view Data Kelas with pelanggaran statistics and charts
+- Read-only access (no CRUD buttons)
+
+#### 2. Extended Access for Kepala Sekolah
+**Access to Data with Graphs:**
+- Can view Data Siswa (already had access)
+- Can view Data Jurusan with pelanggaran statistics and charts
+- Can view Data Kelas with pelanggaran statistics and charts
+- Read-only access (no CRUD buttons)
+
+#### 3. New Controllers & Views
+**DataJurusanController:**
+- `index()`: List jurusan with statistics
+- `show()`: Detail jurusan with charts (pelanggaran per bulan, per kategori, top 10 siswa)
+
+**DataKelasController:**
+- `index()`: List kelas with statistics
+- `show()`: Detail kelas with charts (pelanggaran per bulan, per kategori, top 10 siswa)
+
+**Views with Chart.js:**
+- Line chart: Pelanggaran per bulan (last 6 months)
+- Doughnut chart: Pelanggaran per kategori
+- Top 10 siswa with ranking badges (🥇🥈🥉)
+- Statistics cards with color coding
+
+#### 4. Sidebar Navigation Reorganization
+**MONITORING DATA Section:**
+- Now includes Kepala Sekolah
+- Data Jurusan & Data Kelas for Waka & Kepsek
+
+**WAKA KESISWAAN Section:**
+- Kelola Aturan & Rules
+- Pembinaan Internal
+
+**ADMINISTRASI Section (Operator Only):**
+- Renamed "Manajemen User" to "Data Pengguna"
+
+### 📝 Files Created
+- `app/Http/Controllers/DataKelasController.php`
+- `resources/views/data_jurusan/index.blade.php`
+- `resources/views/data_jurusan/show.blade.php`
+- `resources/views/data_kelas/index.blade.php`
+- `resources/views/data_kelas/show.blade.php`
+- `.kiro/specs/frequency-based-point-system/EXTENDED_ACCESS_SUMMARY.md`
+
+### 📝 Files Modified
+- `routes/web.php` - Added routes for data-jurusan and data-kelas
+- `resources/views/layouts/app.blade.php` - Updated sidebar navigation
+- `app/Http/Controllers/DataJurusanController.php` - Verified implementation
+
+---
+
 ## Version 2.0.0 - Frequency-Based Point System (Planned)
 
 ### 🎯 Major Changes
@@ -447,17 +510,132 @@ Jika ada pertanyaan atau issues setelah deployment, silakan contact:
 - Updated JavaScript to properly map filter buttons to filter_category values
 - Improved user experience with consistent filtering
 
-### ⏳ Phase 7: Real-time Preview UI (NOT STARTED)
+### ✅ Phase 7: Flexible Surat Panggilan System (COMPLETED - 2025-12-07)
+**Architecture: Clean Code with Separation of Concerns**
+
+#### Database Changes:
+- Added `nip` column to `users` table (for pembina signatures)
+- Added `pembina_data` (JSON), `tanggal_pertemuan`, `waktu_pertemuan`, `keperluan` to `surat_panggilan` table
+- Updated models: `User`, `SuratPanggilan`
+
+#### Service Layer (NEW):
+- **Created `SuratPanggilanService.php`** - Focused service for surat panggilan logic:
+  - `buildPembinaData(array $pembinaRoles, Siswa $siswa): array` - Query pembina from database
+  - `generateNomorSurat(): string` - Generate surat number with proper format
+  - `setDefaultMeetingSchedule(): array` - Set default meeting date/time (3 days, 09:00)
+  - Single Responsibility: ONLY handles surat panggilan logic, NOT rules evaluation
+
+#### Updated PelanggaranRulesEngine:
+- Modified `buatAtauUpdateTindakLanjut()` to use `SuratPanggilanService` for building pembina_data
+- Modified `eskalasiBilaPerluan()` to update pembina_data on escalation
+- Modified `reconcileForSiswa()` to rebuild pembina_data on reconciliation
+- Modified `evaluateFrequencyRules()` to return `pembina_roles` from matched rule
+- Clean separation: RulesEngine handles rules evaluation, Service handles surat generation
+
+#### Template (Flexible Layout):
+- **Replaced `resources/views/surat/template_umum.blade.php`** with 100% flexible layout:
+  - Dynamic signature layout based on pembina count:
+    - 1-2 pembina: 2 columns (50% width each)
+    - 3 pembina: 3 columns (33% width each)
+    - 4+ pembina: 4 columns (25% width each)
+  - NO hardcoded "Mengetahui Kepala Sekolah" section
+  - All pembina displayed with equal importance
+  - Proper formatting: jabatan, nama, NIP
+  - Fallback for backward compatibility (if no pembina_data)
+  - Dynamic header with student's jurusan (BIDANG KEAHLIAN)
+
+#### Key Features:
+- ✅ **100% Flexible**: No hardcoded hierarchy, operator decides pembina combination
+- ✅ **Efficient**: Minor violations don't need Kepala Sekolah involvement
+- ✅ **Transparent**: Pembina in letter = Pembina selected in frequency rules
+- ✅ **Adaptable**: Easy to add new roles or change combinations in the future
+- ✅ **Clean Code**: Separation of concerns (Service vs RulesEngine)
+- ✅ **Reusable**: SuratPanggilanService can be called from anywhere
+
+#### Controller:
+- No changes needed to `TindakLanjutController::cetakSurat()` - already works with new template
+
+### ✅ Phase 8: Pembinaan Internal Rules Management UI (COMPLETED - 2025-12-07)
+**Architecture: Configurable Internal Guidance System**
+
+#### Database Changes:
+- Created `pembinaan_internal_rules` table with columns:
+  - `poin_min`, `poin_max` (range akumulasi poin)
+  - `pembina_roles` (JSON array of pembina)
+  - `keterangan` (description of guidance type)
+  - `display_order` (for sorting)
+
+#### Model & Service Layer:
+- **Created `PembinaanInternalRule` model** with helper methods:
+  - `matchesPoin(int $totalPoin): bool` - Check if poin matches range
+  - `getRangeText(): string` - Get formatted range text for display
+- **Updated `PelanggaranRulesEngine`**:
+  - Modified `getPembinaanInternalRekomendasi()` to query from database (was hardcoded)
+  - Changed visibility to `public` for external access
+  - Added `getSiswaPerluPembinaan()` method to get students needing guidance
+  - Changed `hitungTotalPoinAkumulasi()` to `public` for reusability
+
+#### Controller & Views:
+- **Created `PembinaanInternalRulesController`** with CRUD methods:
+  - `index()` - List all rules
+  - `store()` - Create new rule with overlap validation
+  - `update()` - Update existing rule
+  - `destroy()` - Delete rule
+  - `validateNoOverlap()` - Prevent range conflicts
+- **Created views**:
+  - `pembinaan-internal-rules/index.blade.php` - Main management page
+  - `pembinaan-internal-rules/partials/form.blade.php` - Reusable form component
+  - Modal-based UI for add/edit (consistent with frequency rules)
+  - Info boxes explaining difference between Frequency Rules vs Pembinaan Internal
+
+#### Routes & Navigation:
+- Added 4 routes under Operator Sekolah middleware
+- Added sidebar link "Pembinaan Internal" with icon
+- Routes: index, store, update, destroy
+
+#### Data Seeding:
+- **Created `PembinaanInternalRulesSeeder`** with 5 default rules:
+  - 0-50 poin: Wali Kelas (Pembinaan ringan, konseling)
+  - 55-100 poin: Wali Kelas + Kaprodi (Pembinaan sedang, monitoring ketat)
+  - 105-300 poin: Wali Kelas + Kaprodi + Waka (Pembinaan intensif, evaluasi berkala)
+  - 305-500 poin: Semua pembina (Pembinaan kritis, pertemuan dengan orang tua)
+  - 501+ poin: Kepala Sekolah (Dikembalikan kepada orang tua)
+
+#### Key Features:
+- ✅ **Configurable**: Operator can manage thresholds (not hardcoded)
+- ✅ **Rekomendasi Only**: Does NOT trigger automatic letters
+- ✅ **Separate from Frequency Rules**: Clear distinction between external (letters) vs internal (guidance)
+- ✅ **Range Validation**: Prevents overlapping thresholds
+- ✅ **Flexible Pembina**: Multiple pembina can be assigned per range
+- ✅ **Gap Handling Logic**: System automatically fills gaps between ranges with previous rule
+  - Example: Poin 53 (gap between 0-50 and 55-100) → Uses rule "0-50"
+  - Example: Poin 303 (gap between 105-300 and 305-500) → Uses rule "105-300"
+  - UI shows gaps as per tata tertib, system handles them intelligently
+- ✅ **Clean Architecture**: Service layer handles business logic, controller handles HTTP
+
+#### User Experience:
+- Clear documentation in UI about difference between Frequency Rules and Pembinaan Internal
+- Modal-based forms for quick add/edit without page reload
+- Visual feedback with badges and color coding
+- Info boxes with examples and explanations
+
+### ⏳ Phase 9: Real-time Preview UI (NOT STARTED)
 - Add frequency preview to pencatatan form
 - Add warning when threshold will be reached
 - Add poin and sanksi preview
 
-### ⏳ Phase 8: Testing (NOT STARTED)
+### ⏳ Phase 10: Dashboard Integration (NOT STARTED)
+- Add widget to show students needing guidance
+- Filter by poin range
+- Quick access to student profiles
+- Export functionality
+
+### ⏳ Phase 11: Testing (NOT STARTED)
 - Unit tests
 - Integration tests
 - Manual testing scenarios
 
 ---
 
-**Last Updated**: 2025-12-06  
-**Status**: Phase 1-4 Completed, Phase 5-7 Pending
+**Last Updated**: 2025-12-07  
+**Status**: Phase 1-8 Completed, Phase 9-11 Pending

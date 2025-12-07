@@ -61,10 +61,17 @@ class MyRiwayatController extends Controller
     /**
      * Tampilkan form edit untuk riwayat milik user.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
         $record = RiwayatPelanggaran::findOrFail($id);
         $this->authorizeOwner($record);
+
+        // Store return URL in session
+        if ($request->has('return_url')) {
+            session(['riwayat_return_url' => $request->return_url]);
+        } elseif ($request->headers->get('referer')) {
+            session(['riwayat_return_url' => $request->headers->get('referer')]);
+        }
 
         $jenis = JenisPelanggaran::orderBy('nama_pelanggaran')->get();
         return view('riwayat.edit_my', ['r' => $record, 'jenis' => $jenis]);
@@ -116,13 +123,17 @@ class MyRiwayatController extends Controller
         // Rekalkulasi tindak lanjut untuk siswa terkait (edit: jangan hapus kasus otomatis)
         $this->rulesEngine->reconcileForSiswa($record->siswa_id, false);
 
-        return redirect()->route('my-riwayat.index')->with('success', 'Riwayat pelanggaran berhasil diperbarui.');
+        // Redirect back to previous page or default to my-riwayat.index
+        $redirectUrl = session('riwayat_return_url', route('my-riwayat.index'));
+        session()->forget('riwayat_return_url');
+        
+        return redirect($redirectUrl)->with('success', 'Riwayat pelanggaran berhasil diperbarui.');
     }
 
     /**
      * Hapus riwayat (only owner).
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $record = RiwayatPelanggaran::findOrFail($id);
         $this->authorizeOwner($record);
@@ -138,7 +149,13 @@ class MyRiwayatController extends Controller
         // Rekalkulasi tindak lanjut setelah penghapusan (hapus kasus jika tidak lagi perlu)
         $this->rulesEngine->reconcileForSiswa($siswaId, true);
 
-        return redirect()->route('my-riwayat.index')->with('success', 'Riwayat pelanggaran berhasil dihapus.');
+        // Redirect back to return_url or previous page or default to my-riwayat.index
+        $redirectUrl = $request->input('return_url') 
+                    ?? session('riwayat_return_url') 
+                    ?? route('my-riwayat.index');
+        session()->forget('riwayat_return_url');
+        
+        return redirect($redirectUrl)->with('success', 'Riwayat pelanggaran berhasil dihapus.');
     }
 
     /**

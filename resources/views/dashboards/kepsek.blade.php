@@ -245,6 +245,70 @@
         </div>
     </div>
 
+    <!-- 7. SISWA PERLU PEMBINAAN (WIDGET) -->
+    @if($siswaPerluPembinaan->count() > 0)
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card card-outline card-warning shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-check text-warning mr-2"></i> Siswa Perlu Pembinaan Internal (Top 5)
+                    </h5>
+                    <div class="card-tools">
+                        <a href="{{ route('kepala-sekolah.siswa-perlu-pembinaan.index') }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-list"></i> Lihat Semua
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="10%">NIS</th>
+                                <th width="25%">Nama Siswa</th>
+                                <th width="15%">Kelas</th>
+                                <th width="10%" class="text-center">Total Poin</th>
+                                <th width="15%">Range</th>
+                                <th width="25%">Rekomendasi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($siswaPerluPembinaan as $item)
+                            <tr>
+                                <td>{{ $item['siswa']->nis }}</td>
+                                <td>
+                                    <a href="{{ route('siswa.show', $item['siswa']->id) }}" class="text-primary">
+                                        <strong>{{ $item['siswa']->nama_lengkap }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ $item['siswa']->kelas->nama_kelas ?? '-' }}</td>
+                                <td class="text-center">
+                                    <span class="badge badge-{{ $item['total_poin'] > 300 ? 'danger' : ($item['total_poin'] > 100 ? 'warning' : 'info') }}">
+                                        {{ $item['total_poin'] }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ $item['rekomendasi']['range_text'] }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ $item['rekomendasi']['keterangan'] }}</small>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-info-circle"></i> 
+                        Pembinaan internal adalah rekomendasi konseling, bukan trigger surat otomatis.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
 </div>
 
 <!-- Include Chart.js for trend visualization (optional) -->

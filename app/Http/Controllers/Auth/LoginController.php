@@ -75,8 +75,11 @@ class LoginController extends Controller
 
             // 2. Ambil data user yang login
             $user = Auth::user();
+            
+            // 3. Update last login timestamp
+            $user->update(['last_login_at' => now()]);
 
-            // 3. LOGIKA PENGALIHAN (REDIRECT) BERDASARKAN PERAN
+            // 4. LOGIKA PENGALIHAN (REDIRECT) BERDASARKAN PERAN
             // Gunakan helper hasRole/hasAnyRole untuk keputusan
             if (!$user->role) {
                 Auth::logout();

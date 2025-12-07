@@ -233,9 +233,10 @@
             <!-- ================================= -->
             <!-- MENU DATA (Waka/Operator/Wali/Kaprodi) -->
             <!-- ================================= -->
-            @if($isDev || in_array($role, ['Operator Sekolah', 'Waka Kesiswaan', 'Wali Kelas', 'Kaprodi']))
+            @if($isDev || in_array($role, ['Operator Sekolah', 'Waka Kesiswaan', 'Wali Kelas', 'Kaprodi', 'Kepala Sekolah']))
             <li class="nav-header">MONITORING DATA</li>
             
+            @if($isDev || in_array($role, ['Operator Sekolah', 'Waka Kesiswaan', 'Wali Kelas', 'Kaprodi']))
             <li class="nav-item">
                 <a href="{{ route('siswa.index') }}" class="nav-link {{ Request::is('siswa*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-user-graduate"></i>
@@ -244,6 +245,7 @@
                     </p>
                 </a>
             </li>
+            @endif
 
             <li class="nav-item">
                 <a href="{{ route('riwayat.index') }}" class="nav-link {{ Request::is('riwayat-pelanggaran*') ? 'active' : '' }}">
@@ -251,6 +253,22 @@
                     <p>Riwayat Pelanggaran</p>
                 </a>
             </li>
+
+            @if($isDev || in_array($role, ['Waka Kesiswaan', 'Kepala Sekolah']))
+            <li class="nav-item">
+                <a href="{{ route('data-jurusan.index') }}" class="nav-link {{ Request::is('data-jurusan*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-layer-group text-primary"></i>
+                    <p>Data Jurusan</p>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('data-kelas.index') }}" class="nav-link {{ Request::is('data-kelas*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-school text-success"></i>
+                    <p>Data Kelas</p>
+                </a>
+            </li>
+            @endif
             @endif
 
             <!-- ================================= -->
@@ -261,13 +279,19 @@
             <li class="nav-item">
                 <a href="{{ route('users.index') }}" class="nav-link {{ Request::is('users*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-users-cog"></i>
-                    <p>Manajemen User</p>
+                    <p>Data Pengguna</p>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{{ route('frequency-rules.index') }}" class="nav-link {{ Request::is('frequency-rules*') || Request::is('jenis-pelanggaran*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-sliders-h text-warning"></i>
                     <p>Kelola Aturan & Rules</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('pembinaan-internal-rules.index') }}" class="nav-link {{ Request::is('pembinaan-internal-rules*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-check text-info"></i>
+                    <p>Pembinaan Internal</p>
                 </a>
             </li>
             <li class="nav-item">
@@ -287,6 +311,25 @@
                 <i class="nav-icon fas fa-school"></i>
                 <p>Kelola Kelas</p>
               </a>
+            </li>
+            @endif
+
+            <!-- ================================= -->
+            <!-- MENU WAKA KESISWAAN -->
+            <!-- ================================= -->
+            @if($isDev || $role == 'Waka Kesiswaan')
+            <li class="nav-header">WAKA KESISWAAN</li>
+            <li class="nav-item">
+                <a href="{{ route('frequency-rules.index') }}" class="nav-link {{ Request::is('frequency-rules*') || Request::is('jenis-pelanggaran*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-sliders-h text-warning"></i>
+                    <p>Kelola Aturan & Rules</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('pembinaan-internal-rules.index') }}" class="nav-link {{ Request::is('pembinaan-internal-rules*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-check text-info"></i>
+                    <p>Pembinaan Internal</p>
+                </a>
             </li>
             @endif
 
@@ -316,13 +359,11 @@
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('kepala-sekolah.users.index') }}" class="nav-link {{ Request::is('kepala-sekolah/users*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-users"></i>
-                    <p>Manajemen Pengguna</p>
+                <a href="{{ route('kepala-sekolah.siswa-perlu-pembinaan.index') }}" class="nav-link {{ Request::is('kepala-sekolah/siswa-perlu-pembinaan*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-check text-warning"></i>
+                    <p>Siswa Perlu Pembinaan</p>
                 </a>
             </li>
-
-            <!-- Audit & Log removed for Kepala Sekolah (moved to Operator area) -->
             @endif
 
             <!-- ================================= -->

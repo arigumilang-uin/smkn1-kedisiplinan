@@ -73,6 +73,8 @@ class UserController extends Controller
         $request->validate([
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:30',
+            'nip' => 'nullable|string|size:18',
+            'nuptk' => 'nullable|string|size:18',
             'role_id' => 'required|exists:roles,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
@@ -123,6 +125,8 @@ class UserController extends Controller
                     }
                     return $request->phone ?: null;
                 })(),
+                'nip' => $request->nip ?: null,
+                'nuptk' => $request->nuptk ?: null,
                 'password' => '', // Temporary, akan di-update setelah relasi dibuat
             ]);
 
@@ -196,6 +200,8 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:30',
+            'nip' => 'nullable|string|size:18',
+            'nuptk' => 'nullable|string|size:18',
             'role_id' => 'required|exists:roles,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
@@ -268,6 +274,10 @@ class UserController extends Controller
             } else {
                 $user->phone = $request->phone ?: null;
             }
+            
+            // Update NIP/NUPTK
+            $user->nip = $request->nip ?: null;
+            $user->nuptk = $request->nuptk ?: null;
             
             $user->save();
 
@@ -360,5 +370,20 @@ class UserController extends Controller
 
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus!');
+    }
+
+    /**
+     * Toggle user active/inactive status.
+     */
+    public function toggleActive(User $user)
+    {
+        if (auth()->id() == $user->id) {
+            return back()->with('error', 'Anda tidak bisa menonaktifkan akun sendiri!');
+        }
+
+        $user->update(['is_active' => !$user->is_active]);
+
+        $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return back()->with('success', "User berhasil {$status}!");
     }
 }

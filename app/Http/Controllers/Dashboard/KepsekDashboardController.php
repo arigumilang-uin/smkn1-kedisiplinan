@@ -9,10 +9,18 @@ use App\Models\RiwayatPelanggaran;
 use App\Models\Siswa;
 use App\Models\Jurusan;
 use App\Models\JenisPelanggaran;
+use App\Services\PelanggaranRulesEngine;
 use Illuminate\Support\Facades\DB;
 
 class KepsekDashboardController extends Controller
 {
+    protected $rulesEngine;
+
+    public function __construct(PelanggaranRulesEngine $rulesEngine)
+    {
+        $this->rulesEngine = $rulesEngine;
+    }
+
     public function index(): View
     {
         // ========== 1. STATISTIK UTAMA (Executive Summary) ==========
@@ -78,6 +86,10 @@ class KepsekDashboardController extends Controller
             ->groupBy('status')
             ->pluck('jumlah', 'status');
 
+        // ========== 7. SISWA PERLU PEMBINAAN (Top 5 Highest Points) ==========
+        $siswaPerluPembinaan = $this->rulesEngine->getSiswaPerluPembinaan()
+            ->take(5); // Only top 5 for dashboard widget
+
         return view('dashboards.kepsek', [
             'totalSiswa' => $totalSiswa,
             'pelanggaranBulanIni' => $pelanggaranBulanIni,
@@ -88,6 +100,7 @@ class KepsekDashboardController extends Controller
             'topViolations' => $topViolations,
             'jurusanStats' => $jurusanStats,
             'statusStats' => $statusStats,
+            'siswaPerluPembinaan' => $siswaPerluPembinaan,
         ]);
     }
 }

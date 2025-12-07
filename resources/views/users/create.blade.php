@@ -76,6 +76,45 @@
                             </div>
                         </div>
 
+                        <!-- TANDA PENGENAL KEPEGAWAIAN -->
+                        <div id="nipSection">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5 class="mb-3"><i class="fas fa-id-card mr-1"></i> Tanda Pengenal Kepegawaian (Opsional)</h5>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>NIP / NI PPPK (18 digit)</label>
+                                        <input type="text" name="nip" class="form-control @error('nip') is-invalid @enderror" placeholder="Contoh: 197303222000122002" value="{{ old('nip') }}" maxlength="18">
+                                        @error('nip') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                                        <small class="text-muted d-block">
+                                            Nomor Induk Pegawai (PNS) atau NI PPPK (Pegawai Kontrak)
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>NUPTK (18 digit)</label>
+                                        <input type="text" name="nuptk" class="form-control @error('nuptk') is-invalid @enderror" placeholder="Contoh: 123456789012345678" value="{{ old('nuptk') }}" maxlength="18">
+                                        @error('nuptk') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                                        <small class="text-muted d-block">
+                                            Nomor Unik Pendidik dan Tenaga Kependidikan
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Digunakan untuk tanda tangan surat resmi dan dokumen administrasi
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- AREA KHUSUS WALI KELAS -->
                         <div id="waliSection" style="display:none; margin-top: 1rem;">
                             <div class="form-group">
@@ -226,10 +265,12 @@
             const jurusanSelect = document.getElementById('jurusanSelect');
             const waliSection = document.getElementById('waliSection');
             const kelasSelect = document.getElementById('kelasSelect');
+            const nipSection = document.getElementById('nipSection');
 
             function toggleSections() {
                 const opt = roleSelect.options[roleSelect.selectedIndex];
                 const roleName = opt ? opt.dataset.roleName : '';
+                
                 // Kaprodi
                 if (roleName === 'Kaprodi') {
                     kaprodiSection.style.display = '';
@@ -244,6 +285,15 @@
                 } else {
                     waliSection.style.display = 'none';
                     if (kelasSelect) kelasSelect.value = '';
+                }
+
+                // NIP/NUPTK Section - Hide untuk Wali Murid
+                if (nipSection) {
+                    if (roleName === 'Wali Murid') {
+                        nipSection.style.display = 'none';
+                    } else {
+                        nipSection.style.display = '';
+                    }
                 }
             }
 
