@@ -1,0 +1,54 @@
+[32m🔍 Starting View Routes Audit...[39m
+
+[32m✓ Loaded 173 registered routes[39m
+[32mFound 70 Blade files to scan[39m
+
+
+
+[32m📊 Audit Summary[39m
+[32m================[39m
++------------------------+-------+
+|[32m Metric                 [39m|[32m Count [39m|
++------------------------+-------+
+| Blade Files Scanned    | 70    |
+| Total Route References | 232   |
+| Valid Routes           | 206   |
+| Broken Routes          | 26    |
+| Registered Routes      | 173   |
++------------------------+-------+
+
+[37;41m❌ BROKEN ROUTE REFERENCES FOUND![39;49m
+
++-------------------------------------------------------+------+-------------------------------------------------+
+|[32m File                                                  [39m|[32m Line [39m|[32m Missing Route                                   [39m|
++-------------------------------------------------------+------+-------------------------------------------------+
+| audit\siswa\confirm-delete.blade.php                  | 184  | audit.siswa.summary                             |
+| audit\siswa\index.blade.php                           | 25   | audit.siswa.preview                             |
+| audit\siswa\summary.blade.php                         | 112  | audit.siswa                                     |
+| audit\siswa\summary.blade.php                         | 117  | audit.siswa.export                              |
+| audit\siswa\summary.blade.php                         | 122  | audit.siswa.confirm-delete                      |
+| auth\verify-email.blade.php                           | 33   | verification.send                               |
+| data_jurusan\index.blade.php                          | 77   | data-jurusan.show                               |
+| data_kelas\index.blade.php                            | 69   | data-kelas.show                                 |
+| kepala_sekolah\activity\index.blade.php               | 16   | audit.activity.export-csv                       |
+| kepala_sekolah\activity\tabs\status.blade.php         | 80   | users.toggle-active                             |
+| kepala_sekolah\approvals\index.blade.php              | 89   | kepala-sekolah.approvals.show                   |
+| kepala_sekolah\approvals\show.blade.php               | 122  | kepala-sekolah.approvals.process                |
+| kepala_sekolah\reports\index.blade.php                | 31   | kepala-sekolah.reports.preview                  |
+| kepala_sekolah\reports\preview.blade.php              | 18   | kepala-sekolah.reports.export-csv               |
+| kepala_sekolah\reports\preview.blade.php              | 21   | kepala-sekolah.reports.export-pdf               |
+| kepala_sekolah\siswa_perlu_pembinaan\index.blade.p... | 101  | kepala-sekolah.siswa-perlu-pembinaan.export-csv |
+| kepala_sekolah\users\index.blade.php                  | 31   | kepala-sekolah.users.index                      |
+| kepala_sekolah\users\index.blade.php                  | 106  | kepala-sekolah.users.show                       |
+| kepala_sekolah\users\show.blade.php                   | 14   | kepala-sekolah.users.index                      |
+| kepala_sekolah\users\show.blade.php                   | 86   | kepala-sekolah.users.reset-password             |
+| kepala_sekolah\users\show.blade.php                   | 128  | kepala-sekolah.users.toggle-status              |
+| pelanggaran\create.blade.php                          | 45   | pelanggaran.store                               |
+| profile\account.blade.php                             | 30   | verification.send                               |
+| profile\account.blade.php                             | 128  | verification.send                               |
+| profile\complete.blade.php                            | 12   | profile.complete.store                          |
+| riwayat\edit_my.blade.php                             | 12   | my-riwayat.update                               |
++-------------------------------------------------------+------+-------------------------------------------------+
+
+[33m⚠️  Found 26 broken route reference(s)![39m
+[33mThese will cause 500 errors when users click them.[39m

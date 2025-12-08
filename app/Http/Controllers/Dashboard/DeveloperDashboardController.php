@@ -9,16 +9,20 @@ class DeveloperDashboardController extends Controller
 {
     public function index()
     {
-        // Developer dashboard only allowed in non-production and only for the real Developer account
-        if (app()->environment('production')) {
-            abort(403, 'Developer dashboard not available in production.');
+        $user = auth()->user();
+        
+        // Developer dashboard only for Developer role
+        if (! $user->hasRole('Developer')) {
+            abort(403, 'Developer dashboard only accessible by Developer role.');
         }
+        
+        // Show warning if in production (but still allow access for testing)
+        $isProduction = app()->environment('production');
 
-        if (! RoleService::isRealDeveloper()) {
-            abort(403, 'AKSES DITOLAK: Hanya Developer nyata yang boleh melihat halaman ini.');
-        }
-
-        return view('dashboards.developer');
+        return view('dashboards.developer', [
+            'isProduction' => $isProduction,
+            'user' => $user,
+        ]);
     }
 }
 

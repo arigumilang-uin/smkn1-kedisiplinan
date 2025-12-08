@@ -69,9 +69,7 @@ class TindakLanjut extends Model
      */
     protected $casts = [
         'tanggal_tindak_lanjut' => 'date',
-        // 'status' akan otomatis dicast oleh Laravel 11+ jika 
-        // Anda menggunakan Enum di migrasi, tapi ini cara eksplisitnya
-        // jika masih string.
+        'status' => \App\Enums\StatusTindakLanjut::class,
     ];
 
     // =====================================================================
