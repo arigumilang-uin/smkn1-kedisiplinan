@@ -197,7 +197,7 @@
                                         </small>
                                     </div>
                                     
-                                    <span class="point-badge">{{ $jp->poin }} Poin</span>
+                                    <span class="point-badge">{{ $jp->getDisplayPoin() }} @if(!$jp->usesFrequencyRules()) Poin @endif</span>
                                     <input type="checkbox" name="jenis_pelanggaran_id[]" value="{{ $jp->id }}" class="pelanggaran-checkbox">
                                 </div>
                             @endforeach

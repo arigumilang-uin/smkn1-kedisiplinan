@@ -33,7 +33,8 @@ class SiswaService
      */
     public function __construct(
         private SiswaRepositoryInterface $siswaRepository,
-        private UserRepositoryInterface $userRepository
+        private UserRepositoryInterface $userRepository,
+        private \App\Services\Pelanggaran\PelanggaranService $pelanggaranService
     ) {}
 
     /**
@@ -244,10 +245,9 @@ class SiswaService
             'tindakLanjut'
         ])->findOrFail($siswaId);
 
-        // BUSINESS LOGIC: Hitung total poin pelanggaran
-        $totalPoin = $siswa->riwayatPelanggaran->sum(function($riwayat) {
-            return $riwayat->jenisPelanggaran->poin ?? 0;
-        });
+        // BUSINESS LOGIC: Hitung total poin menggunakan PelanggaranService
+        // Service akan delegate ke RulesEngine yang support frequency-based rules
+        $totalPoin = $this->pelanggaranService->calculateTotalPoin($siswaId);
 
         return [
             'siswa' => $siswa,
@@ -321,6 +321,8 @@ class SiswaService
      * 
      * BEFORE: 205 User Models × 20KB = ~4MB
      * AFTER: 205 stdClass × 0.5KB = ~100KB (40x lighter!)
+     * 
+     * UPDATED: Include Developer role for testing purposes
      *
      * @return \Illuminate\Support\Collection<stdClass>
      */
@@ -329,7 +331,7 @@ class SiswaService
         // OPTIMIZATION: Direct DB query with minimal columns
         return \Illuminate\Support\Facades\DB::table('users')
             ->join('roles', 'users.role_id', '=', 'roles.id')
-            ->where('roles.nama_role', 'Wali Murid')
+            ->whereIn('roles.nama_role', ['Wali Murid', 'Developer']) // Allow Developer for testing
             ->select('users.id', 'users.nama', 'users.username', 'users.email')
             ->orderBy('users.nama')
             ->get();

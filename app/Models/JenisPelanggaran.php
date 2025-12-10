@@ -148,4 +148,60 @@ class JenisPelanggaran extends Model
     {
         return $this->has_frequency_rules === true;
     }
+
+    /**
+     * Get display poin for UI - BACKWARD COMPATIBLE
+     * 
+     * LOGIC:
+     * - If has frequency rules → Show "Berdasarkan Frekuensi"
+     * - If no frequency rules → Show actual poin from database
+     * 
+     * This ensures old pelanggaran (without rules) still show correct poin
+     */
+    public function getDisplayPoin(): string
+    {
+        if ($this->usesFrequencyRules()) {
+            return 'Berdasarkan Frekuensi';
+        }
+        
+        return (string)($this->poin ?? 0);
+    }
+
+    /**
+     * Get numeric poin for calculations - BACKWARD COMPATIBLE
+     * 
+     * LOGIC:
+     * - If has frequency rules → Returns 0 (poin determined by rules at runtime)
+     * - If no frequency rules → Returns actual poin
+     * 
+     * This is used when recording violations to know base poin
+     */
+    public function getNumericPoin(): int
+    {
+        if ($this->usesFrequencyRules()) {
+            // Frequency-based: poin will be calculated based on rules
+            return 0;
+        }
+        
+        // Legacy: use poin from database
+        return $this->poin ?? 0;
+    }
+
+    /**
+     * Check if this jenis pelanggaran is valid for recording
+     * 
+     * Valid if:
+     * - Has frequency rules AND is active, OR
+     * - No frequency rules but has poin > 0
+     */
+    public function isRecordable(): bool
+    {
+        if ($this->usesFrequencyRules()) {
+            // Must be active and have at least one rule
+            return $this->is_active && $this->frequencyRules()->exists();
+        }
+        
+        // Legacy: must have poin
+        return $this->poin > 0;
+    }
 }

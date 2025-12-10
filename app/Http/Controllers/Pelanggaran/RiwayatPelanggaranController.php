@@ -139,24 +139,38 @@ class RiwayatPelanggaranController extends Controller
                 ->store('bukti_pelanggaran', 'public');
         }
 
-        // Convert validated request ke DTO dengan combined datetime
-        $riwayatData = RiwayatPelanggaranData::from([
-            'id' => null,
-            'siswa_id' => $request->siswa_id,
-            'jenis_pelanggaran_id' => $request->jenis_pelanggaran_id,
-            'guru_pencatat_user_id' => $request->guru_pencatat_user_id,
-            'tanggal_kejadian' => $request->getCombinedDateTime(),
-            'keterangan' => $request->keterangan,
-            'bukti_foto_path' => $buktiFotoPath,
-        ]);
+        // Get combined datetime once
+        $combinedDateTime = $request->getCombinedDateTime();
 
-        // Panggil service
-        // Service akan: simpan data + panggil RulesEngine + buat tindak lanjut jika perlu
-        $this->pelanggaranService->catatPelanggaran($riwayatData);
+        // Counter for success message
+        $totalRecorded = 0;
+
+        // Loop through each selected siswa
+        foreach ($request->siswa_id as $siswaId) {
+            // Loop through each selected jenis pelanggaran
+            foreach ($request->jenis_pelanggaran_id as $jenisPelanggaranId) {
+                // Create DTO for this combination
+                $riwayatData = RiwayatPelanggaranData::from([
+                    'id' => null,
+                    'siswa_id' => $siswaId,
+                    'jenis_pelanggaran_id' => $jenisPelanggaranId,
+                    'guru_pencatat_user_id' => $request->guru_pencatat_user_id,
+                    'tanggal_kejadian' => $combinedDateTime,
+                    'keterangan' => $request->keterangan,
+                    'bukti_foto_path' => $buktiFotoPath,
+                ]);
+
+                // Call service to record this violation
+                // Service will: save data + call RulesEngine + create tindak lanjut if needed
+                $this->pelanggaranService->catatPelanggaran($riwayatData);
+
+                $totalRecorded++;
+            }
+        }
 
         return redirect()
             ->route('riwayat.index')
-            ->with('success', 'Pelanggaran berhasil dicatat.');
+            ->with('success', "Berhasil mencatat {$totalRecorded} pelanggaran.");
     }
 
     /**

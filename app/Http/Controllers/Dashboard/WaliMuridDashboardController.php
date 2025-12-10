@@ -35,10 +35,9 @@ class WaliMuridDashboardController extends Controller
             $siswaAktif = $semuaAnak->first();
         }
 
-        // 4. Ambil Statistik Poin
-        $totalPoin = RiwayatPelanggaran::where('siswa_id', $siswaAktif->id)
-            ->join('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
-            ->sum('jenis_pelanggaran.poin');
+        // 4. Ambil Statistik Poin (FIXED: Use PelanggaranService)
+        $pelanggaranService = app(\App\Services\Pelanggaran\PelanggaranService::class);
+        $totalPoin = $pelanggaranService->calculateTotalPoin($siswaAktif->id);
 
         // 5. Ambil Riwayat Pelanggaran (Anak Aktif)
         $riwayat = RiwayatPelanggaran::with('jenisPelanggaran')

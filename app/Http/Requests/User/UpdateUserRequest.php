@@ -49,6 +49,14 @@ class UpdateUserRequest extends FormRequest
             'nip' => ['nullable', 'string', 'max:20'],
             'nuptk' => ['nullable', 'string', 'max:20'],
             'is_active' => ['boolean'],
+            
+            // Role-specific assignments
+            'kelas_id' => ['nullable', 'exists:kelas,id'],
+            'jurusan_id' => ['nullable', 'exists:jurusan,id'],
+            
+            // Siswa linking for Wali Murid/Developer roles
+            'siswa_ids' => ['nullable', 'array'],
+            'siswa_ids.*' => ['exists:siswa,id'],
         ];
     }
 

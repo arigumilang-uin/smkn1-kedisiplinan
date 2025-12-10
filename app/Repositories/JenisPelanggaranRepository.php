@@ -176,4 +176,59 @@ class JenisPelanggaranRepository extends BaseRepository implements JenisPelangga
         Cache::forget('jenis_pelanggaran:active');
         // Tambahkan keys lain jika ada
     }
+
+    /**
+     * Find with frequency rules relation
+     *
+     * @param int $id
+     * @return JenisPelanggaran|null
+     */
+    public function findWithFrequencyRules(int $id): ?JenisPelanggaran
+    {
+        return $this->model
+            ->with(['kategoriPelanggaran', 'frequencyRules'])
+            ->find($id);
+    }
+
+    /**
+     * Update frequency rule status (has_frequency_rules and is_active)
+     *
+     * @param int $id
+     * @param bool $hasRules
+     * @param bool $isActive
+     * @return bool
+     */
+    public function updateFrequencyStatus(int $id, bool $hasRules, bool $isActive): bool
+    {
+        $result = $this->model->where('id', $id)->update([
+            'has_frequency_rules' => $hasRules,
+            'is_active' => $isActive,
+        ]);
+        
+        $this->clearCache();
+        
+        return $result;
+    }
+
+    /**
+     * Activate jenis pelanggaran (has frequency rules now)
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function activateFrequencyRules(int $id): bool
+    {
+        return $this->updateFrequencyStatus($id, true, true);
+    }
+
+    /**
+     * Deactivate jenis pelanggaran (no frequency rules)
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function deactivateFrequencyRules(int $id): bool
+    {
+        return $this->updateFrequencyStatus($id, false, false);
+    }
 }

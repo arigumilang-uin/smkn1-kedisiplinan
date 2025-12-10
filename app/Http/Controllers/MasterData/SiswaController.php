@@ -45,14 +45,38 @@ class SiswaController extends Controller
      * ALUR:
      * 1. Validasi filter (via FilterSiswaRequest)
      * 2. Convert ke SiswaFilterData (DTO)
-     * 3. Panggil service untuk data siswa
-     * 4. Panggil service untuk master data filter
-     * 5. Return view
+     * 3. Apply role-based auto-filters (Kaprodi/Wali Kelas)
+     * 4. Panggil service untuk data siswa
+     * 5. Panggil service untuk master data filter
+     * 6. Return view
      */
     public function index(FilterSiswaRequest $request): View
     {
         // Convert validated request data ke DTO
-        $filters = SiswaFilterData::from($request->getFilterData());
+        $filterData = $request->getFilterData();
+        
+        // AUTO-FILTER berdasarkan role
+        $user = auth()->user();
+        $role = $user->effectiveRoleName() ?? $user->role?->nama_role;
+        
+        // Kaprodi: filter by assigned jurusan
+        if ($role === 'Kaprodi' && !isset($filterData['jurusan_id'])) {
+            $jurusanKaprodi = \App\Models\Jurusan::where('kaprodi_user_id', $user->id)->first();
+            if ($jurusanKaprodi) {
+                $filterData['jurusan_id'] = $jurusanKaprodi->id;
+            }
+        }
+        
+        // Wali Kelas: filter by assigned kelas
+        if ($role === 'Wali Kelas' && !isset($filterData['kelas_id'])) {
+            $kelasWali = \App\Models\Kelas::where('wali_kelas_user_id', $user->id)->first();
+            if ($kelasWali) {
+                $filterData['kelas_id'] = $kelasWali->id;
+            }
+        }
+        
+        // Convert to DTO with role-based filters applied
+        $filters = SiswaFilterData::from($filterData);
 
         // Panggil service untuk get filtered siswa
         $siswa = $this->siswaService->getFilteredSiswa($filters);
@@ -147,14 +171,25 @@ class SiswaController extends Controller
      * 
      * ALUR:
      * 1. Validasi (via UpdateSiswaRequest - role-based rules)
-     * 2. Convert ke SiswaData (DTO)
+     * 2. Convert ke SiswaData (DTO) - handle partial data for Wali Kelas
      * 3. Panggil service->updateSiswa() dengan flag isWaliKelas
      * 4. Redirect dengan success message
      */
     public function update(UpdateSiswaRequest $request, int $id): RedirectResponse
     {
-        // Convert validated request ke DTO
-        $siswaData = SiswaData::from($request->validated());
+        // For Wali Kelas: merge validated data with existing siswa data
+        // Because Wali Kelas only validates nomor_hp_wali_murid
+        if ($request->isWaliKelas()) {
+            $existingSiswa = $this->siswaService->getSiswaForEdit($id);
+            $mergedData = array_merge(
+                $existingSiswa->toArray(),
+                $request->validated()
+            );
+            $siswaData = SiswaData::from($mergedData);
+        } else {
+            // For Operator: use validated data directly
+            $siswaData = SiswaData::from($request->validated());
+        }
 
         // Panggil service dengan DTO + flag role
         $this->siswaService->updateSiswa(

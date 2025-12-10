@@ -32,8 +32,10 @@ class CatatPelanggaranRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'siswa_id' => ['required', 'exists:siswa,id'],
-            'jenis_pelanggaran_id' => ['required', 'exists:jenis_pelanggaran,id'],
+            'siswa_id' => ['required', 'array', 'min:1'],
+            'siswa_id.*' => ['required', 'exists:siswa,id'],
+            'jenis_pelanggaran_id' => ['required', 'array', 'min:1'],
+            'jenis_pelanggaran_id.*' => ['required', 'exists:jenis_pelanggaran,id'],
             'tanggal_kejadian' => ['required', 'date'],
             'jam_kejadian' => ['nullable', 'date_format:H:i'],
             'keterangan' => ['nullable', 'string', 'max:1000'],

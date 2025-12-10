@@ -128,7 +128,21 @@
                                     </span>
                                     <h3 class="timeline-header">
                                         <strong>{{ $riwayat->jenisPelanggaran->nama_pelanggaran }}</strong>
-                                        <span class="badge badge-danger ml-2">+{{ $riwayat->jenisPelanggaran->poin }} Poin</span>
+                                        @php
+                                            $poinInfo = \App\Helpers\PoinDisplayHelper::getPoinForRiwayat($riwayat);
+                                        @endphp
+                                        @if($poinInfo['matched'] && $poinInfo['poin'] > 0)
+                                            <span class="badge badge-danger ml-2" title="{{ \App\Helpers\PoinDisplayHelper::getFrequencyText($riwayat) }}">
+                                                +{{ $poinInfo['poin'] }} Poin
+                                            </span>
+                                        @else
+                                            <span class="badge badge-secondary ml-2" title="{{ \App\Helpers\PoinDisplayHelper::getFrequencyText($riwayat) }}">
+                                                +0 Poin
+                                            </span>
+                                        @endif
+                                        @if($poinInfo['frequency'])
+                                            <small class="text-muted">({{ $poinInfo['frequency'] }}×)</small>
+                                        @endif
                                     </h3>
                                     <div class="timeline-body">
                                         <p class="mb-1">
