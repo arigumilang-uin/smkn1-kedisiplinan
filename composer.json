@@ -13,6 +13,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "mallardduck/blade-lucide-icons": "^1.24",
         "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-data": "^4.18"
     },
@@ -90,7 +91,8 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
-        }
+        },
+        "platform-check": false
     },
     "minimum-stability": "stable",
     "prefer-stable": true
