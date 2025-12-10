@@ -120,6 +120,22 @@ class UserController extends Controller
         
         $this->userService->updateUser($id, $userData);
 
+        // Handle role-specific assignments
+        // Kelas assignment for Wali Kelas/Developer
+        if ($request->filled('kelas_id')) {
+            $this->userService->assignKelas($id, $request->input('kelas_id'));
+        }
+        
+        // Jurusan assignment for Kaprodi/Developer
+        if ($request->filled('jurusan_id')) {
+            $this->userService->assignJurusan($id, $request->input('jurusan_id'));
+        }
+
+        // Siswa linking for Wali Murid/Developer
+        if ($request->has('siswa_ids')) {
+            $this->userService->linkSiswa($id, $request->input('siswa_ids', []));
+        }
+
         return redirect()
             ->route('users.index')
             ->with('success', 'User berhasil diperbarui.');

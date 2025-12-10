@@ -51,17 +51,30 @@ class PelanggaranFrequencyRule extends Model
     // =====================================================================
 
     /**
-     * Cek apakah frekuensi masuk dalam range rule ini.
+     * Cek apakah frekuensi TEPAT SAMA dengan threshold rule ini.
+     * 
+     * LOGIC (Updated):
+     * - Rule dengan frequency_max: Trigger di MAX (bukan di min-max range)
+     * - Rule tanpa frequency_max (exact): Trigger di MIN
+     * 
+     * Contoh:
+     * - Min=1, Max=3: Trigger HANYA di frek 3 (bukan 1,2,3)
+     * - Min=1, Max=NULL: Trigger di frek 1 (exact)
+     * 
+     * Rationale:
+     * - Min-Max defines threshold RANGE
+     * - Poin applied ONLY when REACHING the threshold (MAX)
+     * - Before threshold: recorded but no poin added
      */
     public function matchesFrequency(int $frequency): bool
     {
         if ($this->frequency_max === null) {
-            // Open-ended: frequency >= frequency_min
-            return $frequency >= $this->frequency_min;
+            // Exact match: trigger at MIN
+            return $frequency === $this->frequency_min;
         }
 
-        // Range: frequency_min <= frequency <= frequency_max
-        return $frequency >= $this->frequency_min && $frequency <= $this->frequency_max;
+        // Range: trigger ONLY at MAX (threshold)
+        return $frequency === $this->frequency_max;
     }
 
     /**

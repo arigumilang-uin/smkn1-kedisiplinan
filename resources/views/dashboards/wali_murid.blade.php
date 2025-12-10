@@ -99,7 +99,19 @@
                                 <span class="time"><i class="far fa-clock"></i> {{ $r->tanggal_kejadian->format('H:i') }}</span>
                                 <h3 class="timeline-header"><a href="#">{{ $r->jenisPelanggaran->nama_pelanggaran }}</a></h3>
                                 <div class="timeline-body">
-                                    Poin: <span class="text-danger text-bold">+{{ $r->jenisPelanggaran->poin }}</span><br>
+                                    @php
+                                        $poinInfo = \App\Helpers\PoinDisplayHelper::getPoinForRiwayat($r);
+                                    @endphp
+                                    Poin: 
+                                    @if($poinInfo['matched'] && $poinInfo['poin'] > 0)
+                                        <span class="text-danger text-bold">+{{ $poinInfo['poin'] }}</span>
+                                    @else
+                                        <span class="text-secondary text-bold">+0</span>
+                                    @endif
+                                    @if($poinInfo['frequency'])
+                                        <small class="text-muted">({{ $poinInfo['frequency'] }}×)</small>
+                                    @endif
+                                    <br>
                                     Catatan: {{ $r->keterangan ?? '-' }}
                                 </div>
                                 @if($r->bukti_foto_path)

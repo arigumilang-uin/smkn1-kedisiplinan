@@ -249,6 +249,93 @@ class UserService
     }
 
     /**
+     * Link siswa to user (for Wali Murid/Developer roles).
+     * 
+     * LOGIC:
+     * 1. Unlink all siswa currently linked to this user
+     * 2. Link selected siswa to this user
+     * 
+     * @param int $userId
+     * @param array $siswaIds Array of siswa IDs to link
+     * @return void
+     */
+    public function linkSiswa(int $userId, array $siswaIds): void
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Step 1: Unlink all siswa previously linked to this user
+            \App\Models\Siswa::where('wali_murid_user_id', $userId)
+                ->update(['wali_murid_user_id' => null]);
+            
+            // Step 2: Link selected siswa to this user
+            if (!empty($siswaIds)) {
+                \App\Models\Siswa::whereIn('id', $siswaIds)
+                    ->update(['wali_murid_user_id' => $userId]);
+            }
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Assign user to kelas (for Wali Kelas/Developer roles).
+     * 
+     * LOGIC:
+     * - Unassign current wali kelas from target kelas (if any)
+     * - Assign this user as wali kelas
+     * 
+     * @param int $userId
+     * @param int $kelasId
+     * @return void
+     */
+    public function assignKelas(int $userId, int $kelasId): void
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Update kelas to set this user as wali kelas
+            \App\Models\Kelas::where('id', $kelasId)
+                ->update(['wali_kelas_user_id' => $userId]);
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Assign user to jurusan (for Kaprodi/Developer roles).
+     * 
+     * LOGIC:
+     * - Unassign current kaprodi from target jurusan (if any)
+     * - Assign this user as kaprodi
+     * 
+     * @param int $userId
+     * @param int $jurusanId
+     * @return void
+     */
+    public function assignJurusan(int $userId, int $jurusanId): void
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Update jurusan to set this user as kaprodi
+            \App\Models\Jurusan::where('id', $jurusanId)
+                ->update(['kaprodi_user_id' => $userId]);
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Get paginated users with filters.
      *
      * @param int $perPage

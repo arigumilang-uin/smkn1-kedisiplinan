@@ -356,41 +356,17 @@ class PelanggaranService
      * 
      * PERFORMANCE: Uses lightweight DB query instead of loading full Models
      * 
-     * ROLE-BASED:
-     * - Operator/Kepala Sekolah/Waka: Semua siswa
-     * - Wali Kelas: Siswa di kelasnya saja
-     * - Kaprodi: Siswa di jurusannya saja
+     * NO ROLE-BASED FILTER:
+     * - Semua role (Operator, Wali Kelas, Kaprodi) bisa catat pelanggaran untuk SEMUA siswa
+     * - Filter hanya diterapkan di riwayat dan data siswa, BUKAN di catat pelanggaran
      *
-     * @param int|null $userId User ID untuk filter role-based
+     * @param int|null $userId User ID (not used, kept for backward compatibility)
      * @return \Illuminate\Support\Collection<stdClass> NOT Eloquent Models!
      */
     public function getAllSiswaForCreate(?int $userId = null)
     {
-        $kelasId = null;
-        $jurusanId = null;
-
-        if ($userId) {
-            $user = \App\Models\User::find($userId);
-            
-            if ($user && $user->hasRole('Wali Kelas')) {
-                // Filter siswa di kelas wali kelas
-                $kelas = \App\Models\Kelas::where('wali_kelas_user_id', $userId)->first();
-                if (!$kelas) {
-                    return collect([]);
-                }
-                $kelasId = $kelas->id;
-                
-            } elseif ($user && $user->hasRole('Kaprodi')) {
-                // Filter siswa di jurusan kaprodi
-                $jurusan = \App\Models\Jurusan::where('kaprodi_user_id', $userId)->first();
-                if (!$jurusan) {
-                    return collect([]);
-                }
-                $jurusanId = $jurusan->id;
-            }
-        }
-
-        // PERFORMANCE: Use lightweight repository method (stdClass, not Models)
-        return app(\App\Repositories\SiswaRepository::class)->getForDropdown($kelasId, $jurusanId);
+        // NO FILTER - semua siswa ditampilkan untuk semua role
+        // Kaprodi dan Wali Kelas tetap bisa mencatat pelanggaran siswa lain
+        return app(\App\Repositories\SiswaRepository::class)->getForDropdown(null, null);
     }
 }

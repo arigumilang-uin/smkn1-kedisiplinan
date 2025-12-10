@@ -138,13 +138,14 @@ class PelanggaranRulesEngine
             ];
         }
 
-        // Cari rule yang match dengan frekuensi saat ini
+        // Cari rule yang TEPAT match dengan frekuensi saat ini
+        // matchesFrequency() sekarang check EXACT match (frequency === max, atau === min jika no max)
         $matchedRule = $rules->first(function ($rule) use ($currentFrequency) {
             return $rule->matchesFrequency($currentFrequency);
         });
 
         if (!$matchedRule) {
-            // Tidak ada rule yang match, tidak ada poin
+            // Tidak ada rule yang match, tidak ada poin (belum mencapai threshold)
             return [
                 'poin_ditambahkan' => 0,
                 'surat_type' => null,
@@ -153,24 +154,7 @@ class PelanggaranRulesEngine
             ];
         }
 
-        // Cek apakah threshold ini sudah pernah tercapai sebelumnya
-        $previousFrequency = $currentFrequency - 1;
-        $previousRule = $rules->first(function ($rule) use ($previousFrequency) {
-            return $rule->matchesFrequency($previousFrequency);
-        });
-
-        // Jika rule sekarang sama dengan rule sebelumnya, berarti masih di range yang sama
-        // Tidak perlu tambah poin lagi
-        if ($previousRule && $previousRule->id === $matchedRule->id) {
-            return [
-                'poin_ditambahkan' => 0,
-                'surat_type' => null,
-                'sanksi' => $matchedRule->sanksi_description,
-                'pembina_roles' => [],
-            ];
-        }
-
-        // Threshold baru tercapai! Tambahkan poin
+        // Threshold tercapai! Tambahkan poin
         return [
             'poin_ditambahkan' => $matchedRule->poin,
             'surat_type' => $matchedRule->getSuratType(),
@@ -310,15 +294,41 @@ class PelanggaranRulesEngine
 
     /**
      * Hitung total poin akumulasi siswa dari semua riwayat pelanggaran.
-     *
+     * 
+     * UPDATED LOGIC:
+     * - For frequency-based rules: Calculate using evaluateFrequencyRules()
+     * - For legacy rules: Use poin from jenis_pelanggaran table
+     * 
      * @param int $siswaId
      * @return int
      */
     public function hitungTotalPoinAkumulasi(int $siswaId): int
     {
-        return RiwayatPelanggaran::where('siswa_id', $siswaId)
-            ->join('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
-            ->sum('jenis_pelanggaran.poin');
+        // Get ALL riwayat for this siswa, grouped by jenis_pelanggaran
+        $riwayat = RiwayatPelanggaran::where('siswa_id', $siswaId)
+            ->with('jenisPelanggaran.frequencyRules')
+            ->get()
+            ->groupBy('jenis_pelanggaran_id');
+
+        $totalPoin = 0;
+
+        // For each jenis pelanggaran, calculate poin based on its rules
+        foreach ($riwayat as $jenisPelanggaranId => $records) {
+            $jenisPelanggaran = $records->first()?->jenisPelanggaran;
+            
+            if (!$jenisPelanggaran) continue;
+
+            if ($jenisPelanggaran->usesFrequencyRules()) {
+                // FREQUENCY-BASED: Evaluate rules for current frequency
+                $result = $this->evaluateFrequencyRules($siswaId, $jenisPelanggaran);
+                $totalPoin += $result['poin_ditambahkan'];
+            } else {
+                // LEGACY: Sum poin from all records (backward compatibility)
+                $totalPoin += $records->count() * $jenisPelanggaran->poin;
+            }
+        }
+
+        return $totalPoin;
     }
 
     /**

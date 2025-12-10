@@ -99,7 +99,9 @@
                                             </a>
                                             
                                             @php
-                                                $totalPoinSiswa = $r->siswa->riwayatPelanggaran->sum(fn($rp) => $rp->jenisPelanggaran->poin);
+                                                // FIXED: Use PelanggaranService for correct calculation
+                                                $pelanggaranService = app(\App\Services\Pelanggaran\PelanggaranService::class);
+                                                $totalPoinSiswa = $pelanggaranService->calculateTotalPoin($r->siswa_id);
                                                 $bgTotal = $totalPoinSiswa >= 100 ? 'bg-danger' : ($totalPoinSiswa >= 50 ? 'bg-warning' : 'bg-secondary');
                                             @endphp
                                             <span class="badge-poin-total {{ $bgTotal }}" title="Total Akumulasi Poin Siswa Ini">
@@ -125,9 +127,21 @@
 
                             <!-- 4. POIN -->
                             <td class="text-center">
-                                <span class="badge badge-danger px-3 py-1 shadow-sm" style="font-size: 0.85rem; border-radius: 15px;">
-                                    +{{ $r->jenisPelanggaran->poin }}
-                                </span>
+                                @php
+                                    $poinInfo = \App\Helpers\PoinDisplayHelper::getPoinForRiwayat($r);
+                                @endphp
+                                @if($poinInfo['matched'] && $poinInfo['poin'] > 0)
+                                    <span class="badge badge-danger px-3 py-1 shadow-sm" style="font-size: 0.85rem; border-radius: 15px;" title="{{ \App\Helpers\PoinDisplayHelper::getFrequencyText($r) }}">
+                                        +{{ $poinInfo['poin'] }}
+                                    </span>
+                                @else
+                                    <span class="badge badge-secondary px-3 py-1 shadow-sm" style="font-size: 0.85rem; border-radius: 15px;" title="{{ \App\Helpers\PoinDisplayHelper::getFrequencyText($r) }}">
+                                        +0
+                                    </span>
+                                @endif
+                                @if($poinInfo['frequency'])
+                                    <br><small class="text-muted" style="font-size: 0.7rem;">({{ $poinInfo['frequency'] }}×)</small>
+                                @endif
                             </td>
 
                             <!-- 5. PELAPOR -->
