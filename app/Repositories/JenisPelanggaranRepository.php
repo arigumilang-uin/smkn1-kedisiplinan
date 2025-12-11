@@ -231,4 +231,48 @@ class JenisPelanggaranRepository extends BaseRepository implements JenisPelangga
     {
         return $this->updateFrequencyStatus($id, false, false);
     }
+    
+    /**
+     * Get paginated jenis pelanggaran with optional search
+     * 
+     * EXACT LOGIC from JenisPelanggaranController::index() (lines 25-32)
+     * 
+     * @param string|null $searchTerm
+     * @param int $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function getPaginatedWithSearch(?string $searchTerm = null, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = $this->model->with('kategoriPelanggaran');
+        
+        // Search by nama_pelanggaran
+        if ($searchTerm) {
+            $query->where('nama_pelanggaran', 'like', '%' . $searchTerm . '%');
+        }
+        
+        return $query->orderBy('poin', 'asc')->paginate($perPage);
+    }
+    
+    /**
+     * Get all kategori pelanggaran
+     * 
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllKategori(): \Illuminate\Database\Eloquent\Collection
+    {
+        return \App\Models\KategoriPelanggaran::all();
+    }
+    
+    /**
+     * Check if jenis pelanggaran has riwayat records
+     * 
+     * EXACT LOGIC from JenisPelanggaranController::destroy() (line 115)
+     * 
+     * @param JenisPelanggaran $jenisPelanggaran
+     * @return bool
+     */
+    public function hasRiwayatRecords(JenisPelanggaran $jenisPelanggaran): bool
+    {
+        return $jenisPelanggaran->riwayatPelanggaran()->exists();
+    }
 }

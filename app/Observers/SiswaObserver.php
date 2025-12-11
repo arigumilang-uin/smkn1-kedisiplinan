@@ -8,6 +8,36 @@ use Illuminate\Support\Facades\DB;
 class SiswaObserver
 {
     /**
+     * Handle the Siswa "updated" event.
+     * 
+     * Trigger name sync for Wali Murid when wali_murid_user_id changes.
+     */
+    public function updated(Siswa $siswa): void
+    {
+        // If wali_murid_user_id changed, sync name for both old and new wali
+        if ($siswa->wasChanged('wali_murid_user_id')) {
+            $oldWaliId = $siswa->getOriginal('wali_murid_user_id');
+            $newWaliId = $siswa->wali_murid_user_id;
+            
+            // Sync old wali (if exists)
+            if ($oldWaliId) {
+                $oldWali = \App\Models\User::find($oldWaliId);
+                if ($oldWali) {
+                    app(\App\Observers\UserNameSyncObserver::class)->syncUserName($oldWali);
+                }
+            }
+            
+            // Sync new wali (if exists)
+            if ($newWaliId) {
+                $newWali = \App\Models\User::find($newWaliId);
+                if ($newWali) {
+                    app(\App\Observers\UserNameSyncObserver::class)->syncUserName($newWali);
+                }
+            }
+        }
+    }
+    
+    /**
      * Handle the Siswa "deleting" event.
      * (Fired when Siswa::delete() is called; includes soft-deletes.)
      * Cascade soft-delete ke relations: riwayat_pelanggaran, tindak_lanjut.

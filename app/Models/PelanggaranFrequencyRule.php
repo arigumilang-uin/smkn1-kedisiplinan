@@ -51,29 +51,38 @@ class PelanggaranFrequencyRule extends Model
     // =====================================================================
 
     /**
-     * Cek apakah frekuensi TEPAT SAMA dengan threshold rule ini.
+     * Cek apakah frekuensi match dengan rule ini.
      * 
-     * LOGIC (Updated):
-     * - Rule dengan frequency_max: Trigger di MAX (bukan di min-max range)
-     * - Rule tanpa frequency_max (exact): Trigger di MIN
+     * LOGIC (Updated 2025-12-11):
      * 
-     * Contoh:
-     * - Min=1, Max=3: Trigger HANYA di frek 3 (bukan 1,2,3)
-     * - Min=1, Max=NULL: Trigger di frek 1 (exact)
+     * Case 1: min=1, max=NULL → Trigger SETIAP kali (1, 2, 3, 4, ...)
+     * Case 2: min=1, max=1 → Trigger SETIAP kali (1, 2, 3, 4, ...)
+     * Case 3: min=3, max=3 → Trigger SETIAP KELIPATAN 3 (3, 6, 9, 12, ...)
+     * Case 4: min=1, max=3 → Trigger SEKALI di frekuensi 3 (escalation)
+     * Case 5: min=4, max=10 → Trigger SEKALI di frekuensi 10 (escalation)
      * 
      * Rationale:
-     * - Min-Max defines threshold RANGE
-     * - Poin applied ONLY when REACHING the threshold (MAX)
-     * - Before threshold: recorded but no poin added
+     * - max=NULL: Trigger setiap kali (unlimited)
+     * - min=max: Trigger setiap kelipatan (repeating)
+     * - min≠max: Trigger sekali di max (escalation threshold)
+     * 
+     * @param int $frequency Current frequency count
+     * @return bool True if rule matches this frequency
      */
     public function matchesFrequency(int $frequency): bool
     {
+        // Case 1: max=NULL → Trigger setiap kali >= min
         if ($this->frequency_max === null) {
-            // Exact match: trigger at MIN
-            return $frequency === $this->frequency_min;
+            return $frequency >= $this->frequency_min;
         }
-
-        // Range: trigger ONLY at MAX (threshold)
+        
+        // Case 2: min=max → Trigger setiap kelipatan min
+        if ($this->frequency_min === $this->frequency_max) {
+            // Check if frequency is multiple of min
+            return $frequency > 0 && ($frequency % $this->frequency_min) === 0;
+        }
+        
+        // Case 3: min≠max → Trigger SEKALI di max (escalation)
         return $frequency === $this->frequency_max;
     }
 

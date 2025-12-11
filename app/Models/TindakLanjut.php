@@ -31,7 +31,7 @@ class TindakLanjut extends Model
         
         return match($eventName) {
             'created' => "{$userName} membuat tindak lanjut untuk {$siswaName}",
-            'updated' => "{$userName} mengubah tindak lanjut {$siswaName} (Status: {$this->status})",
+            'updated' => "{$userName} mengubah tindak lanjut {$siswaName} (Status: {$this->status->value})",
             'deleted' => "{$userName} menghapus tindak lanjut {$siswaName}",
             default => parent::getActivityDescription($eventName),
         };

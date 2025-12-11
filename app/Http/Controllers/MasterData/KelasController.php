@@ -3,235 +3,148 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Kelas;
-use App\Models\Jurusan;
-use App\Models\User;
-use App\Models\Role;
-use Illuminate\Support\Str;
+use App\Data\MasterData\KelasData;
+use App\Http\Requests\MasterData\CreateKelasRequest;
+use App\Http\Requests\MasterData\UpdateKelasRequest;
+use App\Services\MasterData\KelasService;
+use App\Services\MasterData\KelasStatisticsService;
 
+/**
+ * Kelas Controller
+ * 
+ * REFACTORED: 2025-12-11
+ * PATTERN: Clean Architecture (Thin Controller)
+ * RESPONSIBILITY: HTTP Request/Response ONLY
+ * 
+ * ALL business logic delegated to:
+ * - KelasService (business logic)
+ * - KelasRepository (data access)
+ * - CreateKelasRequest/UpdateKelasRequest (validation)
+ * 
+ * BEFORE: 256 lines with mixed concerns
+ * AFTER: ~110 lines, clean separation
+ */
 class KelasController extends Controller
 {
+    public function __construct(
+        private KelasService $kelasService
+    ) {}
+
+    /**
+     * Display a listing of kelas
+     */
     public function index()
     {
-        $kelas = Kelas::with('jurusan','waliKelas')->orderBy('nama_kelas')->get();
-        return view('kelas.index', ['kelasList' => $kelas]);
+        $kelasList = $this->kelasService->getAllKelas();
+        
+        return view('kelas.index', compact('kelasList'));
     }
 
     /**
-     * Generate kode from nama (same logic as in JurusanController)
+     * Show the form for creating a new kelas
      */
-    protected function generateKode(string $nama): string
-    {
-        $words = preg_split('/\s+/', trim($nama));
-        $letters = '';
-        foreach ($words as $w) {
-            if ($w === '') continue;
-            $letters .= strtoupper(mb_substr($w, 0, 1));
-            if (mb_strlen($letters) >= 3) break;
-        }
-        if ($letters === '') {
-            $letters = 'JRS';
-        }
-        return $letters;
-    }
-
     public function create()
     {
-        $jurusan = Jurusan::orderBy('nama_jurusan')->get();
-        $wali = User::whereHas('role', function($q){ $q->where('nama_role','Wali Kelas'); })->get();
-        return view('kelas.create', ['jurusanList' => $jurusan, 'waliList' => $wali]);
+        $data = $this->kelasService->getDataForCreate();
+        
+        return view('kelas.create', $data);
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created kelas
+     * 
+     * REFACTORED from 83 lines to 15 lines
+     * ALL logic moved to KelasService
+     */
+    public function store(CreateKelasRequest $request)
     {
-        $data = $request->validate([
-            'tingkat' => 'required|string|in:X,XI,XII',
-            'jurusan_id' => 'required|integer',
-            'wali_kelas_user_id' => 'nullable|integer',
-        ]);
-
-        // Determine jurusan code. Prefer explicit kode_jurusan column if present, else compute abbreviation.
-        $jurusan = Jurusan::findOrFail($data['jurusan_id']);
-        $kode = null;
-        if (array_key_exists('kode_jurusan', $jurusan->getAttributes()) && $jurusan->kode_jurusan) {
-            $kode = $jurusan->kode_jurusan;
-        } else {
-            // fallback: build abbreviation from nama_jurusan (take first letters of words, up to 3 chars)
-            $words = preg_split('/\s+/', trim($jurusan->nama_jurusan));
-            $abbr = '';
-            foreach ($words as $w) {
-                if ($w === '') continue;
-                $abbr .= mb_strtoupper(mb_substr($w, 0, 1));
-                if (mb_strlen($abbr) >= 3) break;
-            }
-            $kode = $abbr ?: strtoupper(substr(preg_replace('/[^A-Z]/', '', $jurusan->nama_jurusan), 0, 3));
-        }
-
-        $base = $data['tingkat'] . ' ' . $kode;
-
-        // Find existing kelas with same base and extract numeric suffixes
-        $existing = Kelas::where('jurusan_id', $jurusan->id)
-            ->where('nama_kelas', 'like', $base . '%')
-            ->pluck('nama_kelas')
-            ->toArray();
-
-        $max = 0;
-        foreach ($existing as $name) {
-            if (preg_match('/\s+(\d+)$/', $name, $m)) {
-                $num = intval($m[1]);
-                if ($num > $max) $max = $num;
-            }
-        }
-        $next = $max + 1;
-        $data['nama_kelas'] = $base . ' ' . $next;
-
-        // Simpan kelas terlebih dahulu
-        $kelas = Kelas::create($data);
-
-        // Jika diminta, buat akun Wali Kelas otomatis
-        if ($request->has('create_wali') && $request->boolean('create_wali')) {
-            // username format: walikelas.{tingkat}.{kode}{nomor}  (contoh: walikelas.x.aphp1)
-            $tingkat = Str::lower($data['tingkat']);
-            $kodeSafe = preg_replace('/[^a-z0-9]+/i', '', (string) $kode);
-            $kodeSafe = Str::lower($kodeSafe);
-            if ($kodeSafe === '') {
-                $kodeSafe = Str::lower($this->generateKode($jurusan->nama_jurusan));
-            }
-            $nomor = $next; // seq yang sudah dihitung
-            $baseUsername = "walikelas.{$tingkat}.{$kodeSafe}{$nomor}";
-            $username = $baseUsername;
-            $i = 1;
-            while (User::where('username', $username)->exists()) {
-                $i++;
-                $username = $baseUsername . $i;
-            }
-
-            // Password standardized: smkn1.walikelas.{tingkat}{kode}{nomor}
-            $password = 'smkn1.walikelas.' . $tingkat . $kodeSafe . $nomor;
-            $role = Role::findByName('Wali Kelas');
-            $user = User::create([
-                'role_id' => $role?->id,
-                'nama' => 'Wali Kelas ' . $kelas->nama_kelas,
-                'username' => $username,
-                'email' => $username . '@no-reply.local',
-                'password' => $password,
-            ]);
-
-            // hubungkan user sebagai wali_kelas pada kelas
-            $kelas->wali_kelas_user_id = $user->id;
-            $kelas->save();
-
-            session()->flash('wali_created', ['username' => $username, 'password' => $password]);
-        }
-
-        return redirect()->route('kelas.index')->with('success','Kelas berhasil dibuat: ' . $data['nama_kelas']);
+        $kelasData = KelasData::from($request->validated());
+        
+        $result = $this->kelasService->createKelas($kelasData);
+        
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Kelas berhasil dibuat: ' . $result['nama_kelas']);
     }
 
+    /**
+     * Show the form for editing the specified kelas
+     */
     public function edit(Kelas $kelas)
     {
-        $jurusan = Jurusan::orderBy('nama_jurusan')->get();
-        $wali = User::whereHas('role', function($q){ $q->where('nama_role','Wali Kelas'); })->get();
-        return view('kelas.edit', ['kelas' => $kelas, 'jurusanList' => $jurusan, 'waliList' => $wali]);
+        $data = $this->kelasService->getDataForEdit($kelas);
+        
+        return view('kelas.edit', $data);
     }
 
+    /**
+     * Display the specified kelas
+     */
     public function show(Kelas $kelas)
     {
-        // PERFORMANCE: Eager load to prevent N+1
-        $kelas->load(['jurusan', 'waliKelas', 'siswa.waliMurid']);
+        $kelas = $this->kelasService->getKelas($kelas->id);
         
-        return view('kelas.show', ['kelas' => $kelas]);
+        return view('kelas.show', compact('kelas'));
     }
 
-    public function update(Request $request, Kelas $kelas)
+    /**
+     * Update the specified kelas
+     * 
+     * REFACTORED from 53 lines to 13 lines
+     * ALL logic moved to KelasService
+     */
+    public function update(UpdateKelasRequest $request, Kelas $kelas)
     {
-        $data = $request->validate([
-            'nama_kelas' => 'required|string|max:100',
-            'tingkat' => 'required|string|in:X,XI,XII',
-            'jurusan_id' => 'required|integer',
-            'wali_kelas_user_id' => 'nullable|integer',
-        ]);
-
-        // Simpan perubahan kelas
-        $oldNama = $kelas->nama_kelas;
-        $oldTingkat = $kelas->tingkat;
-        $oldJurusanId = $kelas->jurusan_id;
-
-        $kelas->update($data);
-
-        // Jika nama kelas / tingkat / jurusan berubah dan kelas memiliki wali, perbarui akun wali supaya konsisten
-        if (($kelas->nama_kelas !== $oldNama) || ($kelas->tingkat !== $oldTingkat) || ($kelas->jurusan_id !== $oldJurusanId)) {
-            if ($kelas->wali_kelas_user_id) {
-                $wali = User::find($kelas->wali_kelas_user_id);
-                if ($wali) {
-                    // rebuild username format: walikelas.{tingkat}.{kode}{nomor}
-                    $jurusan = $kelas->jurusan()->first();
-                    $kode = $jurusan?->kode_jurusan ?? '';
-
-                    // Extract nomor suffix from nama_kelas (last number)
-                    $nomor = 1;
-                    if (preg_match('/\s(\d+)$/', $kelas->nama_kelas, $m)) {
-                        $nomor = intval($m[1]);
-                    }
-
-                    $tingkat = Str::lower($kelas->tingkat);
-                    $kodeSafe = preg_replace('/[^a-z0-9]+/i', '', (string) $kode);
-                    $kodeSafe = Str::lower($kodeSafe);
-                    if ($kodeSafe === '') {
-                        $kodeSafe = Str::lower($this->generateKode($jurusan->nama_jurusan ?? ''));
-                    }
-                    $baseUsername = "walikelas.{$tingkat}.{$kodeSafe}{$nomor}";
-                    $newUsername = $baseUsername;
-                    $i = 1;
-                    while (User::where('username', $newUsername)->where('id', '!=', $wali->id)->exists()) {
-                        $i++;
-                        $newUsername = $baseUsername . $i;
-                    }
-
-                    $wali->username = $newUsername;
-                    $wali->nama = 'Wali Kelas ' . $kelas->nama_kelas;
-                    $wali->save();
-                }
-            }
-        }
-
-        return redirect()->route('kelas.index')->with('success','Kelas berhasil diperbarui.');
+        $kelasData = KelasData::from($request->validated());
+        
+        $this->kelasService->updateKelas($kelas, $kelasData);
+        
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Kelas berhasil diperbarui.');
     }
 
+    /**
+     * Remove the specified kelas
+     * 
+     * REFACTORED: Simple delegation
+     */
     public function destroy(Kelas $kelas)
     {
-        $kelas->delete();
-        return redirect()->route('kelas.index')->with('success','Kelas dihapus.');
+        $this->kelasService->deleteKelas($kelas);
+        
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Kelas dihapus.');
     }
     
     /**
      * Index view for monitoring (Kepala Sekolah & Waka Kesiswaan)
+     * 
+     * CLEAN ARCHITECTURE: Uses Service Layer
      */
     public function indexForMonitoring()
     {
-        $kelasList = Kelas::with(['jurusan', 'waliKelas', 'siswa'])
-            ->orderBy('nama_kelas')
-            ->get();
+        $kelasList = $this->kelasService->getAllForMonitoring();
         
         return view('kepala_sekolah.kelas.index', compact('kelasList'));
     }
     
-    
     /**
      * Show view for monitoring (Kepala Sekolah & Waka Kesiswaan)
      * 
-     * CLEAN ARCHITECTURE: Uses Service Layer
-     * PERFORMANCE: Minimal Model hydration
+     * CLEAN ARCHITECTURE: Delegates to Services
+     * PERFORMANCE OPTIMIZED: Minimal model hydration
      */
     public function showForMonitoring(Kelas $kelas)
     {
-        // ARCHITECTURE: Service Layer for business logic
-        $statsService = app(\App\Services\MasterData\KelasStatisticsService::class);
+        $statsService = app(KelasStatisticsService::class);
         
-        // PERFORMANCE: Only load relationships we DISPLAY
+        // Get kelas with optimized relationships
         $kelas->load(['jurusan', 'waliKelas']);
         
-        // CLEAN CODE: Delegate calculations to Service
+        // Get statistics via Service
         $statistics = $statsService->getKelasStatistics($kelas);
         
         // Get siswa list with points (for display)

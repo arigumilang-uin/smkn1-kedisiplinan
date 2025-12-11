@@ -168,8 +168,11 @@ class RiwayatPelanggaranController extends Controller
             }
         }
 
+        // FIXED: Redirect back to catat pelanggaran form instead of riwayat.index
+        // Reason: Not all roles have access to riwayat.index (Guru doesn't)
+        // Better UX: Return to form so user can record more violations
         return redirect()
-            ->route('riwayat.index')
+            ->route('riwayat.create')
             ->with('success', "Berhasil mencatat {$totalRecorded} pelanggaran.");
     }
 

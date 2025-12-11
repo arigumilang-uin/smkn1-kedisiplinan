@@ -82,18 +82,13 @@ class PelanggaranRulesEngine
             } else {
                 // Fallback: immediate accumulation (backward compatibility)
                 $totalPoinBaru += $pelanggaran->poin;
-
-                // Untuk pelanggaran berat, tentukan surat berdasarkan poin
-                if ($pelanggaran->poin >= 100) {
-                    // Pelanggaran berat langsung trigger surat
-                    if ($pelanggaran->poin >= 200) {
-                        $suratTypes[] = self::SURAT_3;
-                    } elseif ($pelanggaran->poin > 500) {
-                        $suratTypes[] = self::SURAT_4;
-                    } else {
-                        $suratTypes[] = self::SURAT_2;
-                    }
-                }
+                
+                // REMOVED: Auto-trigger surat berdasarkan poin
+                // REASON: Surat HANYA trigger dari frequency rules dengan trigger_surat=true
+                // Pembinaan Internal (akumulasi poin) HANYA untuk rekomendasi, TIDAK trigger surat
+                
+                // Sanksi description for fallback
+                $sanksiList[] = $pelanggaran->nama_pelanggaran;
             }
         }
 
@@ -319,9 +314,20 @@ class PelanggaranRulesEngine
             if (!$jenisPelanggaran) continue;
 
             if ($jenisPelanggaran->usesFrequencyRules()) {
-                // FREQUENCY-BASED: Evaluate rules for current frequency
-                $result = $this->evaluateFrequencyRules($siswaId, $jenisPelanggaran);
-                $totalPoin += $result['poin_ditambahkan'];
+                // FREQUENCY-BASED: Iterate through ALL frequencies and sum matched poin
+                // FIX: Previous logic only checked current frequency, missing cumulative poin
+                $currentFrequency = $records->count();
+                $rules = $jenisPelanggaran->frequencyRules;
+                
+                // Iterate from frequency 1 to current
+                for ($freq = 1; $freq <= $currentFrequency; $freq++) {
+                    // Check each rule if it matches this frequency
+                    foreach ($rules as $rule) {
+                        if ($rule->matchesFrequency($freq)) {
+                            $totalPoin += $rule->poin;
+                        }
+                    }
+                }
             } else {
                 // LEGACY: Sum poin from all records (backward compatibility)
                 $totalPoin += $records->count() * $jenisPelanggaran->poin;
@@ -476,36 +482,64 @@ class PelanggaranRulesEngine
             ->first();
 
         if (!$kasusAktif) {
-            // Buat TindakLanjut baru
-            $tl = TindakLanjut::create([
-                'siswa_id' => $siswaId,
-                'pemicu' => $pemicu,
-                'sanksi_deskripsi' => $sanksi,
-                'status' => $status,
-            ]);
+            try {
+                // Buat TindakLanjut baru
+                $tl = TindakLanjut::create([
+                    'siswa_id' => $siswaId,
+                    'pemicu' => $pemicu,
+                    'sanksi_deskripsi' => $sanksi,
+                    'status' => $status,
+                ]);
 
-            // Build pembina data menggunakan service
-            $siswa = Siswa::with(['kelas.waliKelas', 'kelas.jurusan.kaprodi'])->find($siswaId);
-            $suratService = new SuratPanggilanService();
-            $pembinaData = $suratService->buildPembinaData($pembinaRoles, $siswa);
-            $meetingSchedule = $suratService->setDefaultMeetingSchedule();
+                // Build pembina data menggunakan service
+                $siswa = Siswa::with(['kelas.waliKelas', 'kelas.jurusan.kaprodi'])->find($siswaId);
+                
+                if (!$siswa) {
+                    \Log::error("Siswa not found for TindakLanjut", ['siswa_id' => $siswaId]);
+                    throw new \Exception("Siswa dengan ID {$siswaId} tidak ditemukan");
+                }
+                
+                $suratService = new SuratPanggilanService();
+                $pembinaData = $suratService->buildPembinaData($pembinaRoles, $siswa);
+                
+                if (empty($pembinaData)) {
+                    \Log::warning("Pembina data is empty", [
+                        'siswa_id' => $siswaId,
+                        'pembina_roles' => $pembinaRoles
+                    ]);
+                }
+                
+                $meetingSchedule = $suratService->setDefaultMeetingSchedule();
 
-            // Buat SuratPanggilan dengan pembina data
-            $tl->suratPanggilan()->create([
-                'nomor_surat' => $suratService->generateNomorSurat(),
-                'tipe_surat' => $tipeSurat,
-                'tanggal_surat' => now(),
-                'pembina_data' => $pembinaData,
-                'tanggal_pertemuan' => $meetingSchedule['tanggal_pertemuan'],
-                'waktu_pertemuan' => $meetingSchedule['waktu_pertemuan'],
-                'keperluan' => $pemicu,
-            ]);
+                // Buat SuratPanggilan dengan pembina data
+                $tl->suratPanggilan()->create([
+                    'nomor_surat' => $suratService->generateNomorSurat(),
+                    'tipe_surat' => $tipeSurat,
+                    'tanggal_surat' => now(),
+                    'pembina_data' => $pembinaData,
+                    'tanggal_pertemuan' => $meetingSchedule['tanggal_pertemuan'],
+                    'waktu_pertemuan' => $meetingSchedule['waktu_pertemuan'],
+                    'keperluan' => $pemicu,
+                ]);
 
-            // Trigger notifikasi jika butuh approval (Surat 3 & 4)
-            $this->notificationService->notifyKasusButuhApproval($tl);
-            
-            // Trigger notifikasi awareness untuk Waka (Surat 2)
-            $this->notificationService->notifyWakaForSurat2($tl);
+                // Trigger notifikasi jika butuh approval (Surat 3 & 4)
+                $this->notificationService->notifyKasusButuhApproval($tl);
+                
+                // Trigger notifikasi awareness untuk Waka (Surat 2)
+                $this->notificationService->notifyWakaForSurat2($tl);
+                
+            } catch (\Exception $e) {
+                \Log::error("Error creating TindakLanjut + SuratPanggilan", [
+                    'siswa_id' => $siswaId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'tipe_surat' => $tipeSurat,
+                    'pembina_roles' => $pembinaRoles
+                ]);
+                
+                // Re-throw untuk memastikan transaction rollback
+                throw $e;
+            }
         } else {
             // Update jika eskalasi diperlukan
             $this->eskalasiBilaPerluan($kasusAktif, $tipeSurat, $pemicu, $status, $pembinaRoles);

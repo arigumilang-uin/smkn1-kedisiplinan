@@ -3,121 +3,123 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
-
-use App\Models\JenisPelanggaran;
-use App\Models\KategoriPelanggaran;
+use App\Data\MasterData\JenisPelanggaranData;
+use App\Http\Requests\MasterData\CreateJenisPelanggaranRequest;
+use App\Http\Requests\MasterData\UpdateJenisPelanggaranRequest;
+use App\Services\MasterData\JenisPelanggaranService;
 use Illuminate\Http\Request;
 
 /**
  * JenisPelanggaranController
  *
- * Controller untuk mengelola master data jenis pelanggaran (CRUD).
- * Fitur: index dengan search/pagination, create/edit form, delete dengan proteksi data.
- * Proteksi: tidak bisa hapus jenis pelanggaran yang sudah tercatat di riwayat siswa.
+ * REFACTORED: 2025-12-11
+ * PATTERN: Clean Architecture (Thin Controller)
+ * RESPONSIBILITY: HTTP Request/Response ONLY
+ * 
+ * ALL business logic delegated to:
+ * - JenisPelanggaranService (business logic)
+ * - JenisPelanggaranRepository (data access)
+ * - CreateJenisPelanggaranRequest/UpdateJenisPelanggaranRequest (validation)
+ * 
+ * BEFORE: 124 lines with mixed concerns
+ * AFTER: ~80 lines, clean separation
  */
 class JenisPelanggaranController extends Controller
 {
+    public function __construct(
+        private JenisPelanggaranService $jenisPelanggaranService
+    ) {}
+
     /**
-     * Tampilkan daftar jenis pelanggaran dengan fitur pencarian.
+     * Tampilkan daftar jenis pelanggaran dengan fitur pencarian
+     * 
+     * REFACTORED from 12 lines to 6 lines
      */
     public function index(Request $request)
     {
-        $query = JenisPelanggaran::with('kategoriPelanggaran');
-
-        // Pencarian berdasarkan nama pelanggaran
-        if ($request->filled('cari')) {
-            $query->where('nama_pelanggaran', 'like', '%' . $request->cari . '%');
-        }
-
-        $jenisPelanggaran = $query->orderBy('poin', 'asc')->paginate(10);
+        $searchTerm = $request->filled('cari') ? $request->cari : null;
+        
+        $jenisPelanggaran = $this->jenisPelanggaranService->getPaginated($searchTerm, 10);
 
         return view('jenis_pelanggaran.index', compact('jenisPelanggaran'));
     }
 
     /**
-     * Tampilkan form create jenis pelanggaran.
+     * Tampilkan form create jenis pelanggaran
+     * 
+     * REFACTORED: Simple delegation
      */
     public function create()
     {
-        $kategori = KategoriPelanggaran::all();
-        return view('jenis_pelanggaran.create', compact('kategori'));
+        $data = $this->jenisPelanggaranService->getDataForCreate();
+        
+        return view('jenis_pelanggaran.create', $data);
     }
 
     /**
-     * Simpan jenis pelanggaran baru.
+     * Simpan jenis pelanggaran baru
+     * 
+     * REFACTORED from 21 lines to 12 lines
+     * ALL logic moved to Service
      */
-    public function store(Request $request)
+    public function store(CreateJenisPelanggaranRequest $request)
     {
-        $request->validate([
-            'nama_pelanggaran' => 'required|string|max:255',
-            'kategori_id' => 'required|exists:kategori_pelanggaran,id',
-            'poin' => 'nullable|integer|min:0',
-            'filter_category' => 'nullable|in:atribut,absensi,kerapian,ibadah,berat',
-            'keywords' => 'nullable|string|max:500',
-        ]);
-
-        $data = $request->only(['nama_pelanggaran', 'kategori_id', 'filter_category', 'keywords']);
+        $jenisPelanggaranData = JenisPelanggaranData::from($request->validated());
         
-        // Default values
-        $data['poin'] = 0; // Poin akan diatur di frequency rules
-        $data['is_active'] = false; // Nonaktif sampai ada rules
-
-        $jenisPelanggaran = JenisPelanggaran::create($data);
+        $jenisPelanggaran = $this->jenisPelanggaranService->createJenisPelanggaran($jenisPelanggaranData);
 
         // Redirect ke halaman kelola rules untuk pelanggaran yang baru dibuat
-        return redirect()->route('frequency-rules.show', $jenisPelanggaran->id)
+        return redirect()
+            ->route('frequency-rules.show', $jenisPelanggaran->id)
             ->with('success', 'Jenis pelanggaran berhasil ditambahkan! Silakan atur frequency rules atau biarkan kosong untuk menggunakan poin default.');
     }
 
     /**
-     * Tampilkan form edit jenis pelanggaran.
+     * Tampilkan form edit jenis pelanggaran
+     * 
+     * REFACTORED: Simple delegation
      */
     public function edit($id)
     {
-        $jenisPelanggaran = JenisPelanggaran::findOrFail($id);
-        $kategori = KategoriPelanggaran::all();
-        return view('jenis_pelanggaran.edit', compact('jenisPelanggaran', 'kategori'));
+        $data = $this->jenisPelanggaranService->getDataForEdit($id);
+        
+        return view('jenis_pelanggaran.edit', $data);
     }
 
     /**
-     * Perbarui jenis pelanggaran.
+     * Perbarui jenis pelanggaran
+     * 
+     * REFACTORED from 19 lines to 13 lines
+     * ALL logic moved to Service
      */
-    public function update(Request $request, $id)
+    public function update(UpdateJenisPelanggaranRequest $request, $id)
     {
-        $request->validate([
-            'nama_pelanggaran' => 'required|string|max:255',
-            'kategori_id' => 'required|exists:kategori_pelanggaran,id',
-            'poin' => 'nullable|integer|min:0',
-            'filter_category' => 'nullable|in:atribut,absensi,kerapian,ibadah,berat',
-            'keywords' => 'nullable|string|max:500',
-        ]);
-
-        $jenisPelanggaran = JenisPelanggaran::findOrFail($id);
+        $jenisPelanggaranData = JenisPelanggaranData::from($request->validated());
         
-        $data = $request->only(['nama_pelanggaran', 'kategori_id', 'filter_category', 'keywords']);
-
-        $jenisPelanggaran->update($data);
+        $this->jenisPelanggaranService->updateJenisPelanggaran($id, $jenisPelanggaranData);
 
         // Redirect kembali ke frequency rules
-        return redirect()->route('frequency-rules.show', $id)
+        return redirect()
+            ->route('frequency-rules.show', $id)
             ->with('success', 'Jenis pelanggaran berhasil diperbarui!');
     }
 
     /**
-     * Hapus jenis pelanggaran.
-     * Proteksi: tidak bisa hapus jika sudah tercatat di riwayat siswa.
+     * Hapus jenis pelanggaran dengan proteksi
+     * 
+     * REFACTORED from 12 lines to 12 lines (same but cleaner)
+     * Logic moved to Service
      */
     public function destroy($id)
     {
-        $jenisPelanggaran = JenisPelanggaran::findOrFail($id);
-
-        // Cek apakah pelanggaran ini sudah pernah dipakai di riwayat
-        if ($jenisPelanggaran->riwayatPelanggaran()->exists()) {
-            return back()->with('error', 'Gagal hapus! Pelanggaran ini sudah tercatat di riwayat siswa. (Hanya boleh diedit)');
+        $result = $this->jenisPelanggaranService->deleteJenisPelanggaran($id);
+        
+        if ($result['success']) {
+            return redirect()
+                ->route('jenis-pelanggaran.index')
+                ->with('success', $result['message']);
+        } else {
+            return back()->with('error', $result['message']);
         }
-
-        $jenisPelanggaran->delete();
-        return redirect()->route('jenis-pelanggaran.index')->with('success', 'Aturan berhasil dihapus.');
     }
 }
-

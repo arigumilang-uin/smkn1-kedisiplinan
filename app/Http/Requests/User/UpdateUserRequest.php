@@ -23,6 +23,10 @@ class UpdateUserRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     * 
+     * UPDATED 2025-12-11 (CORRECTED):
+     * - nama: EDITABLE by operator (for manual override of auto-sync)
+     * - username: EDITABLE (user's login identifier)
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
@@ -32,7 +36,7 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'role_id' => ['sometimes', 'exists:roles,id'],
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255'], // Operator CAN edit
             'username' => [
                 'required',
                 'string',

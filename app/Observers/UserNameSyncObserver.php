@@ -92,9 +92,12 @@ class UserNameSyncObserver
     /**
      * Sync user name based on role and assignment.
      * 
-     * EXCLUSION: Developer role is NEVER auto-synced
-     * Developer can be assigned to multiple things for testing,
-     * so their name should stay as-is.
+     * RULES (Updated 2025-12-11):
+     * - Kaprodi → "Kaprodi [Nama Jurusan]"
+     * - Wali Kelas → "Wali Kelas [Nama Kelas]"
+     * - Wali Murid → "Wali dari [Nama Anak Pertama]" (if has siswa)
+     * - Guru/Staff → Generic role name ("Guru", "Operator Sekolah", etc.)
+     * - Developer → SKIP (never auto-synced for testing flexibility)
      * 
      * @param User $user
      * @return void
@@ -120,6 +123,9 @@ class UserNameSyncObserver
                 $jurusan = Jurusan::where('kaprodi_user_id', $user->id)->first();
                 if ($jurusan) {
                     $newName = "Kaprodi {$jurusan->nama_jurusan}";
+                } else {
+                    // Not assigned yet
+                    $newName = "Kaprodi";
                 }
                 break;
                 
@@ -128,15 +134,30 @@ class UserNameSyncObserver
                 $kelas = Kelas::where('wali_kelas_user_id', $user->id)->first();
                 if ($kelas) {
                     $newName = "Wali Kelas {$kelas->nama_kelas}";
+                } else {
+                    // Not assigned yet
+                    $newName = "Wali Kelas";
+                }
+                break;
+                
+            case 'Wali Murid':
+                // Find first siswa where this user is wali murid
+                $siswa = \App\Models\Siswa::where('wali_murid_user_id', $user->id)
+                    ->orderBy('id')
+                    ->first();
+                
+                if ($siswa) {
+                    $newName = "Wali dari {$siswa->nama_siswa}";
+                } else {
+                    // Not assigned yet
+                    $newName = "Wali Murid";
                 }
                 break;
                 
             default:
-                // For other roles, keep original or use role name
-                // Only update if name follows pattern (starts with role name)
-                if (str_starts_with($user->nama, 'Kaprodi ') || str_starts_with($user->nama, 'Wali Kelas ')) {
-                    $newName = $role->nama_role;
-                }
+                // For other roles: Use role name directly
+                // Examples: "Operator Sekolah", "Kepala Sekolah", "Waka Kesiswaan", "Guru"
+                $newName = $role->nama_role;
                 break;
         }
         

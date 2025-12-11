@@ -212,26 +212,43 @@ class UserController extends Controller
 
     /**
      * Update own profile.
+     * 
+     * NEW LOGIC (Updated 2025-12-11):
+     * - nama: AUTO-GENERATED (cannot be edited by user)
+     * - username: EDITABLE (user's login identifier)
+     * - email, phone: EDITABLE
      */
     public function updateProfile(Request $request): RedirectResponse
     {
+        $userId = auth()->id();
+        
         $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
+            'username' => [
+                'required',
+                'string',
+                'max:50',
+                \Illuminate\Validation\Rule::unique('users', 'username')->ignore($userId),
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('users', 'email')->ignore($userId),
+            ],
             'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
         $userData = UserData::from([
-            'id' => auth()->id(),
-            'nama' => $request->nama,
+            'id' => $userId,
+            'nama' => auth()->user()->nama, // KEEP EXISTING (auto-generated)
+            'username' => $request->username, // ALLOW EDIT
             'email' => $request->email,
             'phone' => $request->phone,
-            'username' => auth()->user()->username, // Keep existing
-            'role_id' => auth()->user()->role_id, // Keep existing
-            'is_active' => auth()->user()->is_active, // Keep existing
+            'role_id' => auth()->user()->role_id,
+            'is_active' => auth()->user()->is_active,
         ]);
 
-        $this->userService->updateUser(auth()->id(), $userData);
+        $this->userService->updateUser($userId, $userData);
 
         return redirect()
             ->route('profile.show')

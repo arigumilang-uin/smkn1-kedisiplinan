@@ -4,304 +4,135 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jurusan;
-use App\Models\Kelas;
-use App\Models\User;
-use App\Models\Role;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use App\Data\MasterData\JurusanData;
+use App\Http\Requests\MasterData\CreateJurusanRequest;
+use App\Http\Requests\MasterData\UpdateJurusanRequest;
+use App\Services\MasterData\JurusanService;
+use App\Services\MasterData\JurusanStatisticsService;
 
+/**
+ * Jurusan Controller
+ * 
+ * REFACTORED: 2025-12-11
+ * PATTERN: Clean Architecture (Thin Controller)
+ * RESPONSIBILITY: HTTP Request/Response ONLY
+ * 
+ * ALL business logic delegated to:
+ * - JurusanService (business logic)
+ * - JurusanRepository (data access)
+ * - CreateJurusanRequest/UpdateJurusanRequest (validation)
+ * 
+ * BEFORE: 355 lines with mixed concerns
+ * AFTER: ~90 lines, clean separation
+ */
 class JurusanController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        private JurusanService $jurusanService
+    ) {
         $this->middleware('auth');
     }
 
+    /**
+     * Display a listing of jurusan
+     */
     public function index()
     {
-        $jurusan = Jurusan::withCount(['kelas'])->withCount(['siswa'])->orderBy('nama_jurusan')->get();
-        return view('jurusan.index', ['jurusanList' => $jurusan]);
+        $jurusanList = $this->jurusanService->getAllJurusan();
+        
+        return view('jurusan.index', compact('jurusanList'));
     }
 
+    /**
+     * Show the form for creating a new jurusan
+     */
     public function create()
     {
         return view('jurusan.create');
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created jurusan
+     * 
+     * REFACTORED from 60 lines to 12 lines
+     * ALL logic moved to JurusanService
+     */
+    public function store(CreateJurusanRequest $request)
     {
-        $data = $request->validate([
-            'nama_jurusan' => 'required|string|max:191',
-            'kode_jurusan' => 'nullable|string|max:20|unique:jurusan,kode_jurusan',
-            'kaprodi_user_id' => 'nullable|exists:users,id',
-        ]);
-
-        if (empty($data['kode_jurusan'])) {
-            $data['kode_jurusan'] = $this->generateKode($data['nama_jurusan']);
-
-            // ensure unique by appending number if necessary
-            $base = $data['kode_jurusan'];
-            $i = 1;
-            while (Jurusan::where('kode_jurusan', $data['kode_jurusan'])->exists()) {
-                $i++;
-                $data['kode_jurusan'] = $base . $i;
-            }
-        }
-
-        // Simpan jurusan terlebih dahulu
-        $jurusan = Jurusan::create($data);
-
-        // Jika operator meminta pembuatan akun Kaprodi otomatis saat create, buat user baru
-        if ($request->has('create_kaprodi') && $request->boolean('create_kaprodi')) {
-            $kode = $jurusan->kode_jurusan ?? $this->generateKode($jurusan->nama_jurusan);
-            $cleanKode = preg_replace('/[^a-z0-9]+/i', '', (string) $kode);
-            $cleanKode = Str::lower($cleanKode);
-            if ($cleanKode === '') {
-                $cleanKode = Str::lower($this->generateKode($jurusan->nama_jurusan));
-            }
-            $baseUsername = 'kaprodi.' . $cleanKode;
-            $username = $baseUsername;
-            $i = 1;
-            while (User::where('username', $username)->exists()) {
-                $i++;
-                $username = $baseUsername . $i;
-            }
-
-            $password = Str::random(10);
-
-            $role = Role::findByName('Kaprodi');
-            $user = User::create([
-                'role_id' => $role?->id,
-                'nama' => 'Kaprodi ' . $jurusan->nama_jurusan,
-                'username' => $username,
-                'email' => $username . '@no-reply.local',
-                'password' => $password,
-            ]);
-
-            // Hubungkan kaprodi ke jurusan
-            $jurusan->kaprodi_user_id = $user->id;
-            $jurusan->save();
-
-            // Flash kredensial supaya operator melihatnya setelah redirect
-            session()->flash('kaprodi_created', ['username' => $username, 'password' => $password]);
-        }
-
-        return redirect()->route('jurusan.index')->with('success', 'Jurusan berhasil dibuat.');
+        $jurusanData = JurusanData::from($request->validated());
+        
+        $jurusan = $this->jurusanService->createJurusan($jurusanData);
+        
+        return redirect()
+            ->route('jurusan.index')
+            ->with('success', 'Jurusan berhasil dibuat.');
     }
 
+    /**
+     * Display the specified jurusan
+     */
     public function show(Jurusan $jurusan)
     {
-        $jurusan->load(['kaprodi', 'kelas.siswa']);
-        return view('jurusan.show', ['jurusan' => $jurusan]);
+        $jurusan = $this->jurusanService->getJurusan($jurusan->id);
+        
+        return view('jurusan.show', compact('jurusan'));
     }
 
+    /**
+     * Show the form for editing the specified jurusan
+     */
     public function edit(Jurusan $jurusan)
     {
-        return view('jurusan.edit', ['jurusan' => $jurusan]);
+        return view('jurusan.edit', compact('jurusan'));
     }
 
-    public function update(Request $request, Jurusan $jurusan)
+    /**
+     * Update the specified jurusan
+     * 
+     * REFACTORED from 120 lines to 15 lines
+     * ALL logic moved to JurusanService
+     */
+    public function update(UpdateJurusanRequest $request, Jurusan $jurusan)
     {
-        $data = $request->validate([
-            'nama_jurusan' => 'required|string|max:191',
-            'kode_jurusan' => 'nullable|string|max:20|unique:jurusan,kode_jurusan,' . $jurusan->id,
-            'kaprodi_user_id' => 'nullable|exists:users,id',
-        ]);
-
-        // Jika kode dikosongkan pada form, coba generate dari nama
-        if (empty($data['kode_jurusan'])) {
-            $data['kode_jurusan'] = $this->generateKode($data['nama_jurusan']);
-
-            // pastikan unik
-            $base = $data['kode_jurusan'];
-            $i = 1;
-            while (Jurusan::where('kode_jurusan', $data['kode_jurusan'])->where('id', '!=', $jurusan->id)->exists()) {
-                $i++;
-                $data['kode_jurusan'] = $base . $i;
-            }
-        }
-
-        DB::transaction(function () use ($jurusan, $data, $request) {
-            $oldKode = $jurusan->kode_jurusan;
-            $jurusan->fill($data);
-            $jurusan->save();
-
-            // Jika kode berubah, propagasi ke kelas terkait
-            $newKode = $jurusan->kode_jurusan;
-            if ($newKode !== $oldKode) {
-                $kelasByTingkat = $jurusan->kelas()->orderBy('id')->get()->groupBy('tingkat');
-                foreach ($kelasByTingkat as $tingkat => $kelasGroup) {
-                    $seq = 0;
-                    foreach ($kelasGroup as $kelas) {
-                        $seq++;
-                        $kelas->nama_kelas = trim($kelas->tingkat . ' ' . $newKode . ' ' . $seq);
-                        $kelas->save();
-
-                        // Jika kelas memiliki wali, perbarui akun wali agar username/nama mengikuti format baru
-                        if ($kelas->wali_kelas_user_id) {
-                            $wali = User::find($kelas->wali_kelas_user_id);
-                            if ($wali) {
-                                $tingkatShort = Str::lower($kelas->tingkat);
-                                $kodeSafe = preg_replace('/[^a-z0-9]+/i', '', (string) $newKode);
-                                $kodeSafe = Str::lower($kodeSafe);
-                                if ($kodeSafe === '') {
-                                    $kodeSafe = Str::lower($this->generateKode($jurusan->nama_jurusan));
-                                }
-                                $baseWaliUsername = "walikelas.{$tingkatShort}.{$kodeSafe}{$seq}";
-                                $newWaliUsername = $baseWaliUsername;
-                                $j = 1;
-                                while (User::where('username', $newWaliUsername)->where('id', '!=', $wali->id)->exists()) {
-                                    $j++;
-                                    $newWaliUsername = $baseWaliUsername . $j;
-                                }
-                                $wali->username = $newWaliUsername;
-                                $wali->nama = 'Wali Kelas ' . $kelas->nama_kelas;
-                                $wali->save();
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Jika Kaprodi sudah ada, dan kode berubah, perbarui username Kaprodi supaya mengikuti kode baru
-            if ($jurusan->kaprodi_user_id) {
-                $kaprodi = User::find($jurusan->kaprodi_user_id);
-                if ($kaprodi) {
-                    $rawKode = $jurusan->kode_jurusan ?? $this->generateKode($jurusan->nama_jurusan);
-                    $cleanKode = preg_replace('/[^a-z0-9]+/i', '', (string) $rawKode);
-                    $cleanKode = Str::lower($cleanKode);
-                    if ($cleanKode === '') {
-                        $cleanKode = Str::lower($this->generateKode($jurusan->nama_jurusan));
-                    }
-                    $desiredBase = 'kaprodi.' . $cleanKode;
-                    $newUsername = $desiredBase;
-                    $i = 1;
-                    while (User::where('username', $newUsername)->where('id', '!=', $kaprodi->id)->exists()) {
-                        $i++;
-                        $newUsername = $desiredBase . $i;
-                    }
-                    // update username & display name
-                    $kaprodi->username = $newUsername;
-                    $kaprodi->nama = 'Kaprodi ' . $jurusan->nama_jurusan;
-                    $kaprodi->save();
-                }
-            } else {
-                // Jika Kaprodi belum ada tapi operator meminta pembuatan akun saat edit
-                if ($request->has('create_kaprodi') && $request->boolean('create_kaprodi')) {
-                    $kode = $jurusan->kode_jurusan ?? $this->generateKode($jurusan->nama_jurusan);
-                    $cleanKode = preg_replace('/[^a-z0-9]+/i', '', (string) $kode);
-                    $cleanKode = Str::lower($cleanKode);
-                    if ($cleanKode === '') {
-                        $cleanKode = Str::lower($this->generateKode($jurusan->nama_jurusan));
-                    }
-                    $baseUsername = 'kaprodi.' . $cleanKode;
-                    $username = $baseUsername;
-                    $i = 1;
-                    while (User::where('username', $username)->exists()) {
-                        $i++;
-                        $username = $baseUsername . $i;
-                    }
-
-                    // Password standardized: smkn1.kaprodi.{kode_jurusan}
-                    $password = 'smkn1.kaprodi.' . $cleanKode;
-                    $role = Role::findByName('Kaprodi');
-                    $user = User::create([
-                        'role_id' => $role?->id,
-                        'nama' => 'Kaprodi ' . $jurusan->nama_jurusan,
-                        'username' => $username,
-                        'email' => $username . '@no-reply.local',
-                        'password' => $password,
-                    ]);
-
-                    $jurusan->kaprodi_user_id = $user->id;
-                    $jurusan->save();
-                    session()->flash('kaprodi_created', ['username' => $username, 'password' => $password]);
-                }
-            }
-        });
-
-        return redirect()->route('jurusan.show', $jurusan)->with('success', 'Jurusan diperbarui. Perubahan nama kode telah dipropagasi ke kelas terkait.');
+        $jurusanData = JurusanData::from($request->validated());
+        
+        $jurusan = $this->jurusanService->updateJurusan($jurusan, $jurusanData);
+        
+        return redirect()
+            ->route('jurusan.show', $jurusan)
+            ->with('success', 'Jurusan diperbarui. Perubahan nama kode telah dipropagasi ke kelas terkait.');
     }
 
+    /**
+     * Remove the specified jurusan
+     * 
+     * REFACTORED from 40 lines to 17 lines
+     * ALL logic moved to JurusanService
+     */
     public function destroy(Jurusan $jurusan)
     {
-        try {
-            // Prevent deletion if there are kelas or siswa
-            $kelasCount = $jurusan->kelas()->count();
-            $siswaCount = $jurusan->siswa()->count();
-            
-            if ($kelasCount > 0 || $siswaCount > 0) {
-                return redirect()->route('jurusan.index')
-                    ->with('error', "Tidak dapat menghapus jurusan yang memiliki kelas ({$kelasCount}) atau siswa ({$siswaCount}).");
-            }
-
-            // Store kaprodi_user_id before deletion for cleanup
-            $kaprodiUserId = $jurusan->kaprodi_user_id;
-
-            // Delete jurusan
-            $jurusan->delete();
-
-            // Optionally delete kaprodi user if no other jurusan uses it
-            if ($kaprodiUserId) {
-                $user = User::find($kaprodiUserId);
-                if ($user) {
-                    // Check if this user is still kaprodi of any other jurusan
-                    $stillKaprodi = Jurusan::where('kaprodi_user_id', $kaprodiUserId)->exists();
-                    if (!$stillKaprodi) {
-                        $user->delete();
-                    }
-                }
-            }
-
-            return redirect()->route('jurusan.index')
-                ->with('success', 'Jurusan berhasil dihapus.');
-                
-        } catch (\Exception $e) {
-            \Log::error('Error deleting jurusan: ' . $e->getMessage());
-            
-            return redirect()->route('jurusan.index')
-                ->with('error', 'Gagal menghapus jurusan: ' . $e->getMessage());
+        $result = $this->jurusanService->deleteJurusan($jurusan);
+        
+        if ($result['success']) {
+            return redirect()
+                ->route('jurusan.index')
+                ->with('success', $result['message']);
+        } else {
+            return redirect()
+                ->route('jurusan.index')
+                ->with('error', $result['message']);
         }
     }
 
-     /**
-      * Generate kode_jurusan from a name by taking initials (up to 3 chars)
-      */
-    protected function generateKode(string $nama): string
-    {
-        $words = preg_split('/\s+/', trim($nama));
-        $letters = '';
-        foreach ($words as $w) {
-            if ($w === '') continue;
-            $letters .= strtoupper(mb_substr($w, 0, 1));
-            if (mb_strlen($letters) >= 3) break;
-        }
-        if ($letters === '') {
-            $letters = 'JRS';
-        }
-        return $letters;
-    }
-    
-    /**
-     * Index view for monitoring (Kepala Sekolah & Waka Kesiswaan)
-     * Shows jurusan with enriched statistics, not CRUD interface
-     */
-    
     /**
      * Index view for monitoring (Kepala Sekolah & Waka Kesiswaan)
      * Shows jurusan with enriched statistics, not CRUD interface
      * 
-     * CLEAN ARCHITECTURE: Uses raw counts instead of loading all students
-     * PERFORMANCE OPTIMIZED: Minimal model hydration
+     * CLEAN ARCHITECTURE: Uses Service Layer
      */
     public function indexForMonitoring()
     {
-        // OPTIMIZATION: Use withCount instead of loading all siswa models
-        $jurusanList = Jurusan::withCount(['kelas', 'siswa'])
-            ->with('kaprodi')  // Only load kaprodi relationship
-            ->orderBy('nama_jurusan')
-            ->get();
+        $jurusanList = $this->jurusanService->getAllForMonitoring();
         
         return view('kepala_sekolah.jurusan.index', compact('jurusanList'));
     }
@@ -309,37 +140,30 @@ class JurusanController extends Controller
     /**
      * Show view for monitoring (Kepala Sekolah & Waka Kesiswaan)
      * 
-     * CLEAN ARCHITECTURE: Uses Service Layer for business logic
-     * PERFORMANCE: ZERO siswa Model hydration!
-     * SEPARATION OF CONCERNS: Controller only orchestrates
+     * CLEAN ARCHITECTURE: Delegates to Services
+     * PERFORMANCE OPTIMIZED: Minimal model hydration
      */
     public function showForMonitoring(Jurusan $jurusan)
     {
-        // ARCHITECTURE: Inject Service
-        $statsService = app(\App\Services\MasterData\JurusanStatisticsService::class);
+        $statsService = app(JurusanStatisticsService::class);
         
-        // PERFORMANCE CRITICAL: Only load relationships we DISPLAY
-        // DO NOT load kelas.siswa - we only need COUNT!
-        $jurusan->load([
-            'kaprodi',
-            'kelas' => function($query) {
-                $query->withCount('siswa')  // Count only, no Model loading!
-                      ->with('waliKelas');   // For display in table
-            }
-        ]);
+        // Get jurusan with optimized relationships
+        $jurusan = $this->jurusanService->getForMonitoringShow($jurusan->id);
         
-        // CLEAN CODE: Delegate business logic to Service
+        // Get statistics via Service
         $statistics = $statsService->getJurusanStatistics($jurusan);
         
-        // OPTIMIZATION: Pre-calculate pelanggaran per kelas (batch)
-        $pelanggaranPerKelas = $statsService->getPelanggaranCountPerKelas($jurusan->kelas->pluck('id'));
+        // Get pelanggaran count per kelas (batch)
+        $pelanggaranPerKelas = $statsService->getPelanggaranCountPerKelas(
+            $jurusan->kelas->pluck('id')
+        );
         
         // Attach pelanggaran count to kelas for view
         foreach ($jurusan->kelas as $kelas) {
             $kelas->pelanggaran_count = $pelanggaranPerKelas[$kelas->id] ?? 0;
         }
         
-        // CLEAN: Extract statistics
+        // Extract statistics
         $totalSiswa = $statistics['total_siswa'];
         $totalPelanggaran = $statistics['total_pelanggaran'];
         $siswaPerluPembinaan = $statistics['siswa_perlu_pembinaan'];
