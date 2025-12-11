@@ -12,25 +12,6 @@
     }
 </script>
 
-<style>
-    .page-wrap { background: #f8fafc; min-height: 100vh; padding: 1.5rem; font-family: 'Inter', sans-serif; }
-    
-    /* Tabel Clean Floating */
-    .float-table { border-collapse: separate; border-spacing: 0 10px; width: 100%; }
-    .float-row { background: white; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-    .float-row td:first-child { border-radius: 10px 0 0 10px; border-left: 1px solid #f1f5f9; }
-    .float-row td:last-child { border-radius: 0 10px 10px 0; border-right: 1px solid #f1f5f9; }
-    .float-row:hover { transform: translateY(-3px); border-color: #bfdbfe; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.1); z-index: 10; position: relative; }
-    
-    /* Tombol Primary (Solid Blue) */
-    .btn-primary { background-color: #2563eb; color: white; padding: 0.6rem 1.2rem; border-radius: 0.75rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: 0.2s; border: 1px solid #1d4ed8; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
-    .btn-primary:hover { background-color: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3); }
-    
-    /* Tombol Aksi Kecil */
-    .btn-action { padding: 6px; border-radius: 8px; transition: 0.2s; color: #64748b; border: 1px solid transparent; background: transparent; }
-    .btn-action:hover { background: white; border-color: #e2e8f0; color: #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-</style>
-
 <div class="page-wrap">
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -185,4 +166,23 @@
     </div>
 
 </div>
+
+<style>
+    .page-wrap { background: #f8fafc; min-height: 100vh; padding: 1.5rem; font-family: 'Inter', sans-serif; }
+    
+    /* Tabel Clean Floating */
+    .float-table { border-collapse: separate; border-spacing: 0 10px; width: 100%; }
+    .float-row { background: white; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .float-row td:first-child { border-radius: 10px 0 0 10px; border-left: 1px solid #f1f5f9; }
+    .float-row td:last-child { border-radius: 0 10px 10px 0; border-right: 1px solid #f1f5f9; }
+    .float-row:hover { transform: translateY(-3px); border-color: #bfdbfe; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.1); z-index: 10; position: relative; }
+    
+    /* Tombol Primary (Solid Blue) */
+    .btn-primary { background-color: #2563eb; color: white; padding: 0.6rem 1.2rem; border-radius: 0.75rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: 0.2s; border: 1px solid #1d4ed8; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+    .btn-primary:hover { background-color: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3); }
+    
+    /* Tombol Aksi Kecil */
+    .btn-action { padding: 6px; border-radius: 8px; transition: 0.2s; color: #64748b; border: 1px solid transparent; background: transparent; }
+    .btn-action:hover { background: white; border-color: #e2e8f0; color: #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+</style>
 @endsection

@@ -143,7 +143,7 @@
           <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->nama) }}&background=007bff&color=fff" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="{{ route('account.edit') }}" class="d-block">{{ Str::limit(Auth::user()->nama, 18) }}</a>
+          <a href="{{ route('account.edit') }}" class="d-block">{{ Str::limit(Auth::user()->username, 18) }}</a>
           <small class="text-muted text-uppercase" style="font-size: 10px; letter-spacing: 1px;">
               {{ Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role }}
           </small>

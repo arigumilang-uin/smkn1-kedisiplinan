@@ -149,9 +149,9 @@
                                 {{ substr($u->nama, 0, 1) }}
                             </div>
                             <div>
-                                <div class="text-sm font-bold text-slate-700">{{ $u->nama }}</div>
+                                <div class="text-sm font-bold text-slate-700">{{ $u->username }}</div>
                                 <div class="text-[10px] font-mono text-blue-500 mt-0.5 bg-blue-50 px-1.5 py-0.5 rounded-md inline-block border border-blue-100">
-                                    {{ $u->username }}
+                                    {{ $u->nama }}
                                 </div>
                             </div>
                         </div>

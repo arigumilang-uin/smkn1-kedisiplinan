@@ -12,43 +12,6 @@
     }
 </script>
 
-<style>
-    .page-wrap { background: #f8fafc; min-height: 100vh; padding: 2rem 1.5rem; font-family: 'Inter', sans-serif; display: flex; justify-content: center; }
-    
-    /* Input Styling Lebih Rapi */
-    .form-group { margin-bottom: 1.25rem; }
-    .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; }
-    .form-input { 
-        width: 100%; 
-        padding: 0.75rem 1rem; 
-        border-radius: 0.75rem; 
-        border: 1px solid #cbd5e1; 
-        background-color: #ffffff; 
-        color: #1e293b; 
-        transition: all 0.2s; 
-        font-size: 0.95rem; 
-        line-height: 1.5;
-    }
-    .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-    
-    /* Custom Select Arrow */
-    select.form-input {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.75rem center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
-    }
-
-    /* Buttons */
-    .btn-primary { background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; }
-    .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
-    
-    .btn-secondary { background: white; border: 1px solid #e2e8f0; color: #64748b; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; text-decoration: none; display: inline-block; text-align: center; width: 100%; transition: 0.2s; }
-    .btn-secondary:hover { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
-</style>
-
 <div class="page-wrap">
 
     <div class="w-full max-w-2xl">
@@ -131,4 +94,41 @@
     </div>
 
 </div>
+
+<style>
+    .page-wrap { background: #f8fafc; min-height: 100vh; padding: 2rem 1.5rem; font-family: 'Inter', sans-serif; display: flex; justify-content: center; }
+    
+    /* Input Styling Lebih Rapi */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; }
+    .form-input { 
+        width: 100%; 
+        padding: 0.75rem 1rem; 
+        border-radius: 0.75rem; 
+        border: 1px solid #cbd5e1; 
+        background-color: #ffffff; 
+        color: #1e293b; 
+        transition: all 0.2s; 
+        font-size: 0.95rem; 
+        line-height: 1.5;
+    }
+    .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    
+    /* Custom Select Arrow */
+    select.form-input {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+
+    /* Buttons */
+    .btn-primary { background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; }
+    .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+    
+    .btn-secondary { background: white; border: 1px solid #e2e8f0; color: #64748b; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; text-decoration: none; display: inline-block; text-align: center; width: 100%; transition: 0.2s; }
+    .btn-secondary:hover { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+</style>
 @endsection

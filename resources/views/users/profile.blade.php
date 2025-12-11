@@ -22,6 +22,13 @@
     }
 </script>
 
+@php
+    // Logika untuk menentukan apakah pengguna adalah Operator (digunakan untuk Nama Lengkap)
+    // Asumsi nama role untuk operator adalah 'Operator'
+    $userRoleName = $user->role->nama_role ?? 'User';
+    $isOperator = $userRoleName === 'Operator';
+@endphp
+
 <div class="page-container p-6 bg-slate-50 min-h-screen font-sans">
     
     <div class="max-w-6xl mx-auto">
@@ -46,18 +53,20 @@
                 <div class="relative z-10 flex-1 flex flex-col items-center justify-center w-full">
                     <div class="mb-6 relative inline-block">
                         <div class="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-cyan-400 shadow-2xl mx-auto flex items-center justify-center">
+                            {{-- Avatar menggunakan Nama --}}
                             <img src="https://ui-avatars.com/api/?name={{ urlencode($user->nama) }}&background=0f172a&color=fff&size=256&bold=true" 
-                                 class="w-full h-full rounded-full border-4 border-slate-900 object-cover">
+                                    class="w-full h-full rounded-full border-4 border-slate-900 object-cover">
                         </div>
                         <div class="absolute bottom-2 right-2 w-6 h-6 bg-emerald-500 border-4 border-slate-900 rounded-full" title="Online"></div>
                     </div>
                     
+                    {{-- SIDEBAR: Menampilkan NAMA LENGKAP --}}
                     <h2 class="text-2xl font-bold tracking-tight mb-1">{{ $user->nama }}</h2>
                     <p class="text-blue-200 text-sm mb-6 font-medium">{{ $user->email }}</p>
                     
                     <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 shadow-sm mx-auto">
                         <span class="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">{{ $user->role->nama_role ?? 'User' }}</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">{{ $userRoleName }}</span>
                     </div>
                 </div>
 
@@ -68,7 +77,8 @@
 
             <div class="w-full md:w-2/3 p-8 md:p-12 bg-white">
                 
-                <div class="mb-8 pb-4 border-b border-slate-100">
+                {{-- PERBAIKAN SPACING: mb-8 diubah menjadi mb-5 dan pb-4 menjadi pb-2 --}}
+                <div class="mb-5 pb-2 border-b border-slate-100">
                     <h3 class="text-lg font-bold text-slate-800">Edit Informasi</h3>
                     <p class="text-sm text-slate-400">Perbarui detail profil Anda di bawah ini.</p>
                 </div>
@@ -79,36 +89,42 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
+                        {{-- PERBAIKAN 1: Nama Lengkap sebagai teks statis (Display Field) --}}
                         <div class="md:col-span-2">
                             <div class="group">
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nama Lengkap</label>
-                                <input type="text" name="nama" class="form-input-premium" value="{{ old('nama', $user->nama) }}" required>
-                                @error('nama') <p class="text-red-500 text-xs mt-1 ml-1">{{ $message }}</p> @enderror
+                                
+                                {{-- Menampilkan Nama Lengkap di luar input form --}}
+                                <div class="px-1 py-2 font-medium-bold">
+                                    {{ $user->nama }}
+                                </div>
                             </div>
                         </div>
-
+                        
                         <div class="group">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Alamat Email</label>
                             <input type="email" name="email" class="form-input-premium" value="{{ old('email', $user->email) }}" required>
                             @error('email') <p class="text-red-500 text-xs mt-1 ml-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
+                        {{-- PERBAIKAN 2: Input Username (Editable untuk semua user) --}}
+                        <div class="group">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Username</label>
-                            <div class="relative">
-                                <input type="text" class="form-input-premium bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200" value="{{ $user->username }}" readonly>
-                                <div class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                </div>
-                            </div>
+                            <input 
+                                type="text" 
+                                name="username" 
+                                class="form-input-premium" 
+                                value="{{ old('username', $user->username) }}" 
+                                required
+                            >
+                            @error('username') <p class="text-red-500 text-xs mt-1 ml-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nomor WhatsApp</label>
+                            {{-- Input Phone tetap readonly jika role Wali Murid --}}
                             <input type="text" name="phone" class="form-input-premium" value="{{ old('phone', $user->phone) }}" placeholder="08..."
-                                {{ $user->role->nama_role == 'Wali Murid' ? 'readonly' : '' }}>
+                                {{ $userRoleName == 'Wali Murid' ? 'readonly' : '' }}>
                             @error('phone') <p class="text-red-500 text-xs mt-1 ml-1">{{ $message }}</p> @enderror
                         </div>
 
@@ -131,7 +147,7 @@
 
                     </div>
 
-                    @if($user->role->nama_role == 'Wali Murid')
+                    @if($userRoleName == 'Wali Murid')
                         <div class="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -166,6 +182,7 @@
 {{-- 3. STYLE CSS (PREMIUM INPUT) --}}
 @section('styles')
 <style>
+    /* Styling dasar form-input-premium */
     .form-input-premium {
         display: block;
         width: 100%;
@@ -180,6 +197,7 @@
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* Efek focus */
     .form-input-premium:focus {
         border-color: #3b82f6;
         background-color: #fff;
@@ -187,10 +205,12 @@
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
 
-    .form-input-premium:hover:not(:disabled) {
+    /* Efek hover (kecuali disabled) */
+    .form-input-premium:hover:not(:disabled):not([readonly]) {
         border-color: #cbd5e1;
     }
 
+    /* Styling untuk disabled/readonly */
     .form-input-premium:disabled, .form-input-premium[readonly] {
         background-color: #f8fafc;
         color: #94a3b8;
