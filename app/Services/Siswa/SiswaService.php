@@ -249,9 +249,17 @@ class SiswaService
         // Service akan delegate ke RulesEngine yang support frequency-based rules
         $totalPoin = $this->pelanggaranService->calculateTotalPoin($siswaId);
 
+        // Get pembinaan internal recommendation
+        $pembinaanRekomendasi = $this->pelanggaranService->getStatistikSiswa($siswaId)['pembinaan_rekomendasi'] ?? [
+            'pembina_roles' => [],
+            'keterangan' => '',
+            'range_text' => '',
+        ];
+
         return [
             'siswa' => $siswa,
             'totalPoin' => $totalPoin,
+            'pembinaanRekomendasi' => $pembinaanRekomendasi,
         ];
     }
 

@@ -40,7 +40,8 @@ class PelanggaranService
         private RiwayatPelanggaranRepositoryInterface $riwayatRepo,
         private JenisPelanggaranRepositoryInterface $jenisRepo,
         private SiswaRepositoryInterface $siswaRepo,
-        private PelanggaranRulesEngine $rulesEngine
+        private PelanggaranRulesEngine $rulesEngine,
+        private \App\Notifications\TindakLanjutNotificationService $notificationService
     ) {}
 
     /**
@@ -83,6 +84,21 @@ class PelanggaranService
                 $data->siswa_id,
                 [$data->jenis_pelanggaran_id]
             );
+
+            // Evaluasi pembinaan internal & kirim notifikasi ke pembina
+            $totalPoin = $this->rulesEngine->hitungTotalPoinAkumulasi($data->siswa_id);
+            $pembinaanRekomendasi = $this->rulesEngine->getPembinaanInternalRekomendasi($totalPoin);
+            
+            // Kirim notifikasi jika ada pembina yang perlu diberitahu
+            if (!empty($pembinaanRekomendasi['pembina_roles'])) {
+                $siswa = $createdRiwayat->siswa;
+                $pembinaanRekomendasi['total_poin'] = $totalPoin;
+                
+                $this->notificationService->notifyPembinaanInternal(
+                    $siswa,
+                    $pembinaanRekomendasi
+                );
+            }
 
             DB::commit();
 

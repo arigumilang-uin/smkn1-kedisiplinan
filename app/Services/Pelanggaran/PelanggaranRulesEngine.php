@@ -340,11 +340,8 @@ class PelanggaranRulesEngine
     /**
      * Get siswa yang perlu pembinaan berdasarkan akumulasi poin.
      * 
-     * OPTIMIZATION: Fetches all data in 2-3 queries instead of N+1
-     * - Query 1: Eager load siswa with kelas and jurusan
-     * - Query 2: Batch calculate total points using subquery
-     * - Query 3: Fetch rules once
-     * - Process in-memory using PHP collections
+     * UPDATED: Use frequency-based point calculation (hitungTotalPoinAkumulasi)
+     * Old method used simple SUM which doesn't work with frequency rules!
      * 
      * @param int|null $poinMin Filter minimum poin (optional)
      * @param int|null $poinMax Filter maximum poin (optional)
@@ -352,50 +349,57 @@ class PelanggaranRulesEngine
      */
     public function getSiswaPerluPembinaan(?int $poinMin = null, ?int $poinMax = null)
     {
-        // OPTIMIZATION 1: Fetch pembinaan rules ONCE (not per student)
+        // Fetch pembinaan rules ONCE
         $rules = \App\Models\PembinaanInternalRule::orderBy('display_order')->get();
         
-        // OPTIMIZATION 2: Batch calculate points using JOIN and GROUP BY
-        // This replaces N individual queries with 1 query
-        $siswaWithPoints = Siswa::leftJoin('riwayat_pelanggaran', 'siswa.id', '=', 'riwayat_pelanggaran.siswa_id')
-            ->leftJoin('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
-            ->selectRaw('siswa.id, COALESCE(SUM(jenis_pelanggaran.poin), 0) as total_poin')
-            ->groupBy('siswa.id');
+        // Get ALL siswa yang punya riwayat pelanggaran
+        // Then calculate poin using frequency-based logic
+        $siswaIds = \App\Models\RiwayatPelanggaran::distinct()
+            ->pluck('siswa_id');
         
-        // Apply poin filters at DB level for performance
-        if ($poinMin !== null) {
-            $siswaWithPoints->havingRaw('total_poin >= ?', [$poinMin]);
+        // Calculate poin for each siswa using correct frequency logic
+        $siswaList = collect();
+        
+        foreach ($siswaIds as $siswaId) {
+            // Use the CORRECT frequency-based calculation
+            $totalPoin = $this->hitungTotalPoinAkumulasi($siswaId);
+            
+            // Skip if poin is 0
+            if ($totalPoin == 0) {
+                continue;
+            }
+            
+            // Apply poin filters
+            if ($poinMin !== null && $totalPoin < $poinMin) {
+                continue;
+            }
+            if ($poinMax !== null && $totalPoin > $poinMax) {
+                continue;
+            }
+            
+            // Get rekomendasi
+            $rekomendasi = $this->getPembinaanInternalRekomendasiOptimized($totalPoin, $rules);
+            
+            // Skip if no matching rule (no recommendation)
+            if (empty($rekomendasi['pembina_roles'])) {
+                continue;
+            }
+            
+            // Load siswa with relations
+            $siswa = Siswa::with(['kelas.jurusan', 'kelas.waliKelas'])->find($siswaId);
+            
+            if (!$siswa) {
+                continue;
+            }
+            
+            $siswaList->push([
+                'siswa' => $siswa,
+                'total_poin' => $totalPoin,
+                'rekomendasi' => $rekomendasi,
+            ]);
         }
-        if ($poinMax !== null) {
-            $siswaWithPoints->havingRaw('total_poin <= ?', [$poinMax]);
-        }
         
-        // Only students with poin > 0
-        $siswaWithPoints->havingRaw('total_poin > 0');
-        
-        // Get the results as a map: siswa_id => total_poin
-        $poinMap = $siswaWithPoints->pluck('total_poin', 'id');
-        
-        // OPTIMIZATION 3: Eager load siswa with relations in one query
-        $siswaList = Siswa::with(['kelas', 'kelas.jurusan'])
-            ->whereIn('id', $poinMap->keys())
-            ->get()
-            ->map(function ($siswa) use ($poinMap, $rules) {
-                $totalPoin = $poinMap[$siswa->id] ?? 0;
-                
-                // OPTIMIZATION 4: Process rekomendasi in-memory using pre-fetched rules
-                $rekomendasi = $this->getPembinaanInternalRekomendasiOptimized($totalPoin, $rules);
-                
-                return [
-                    'siswa' => $siswa,
-                    'total_poin' => $totalPoin,
-                    'rekomendasi' => $rekomendasi,
-                ];
-            })
-            ->sortByDesc('total_poin')
-            ->values();
-
-        return $siswaList;
+        return $siswaList->sortByDesc('total_poin')->values();
     }
     
     /**

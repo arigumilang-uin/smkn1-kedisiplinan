@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Notification;
  * Tanggung jawab:
  * - Kirim notifikasi ke Kepala Sekolah saat kasus butuh approval
  * - Kirim notifikasi ke Waka Kesiswaan untuk awareness (Surat 2)
+ * - Kirim notifikasi pembinaan internal ke pembina terkait
  * - Handle notification logic secara terpusat
  * 
  * Design Pattern: Service Layer (Single Responsibility)
@@ -72,6 +73,45 @@ class TindakLanjutNotificationService
     }
 
     /**
+     * Kirim notifikasi pembinaan internal ke pembina terkait.
+     * 
+     * Dipanggil setelah catat pelanggaran untuk memberitahu pembina
+     * bahwa siswa perlu pembinaan sesuai dengan akumulasi poin.
+     * 
+     * Clean Architecture: Notification Logic di Service Layer
+     * 
+     * @param \App\Models\Siswa $siswa
+     * @param array $rekomendasi ['pembina_roles' => [], 'keterangan' => '', 'range_text' => '', 'total_poin' => int]
+     * @return void
+     */
+    public function notifyPembinaanInternal(\App\Models\Siswa $siswa, array $rekomendasi): void
+    {
+        // Validate rekomendasi data
+        if (empty($rekomendasi['pembina_roles']) || empty($rekomendasi['keterangan'])) {
+            return;
+        }
+
+        // Get pembina users by roles
+        $pembinaUsers = $this->getPembinaByRoles($rekomendasi['pembina_roles'], $siswa);
+
+        if ($pembinaUsers->isEmpty()) {
+            \Log::warning('No pembina found for internal coaching notification', [
+                'siswa_id' => $siswa->id,
+                'roles' => $rekomendasi['pembina_roles'],
+            ]);
+            return;
+        }
+
+        // Create notification for each pembina
+        foreach ($pembinaUsers as $pembina) {
+            $pembina->notify(new \App\Notifications\PembinaanInternalNotification(
+                $siswa,
+                $rekomendasi
+            ));
+        }
+    }
+
+    /**
      * Get Kepala Sekolah user.
      * 
      * @return User|null
@@ -93,6 +133,64 @@ class TindakLanjutNotificationService
         return User::whereHas('role', function ($q) {
             $q->where('nama_role', 'Waka Kesiswaan');
         })->first();
+    }
+
+    /**
+     * Get pembina users by roles with siswa context.
+     * 
+     * Handles special cases:
+     * - Wali Kelas: Get from siswa's kelas
+     * - Kaprodi: Get from siswa's jurusan
+     * - Other roles: Get by role name
+     * 
+     * @param array $roles Array of role names
+     * @param \App\Models\Siswa $siswa
+     * @return \Illuminate\Support\Collection
+     */
+    private function getPembinaByRoles(array $roles, \App\Models\Siswa $siswa): \Illuminate\Support\Collection
+    {
+        $users = collect();
+
+        foreach ($roles as $roleName) {
+            $user = null;
+
+            switch ($roleName) {
+                case 'Wali Kelas':
+                    // Get wali kelas from siswa's kelas
+                    if ($siswa->kelas && $siswa->kelas->waliKelas) {
+                        $user = $siswa->kelas->waliKelas;
+                    }
+                    break;
+
+                case 'Kaprodi':
+                    // Get kaprodi from siswa's jurusan
+                    if ($siswa->kelas && $siswa->kelas->jurusan && $siswa->kelas->jurusan->kaprodi) {
+                        $user = $siswa->kelas->jurusan->kaprodi;
+                    }
+                    break;
+
+                case 'Waka Kesiswaan':
+                    $user = $this->getWakaKesiswaan();
+                    break;
+
+                case 'Kepala Sekolah':
+                    $user = $this->getKepalaSekolah();
+                    break;
+
+                default:
+                    // Try to find by role name
+                    $user = User::whereHas('role', function ($q) use ($roleName) {
+                        $q->where('nama_role', $roleName);
+                    })->first();
+                    break;
+            }
+
+            if ($user) {
+                $users->push($user);
+            }
+        }
+
+        return $users->unique('id');
     }
 
     /**

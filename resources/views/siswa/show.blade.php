@@ -166,6 +166,43 @@
                     </div>
                 </div>
             </div>
+            
+            {{-- Pembinaan Internal Recommendation --}}
+            @if(!empty($pembinaanRekomendasi['pembina_roles']))
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl shadow-lg border-2 border-orange-200 p-5">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-orange-500 text-white rounded-full p-2.5">
+                                <i class="fas fa-user-tie text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-base font-bold text-orange-900 mb-1">
+                                <i class="fas fa-exclamation-circle mr-1"></i>Rekomendasi Pembinaan Internal
+                            </h4>
+                            <p class="text-sm text-orange-700 mb-3">
+                                <strong>Range Poin:</strong> {{ $pembinaanRekomendasi['range_text'] }}
+                            </p>
+                            
+                            <div class="bg-white rounded-lg p-3 mb-3 border border-orange-200">
+                                <p class="text-sm font-medium text-gray-700 mb-2">Pembina yang Terlibat:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach($pembinaanRekomendasi['pembina_roles'] as $role)
+                                        <span class="px-2.5 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
+                                            <i class="fas fa-user-check mr-1"></i>{{ $role }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            
+                            <div class="bg-orange-100 rounded-lg p-3 border border-orange-300">
+                                <p class="text-sm font-semibold text-orange-900 mb-1">Keterangan:</p>
+                                <p class="text-sm text-orange-800">{{ $pembinaanRekomendasi['keterangan'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="lg:col-span-3 space-y-6">

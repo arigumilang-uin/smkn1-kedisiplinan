@@ -146,6 +146,7 @@ class SiswaController extends Controller
         return view('siswa.show', [
             'siswa' => $result['siswa'],
             'totalPoin' => $result['totalPoin'],
+            'pembinaanRekomendasi' => $result['pembinaanRekomendasi'],
         ]);
     }
 

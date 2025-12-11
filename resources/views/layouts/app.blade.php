@@ -244,6 +244,15 @@
                 </a>
             </li>
 
+            @if($isDev || in_array($role, ['Wali Kelas', 'Kaprodi', 'Waka Kesiswaan', 'Kepala Sekolah']))
+            <li class="nav-item">
+                <a href="{{ route('pembinaan.index') }}" class="nav-link {{ Request::is('pembinaan*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-tie"></i>
+                    <p>Siswa Perlu Pembinaan</p>
+                </a>
+            </li>
+            @endif
+
             @if($isDev || in_array($role, ['Waka Kesiswaan', 'Kepala Sekolah']))
             <li class="nav-item">
                 @php $jurusanRoute = in_array($role, ['Kepala Sekolah', 'Waka Kesiswaan']) ? route('kepala-sekolah.data.jurusan') : route('data-jurusan.index'); @endphp
