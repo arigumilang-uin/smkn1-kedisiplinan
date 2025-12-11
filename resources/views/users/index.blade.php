@@ -7,6 +7,7 @@
 
 @section('content')
 
+{{-- TAILWIND CONFIG & STYLES (Dibiarkan tetap di sini sesuai permintaan awal) --}}
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
     tailwind.config = {
@@ -31,7 +32,7 @@
 <style>
     .page-container {
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background-color: #f8fafc; /* Sama dengan dashboard */
+        background-color: #f8fafc;
         min-height: 100vh;
         padding: 1.5rem;
     }
@@ -61,6 +62,7 @@
 
 <div class="page-container">
 
+    {{-- HEADER WITH GRADIENT BACKGROUND --}}
     <div class="relative rounded-2xl bg-gradient-to-r from-slate-800 to-blue-900 p-6 shadow-lg mb-8 overflow-hidden text-white flex flex-col md:flex-row items-center justify-between gap-4 border border-blue-800/50">
         
         <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500 opacity-10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
@@ -78,25 +80,19 @@
         </div>
 
         <div class="flex gap-3 relative z-10">
-          
-
             <a href="{{ route('users.create') }}" class="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-300 border border-white/20 shadow-sm backdrop-blur-md overflow-hidden font-medium text-sm no-underline">
-    <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-    Tambah User
-</a>
+                <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                Tambah User
+            </a>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-soft border border-slate-100 mb-8 overflow-hidden transition-all relative">        <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-blue-50/30 transition" data-card-widget="collapse">
-            
-            
-        </div>
-        <div class="p-6 bg-white">
-            @include('components.users.filter-form')
-        </div>
-    </div>
+    {{-- FILTER SECTION - SINGLE CARD LAYER --}}
+    {{-- Hapus wrapper card ganda, panggil partial yang diasumsikan sudah berisi satu card utuh --}}
+    @include('components.users.filter-form')
 
+    {{-- ALERTS --}}
     @if(session('success'))
         <div class="mb-6 p-4 rounded-xl bg-emerald-50/80 border border-emerald-100 text-emerald-700 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-3">
@@ -105,22 +101,23 @@
                 </div>
                 <span class="font-medium text-sm">{{ session('success') }}</span>
             </div>
-            <button type="button" class="text-emerald-400 hover:text-emerald-600" data-dismiss="alert">&times;</button>
+            <button type="button" class="text-emerald-400 hover:text-emerald-600" data-dismiss="alert" onclick="this.closest('div').style.display='none'">&times;</button>
         </div>
     @endif
     
     @if(session('error'))
         <div class="mb-6 p-4 rounded-xl bg-rose-50/80 border border-rose-100 text-rose-700 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-3">
-                 <div class="p-1.5 bg-rose-100 rounded-full text-rose-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
+                   <div class="p-1.5 bg-rose-100 rounded-full text-rose-600">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
                 </div>
                 <span class="font-medium text-sm">{{ session('error') }}</span>
             </div>
-            <button type="button" class="text-rose-400 hover:text-rose-600" data-dismiss="alert">&times;</button>
+            <button type="button" class="text-rose-400 hover:text-rose-600" data-dismiss="alert" onclick="this.closest('div').style.display='none'">&times;</button>
         </div>
     @endif
 
+    {{-- DAFTAR PENGGUNA HEADER --}}
     <div class="mb-3 px-2 flex justify-between items-end">
         <h3 class="text-base font-bold text-slate-700 m-0">Daftar Pengguna</h3>
         <p class="text-xs text-slate-500 m-0">
@@ -128,6 +125,7 @@
         </p>
     </div>
 
+    {{-- DATA TABLE --}}
     <div class="overflow-x-auto pb-4">
         <table class="floating-table text-left">
             <thead>
@@ -159,9 +157,9 @@
 
                     <td class="px-6 py-4">
                         @php $roleName = $u->role?->nama_role ?? 'N/A'; @endphp
-                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white border border-slate-200 text-slate-500">
-                                {{ $roleName }}
-                            </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white border border-slate-200 text-slate-500">
+                            {{ $roleName }}
+                        </span>
                     </td>
 
                     <td class="px-6 py-4 text-sm">
@@ -227,52 +225,53 @@
         </table>
     </div>
 
-   <div class="mt-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-    
-    <div class="text-sm text-slate-500 text-center md:text-left">
-        Menampilkan 
-        <span class="font-bold text-slate-800">{{ $users->firstItem() ?? 0 }}</span> 
-        sampai 
-        <span class="font-bold text-slate-800">{{ $users->lastItem() ?? 0 }}</span> 
-        dari total 
-        <span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">{{ $users->total() }}</span> 
-        data
-    </div>
-
-    <div class="flex items-center gap-2">
+    {{-- PAGINATION --}}
+    <div class="mt-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         
-        @if ($users->onFirstPage())
-            <span class="px-4 py-2 text-sm text-slate-300 bg-slate-50 border border-slate-100 rounded-xl cursor-not-allowed flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                Prev
-            </span>
-        @else
-            <a href="{{ $users->previousPageUrl() }}" class="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                Prev
-            </a>
-        @endif
-
-        <div class="hidden sm:flex items-center px-2 text-xs font-bold text-slate-400 gap-1">
-            <span>Page</span>
-            <span class="w-6 h-6 flex items-center justify-center bg-blue-600 text-white rounded-full shadow-md shadow-blue-200">
-                {{ $users->currentPage() }}
-            </span>
+        <div class="text-sm text-slate-500 text-center md:text-left">
+            Menampilkan 
+            <span class="font-bold text-slate-800">{{ $users->firstItem() ?? 0 }}</span> 
+            sampai 
+            <span class="font-bold text-slate-800">{{ $users->lastItem() ?? 0 }}</span> 
+            dari total 
+            <span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">{{ $users->total() }}</span> 
+            data
         </div>
 
-        @if ($users->hasMorePages())
-            <a href="{{ $users->nextPageUrl() }}" class="px-4 py-2 text-sm text-white bg-blue-600 border border-blue-600 rounded-xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center gap-2">
-                Next
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </a>
-        @else
-            <span class="px-4 py-2 text-sm text-slate-300 bg-slate-50 border border-slate-100 rounded-xl cursor-not-allowed flex items-center gap-2">
-                Next
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </span>
-        @endif
+        <div class="flex items-center gap-2">
+            
+            @if ($users->onFirstPage())
+                <span class="px-4 py-2 text-sm text-slate-300 bg-slate-50 border border-slate-100 rounded-xl cursor-not-allowed flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Prev
+                </span>
+            @else
+                <a href="{{ $users->previousPageUrl() }}" class="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Prev
+                </a>
+            @endif
+
+            <div class="hidden sm:flex items-center px-2 text-xs font-bold text-slate-400 gap-1">
+                <span>Page</span>
+                <span class="w-6 h-6 flex items-center justify-center bg-blue-600 text-white rounded-full shadow-md shadow-blue-200">
+                    {{ $users->currentPage() }}
+                </span>
+            </div>
+
+            @if ($users->hasMorePages())
+                <a href="{{ $users->nextPageUrl() }}" class="px-4 py-2 text-sm text-white bg-blue-600 border border-blue-600 rounded-xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center gap-2">
+                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+            @else
+                <span class="px-4 py-2 text-sm text-slate-300 bg-slate-50 border border-slate-100 rounded-xl cursor-not-allowed flex items-center gap-2">
+                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </span>
+            @endif
+        </div>
     </div>
-</div>
 
 </div>
 @endsection
