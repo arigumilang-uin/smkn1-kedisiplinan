@@ -96,3 +96,5 @@ Keep this workflow in your project notes and ensure `Developer` role is not pres
 
 contoh untuk membuat akun dengan role developer:
 php artisan developer:enable --email=developer@local --password=password
+
+tess
