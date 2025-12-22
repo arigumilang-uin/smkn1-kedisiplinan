@@ -90,22 +90,15 @@ class SiswaService
         return SiswaData::from($updatedSiswa);
     }
 
-    public function deleteSiswa(int $siswaId, ?string $alasanKeluar = null, ?string $keteranganKeluar = null): bool
+    public function deleteSiswa(int $siswaId): bool
     {
         $siswa = \App\Models\Siswa::find($siswaId);
         
         if (!$siswa) {
-    return false;
-}
-
-    // Set alasan keluar before soft delete
-       if ($alasanKeluar) {
-           $siswa->alasan_keluar = $alasanKeluar;
-           $siswa->keterangan_keluar = $keteranganKeluar;
-    $siswa->save();
-}
-
-$waliId = $siswa->wali_murid_user_id;
+            return false;
+        }
+        
+        $waliId = $siswa->wali_murid_user_id;
         
         // Delete siswa first
         $deleted = $this->siswaRepository->delete($siswaId);
@@ -360,10 +353,8 @@ $waliId = $siswa->wali_murid_user_id;
     public function bulkDeleteByKelas(int $kelasId, array $options = []): array
     {
         $deleteOrphanedWali = $options['deleteOrphanedWali'] ?? false;
-$alasanKeluar = $options['alasanKeluar'] ?? null;
-$keteranganKeluar = $options['keteranganKeluar'] ?? null;
-
-DB::beginTransaction();
+        
+        DB::beginTransaction();
         
         try {
             $siswaList = \App\Models\Siswa::where('kelas_id', $kelasId)->get();
@@ -377,19 +368,12 @@ DB::beginTransaction();
             }
             
             foreach ($siswaList as $siswa) {
-    // Set alasan keluar before delete
-    if ($alasanKeluar) {
-        $siswa->alasan_keluar = $alasanKeluar;
-        $siswa->keterangan_keluar = $keteranganKeluar;
-        $siswa->save();
-    }
-    
-        \App\Models\RiwayatPelanggaran::where('siswa_id', $siswa->id)->delete();
-        \App\Models\TindakLanjut::where('siswa_id', $siswa->id)->delete();
-    
-        $deletedIds[] = $siswa->id;
-        $siswa->delete();
-    }
+                \App\Models\RiwayatPelanggaran::where('siswa_id', $siswa->id)->delete();
+                \App\Models\TindakLanjut::where('siswa_id', $siswa->id)->delete();
+                
+                $deletedIds[] = $siswa->id;
+                $siswa->delete();
+            }
             
             if ($deleteOrphanedWali && !empty($orphanedWaliIds)) {
                 foreach ($orphanedWaliIds as $waliId) {
@@ -447,189 +431,5 @@ DB::beginTransaction();
         }
         
         return $orphanedWaliIds;
-    }
-
-    /**
-     * Get deleted siswa with filters and pagination.
-     */
-    public function getDeletedSiswa(array $filters = []): LengthAwarePaginator
-    {
-        $query = \App\Models\Siswa::onlyTrashed()
-            ->with(['kelas.jurusan', 'waliMurid'])
-            ->orderBy('deleted_at', 'desc');
-        
-        // Filter by alasan keluar
-        if (!empty($filters['alasan_keluar'])) {
-            $query->where('alasan_keluar', $filters['alasan_keluar']);
-        }
-        
-        // Filter by kelas
-        if (!empty($filters['kelas_id'])) {
-            $query->where('kelas_id', $filters['kelas_id']);
-        }
-        
-        // Search by nama or NISN
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function($q) use ($search) {
-                $q->where('nama_siswa', 'like', "%{$search}%")
-                  ->orWhere('nisn', 'like', "%{$search}%");
-            });
-        }
-        
-        return $query->paginate(20);
-    }
-    
-    /**
-     * Restore soft deleted siswa and all related data.
-     * Also handle wali murid - reconnect or create if needed.
-     */
-    public function restoreSiswa(int $siswaId): bool
-    {
-        DB::beginTransaction();
-        
-        try {
-            // Get deleted siswa without triggering events
-            $siswa = \App\Models\Siswa::onlyTrashed()->findOrFail($siswaId);
-            $namaSiswa = $siswa->nama_siswa;
-            $nomorHp = $siswa->nomor_hp_wali_murid;
-            
-            // Handle wali murid - find or create
-            $waliId = null;
-            if ($nomorHp) {
-                $phoneClean = preg_replace('/\D+/', '', $nomorHp);
-                
-                // Check if wali with this phone exists
-                $existingWali = $this->userRepository->findByUsername('wali.' . $phoneClean);
-                
-                if ($existingWali) {
-                    // Wali exists, use it
-                    $waliId = $existingWali->id;
-                } else {
-                    // Wali not found, create new one
-                    $waliData = $this->findOrCreateWaliByPhone($nomorHp, $namaSiswa);
-                    $waliId = $waliData['user_id'];
-                }
-                
-                // Update siswa wali_murid_user_id
-                $siswa->wali_murid_user_id = $waliId;
-            }
-            
-            // Restore siswa WITHOUT triggering LogsActivity trait events
-            \App\Models\Siswa::withoutEvents(function () use ($siswa) {
-                $siswa->restore();
-            });
-            
-            // Restore related riwayat pelanggaran
-            \App\Models\RiwayatPelanggaran::withoutEvents(function () use ($siswaId) {
-                \App\Models\RiwayatPelanggaran::onlyTrashed()
-                    ->where('siswa_id', $siswaId)
-                    ->restore();
-            });
-            
-            // Restore related tindak lanjut
-            \App\Models\TindakLanjut::withoutEvents(function () use ($siswaId) {
-                \App\Models\TindakLanjut::onlyTrashed()
-                    ->where('siswa_id', $siswaId)
-                    ->restore();
-            });
-            
-            DB::commit();
-            
-            // Manual activity logging AFTER successful restore
-            try {
-                activity()
-                    ->causedBy(auth()->user())
-                    ->withProperties([
-                        'siswa_id' => $siswaId,
-                        'nama_siswa' => $namaSiswa,
-                        'wali_restored' => $waliId ? 'reconnected/created' : 'none',
-                    ])
-                    ->log("Restored siswa {$namaSiswa}");
-            } catch (\Exception $logError) {
-                \Log::warning('Activity log failed: ' . $logError->getMessage());
-            }
-            
-            return true;
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Restore siswa failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-    
-    /**
-     * Permanently delete siswa and all related data from database.
-     * This operation CANNOT be undone.
-     */
-    public function permanentDeleteSiswa(int $siswaId): bool
-    {
-        DB::beginTransaction();
-        
-        try {
-            $siswa = \App\Models\Siswa::onlyTrashed()->findOrFail($siswaId);
-            $namaSiswa = $siswa->nama_siswa;
-            
-            // Force delete related data (bypass soft delete, permanent delete)
-            \App\Models\RiwayatPelanggaran::onlyTrashed()
-                ->where('siswa_id', $siswaId)
-                ->forceDelete();
-            
-            \App\Models\TindakLanjut::onlyTrashed()
-                ->where('siswa_id', $siswaId)
-                ->forceDelete();
-            
-            // Force delete siswa (permanent)
-            $siswa->forceDelete();
-            
-            DB::commit();
-            
-            // Log activity
-            try {
-                activity()
-                    ->causedBy(auth()->user())
-                    ->withProperties([
-                        'siswa_id' => $siswaId,
-                        'nama_siswa' => $namaSiswa,
-                        'action' => 'PERMANENT DELETE',
-                    ])
-                    ->log("PERMANENT DELETE siswa {$namaSiswa}");
-            } catch (\Exception $logError) {
-                \Log::warning('Activity log failed: ' . $logError->getMessage());
-            }
-            
-            return true;
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Permanent delete failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-    
-    /**
-     * Bulk permanent delete by IDs.
-     */
-    public function bulkPermanentDelete(array $siswaIds): int
-    {
-        DB::beginTransaction();
-        
-        try {
-            $count = 0;
-            
-            foreach ($siswaIds as $siswaId) {
-                $this->permanentDeleteSiswa($siswaId);
-                $count++;
-            }
-            
-            DB::commit();
-            
-            return $count;
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
     }
 }

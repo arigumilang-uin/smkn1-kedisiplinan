@@ -52,6 +52,8 @@ class Siswa extends Model
         'nisn',
         'nama_siswa',
         'nomor_hp_wali_murid',
+        'alasan_keluar',
+        'keterangan_keluar',
     ];
 
     /**

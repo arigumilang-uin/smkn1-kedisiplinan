@@ -96,4 +96,30 @@ class SiswaPolicy
     {
         return $user->hasRole('Operator Sekolah');
     }
+    
+    /**
+     * Determine if the user can bulk delete siswa.
+     * 
+     * Hanya Operator Sekolah yang boleh bulk delete siswa.
+     */
+    public function bulkDelete(User $user): bool
+    {
+        return $user->hasRole('Operator Sekolah');
+    }
+
+    /**
+     * Determine if user can restore deleted siswa.
+     */
+    public function restore(User $user): bool
+    {
+        return $user->hasRole('Operator Sekolah');
+    }
+
+    /**
+     * Determine if user can permanently delete siswa.
+     */
+    public function forceDelete(User $user): bool
+    {
+        return $user->hasRole('Operator Sekolah');
+    }
 }

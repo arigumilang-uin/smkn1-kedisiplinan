@@ -47,7 +47,25 @@ Route::middleware(['auth'])->group(function () {
         // Bulk Operations
         Route::post('/bulk-delete', [SiswaController::class, 'bulkDelete'])
             ->name('bulk-delete')
-            ->middleware('can:delete,App\Models\Siswa');
+            ->middleware('can:bulkDelete,App\Models\Siswa');
+
+        // Restore Operations
+        Route::get('/deleted', [SiswaController::class, 'showDeleted'])
+            ->name('deleted')
+            ->middleware('can:restore,App\Models\Siswa');
+        
+        Route::post('/{id}/restore', [SiswaController::class, 'restore'])
+            ->name('restore')
+            ->middleware('can:restore,App\Models\Siswa');
+
+            // Permanent Delete Operations
+        Route::delete('/{id}/force-delete', [SiswaController::class, 'forceDestroy'])
+            ->name('force-delete')
+            ->middleware('can:forceDelete,App\Models\Siswa');
+
+        Route::post('/bulk-force-delete', [SiswaController::class, 'bulkForceDelete'])
+            ->name('bulk-force-delete')
+            ->middleware('can:forceDelete,App\Models\Siswa');
 
         // Statistics/Reports
         Route::get('/statistics', [SiswaController::class, 'statistics'])

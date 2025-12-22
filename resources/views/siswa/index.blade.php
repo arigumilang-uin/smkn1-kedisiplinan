@@ -147,6 +147,26 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                             Tambah Siswa
                         </a>
+                        
+                        {{-- Tombol Bulk Delete --}}
+                        <button type="button" onclick="$('#bulkDeleteModal').modal('show')" 
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                            Hapus Per Kelas
+                        </button>
+                        
+                        {{-- Tombol Lihat Data Terhapus --}}
+                        <a href="{{ route('siswa.deleted') }}" 
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg shadow transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+                            </svg>
+                            Data Terhapus
+                        </a>
                     @endif
                 </div>
             </div>
@@ -305,12 +325,12 @@
                                         <a href="{{ route('siswa.show', $s->id) }}" class="btn-action hover:text-blue-600 hover:border-blue-100" title="Detail Siswa">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </a>
-                                        <form onsubmit="return confirm('Yakin ingin menghapus siswa {{ $s->nama_siswa }}?');" action="{{ route('siswa.destroy', $s->id) }}" method="POST" class="m-0 inline">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn-action hover:text-rose-500 hover:border-rose-100 cursor-pointer" title="Hapus">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                                onclick="openDeleteModal({{ $s->id }}, '{{ addslashes($s->nama_siswa) }}')" 
+                                                class="btn-action hover:text-rose-500 hover:border-rose-100 cursor-pointer" 
+                                                title="Hapus">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        </button>
                                     @elseif($isWaka)
                                         <a href="{{ route('riwayat.index', ['cari_siswa' => $s->nama_siswa]) }}" class="btn-action bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 hover:shadow-md transition-all font-semibold px-3 py-1.5">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M5.3 10.7l2.8-2.8"/><path d="M2 12h4"/><path d="M5.3 13.3l2.8 2.8"/><path d="M12 18v4"/><path d="M16.9 16.9l2.8 2.8"/><path d="M18 12h4"/><path d="M16.9 7.1l2.8-2.8"/></svg>
@@ -345,8 +365,15 @@
                 </div>
             </div>
 
+
         </div>
     </div>
+    
+    {{-- Bulk Delete Modal Component --}}
+    @include('components.siswa.bulk-delete-modal')
+    
+    {{-- Single Delete Modal Component --}}
+    @include('components.siswa.delete-single-modal')
 @endsection
 
 @section('scripts')
