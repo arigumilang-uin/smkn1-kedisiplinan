@@ -111,6 +111,18 @@ Route::middleware(['auth'])->group(function () {
         })->name('pending-approval');
     });
 
+
+    Route::prefix('kepala-sekolah/reports')->name('kepala-sekolah.reports.')->group(function () {
+    // Route preview yang sudah ada
+    Route::post('/preview', [\App\Http\Controllers\Report\ApprovalController::class, 'preview'])->name('preview');
+    
+    // TAMBAHKAN INI: Route untuk Export CSV
+    Route::get('/export-csv', [\App\Http\Controllers\Report\ApprovalController::class, 'exportCsv'])->name('export-csv');
+    
+    // (Opsional) Tambahkan juga untuk PDF jika ada di view Anda
+    Route::get('/export-pdf', [\App\Http\Controllers\Report\ApprovalController::class, 'exportPdf'])->name('export-pdf');
+});
+
     // ===================================================================
     // PELANGGARAN SHORTCUTS
     // ===================================================================
@@ -136,6 +148,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pelanggaran-by-jurusan', function () {
             return view('reports.pelanggaran-jurusan');
         })->name('pelanggaran-jurusan');
+    });
+
+    // ===================================================================
+    // KEPALA SEKOLAH REPORTS
+    // ===================================================================
+    Route::prefix('kepala-sekolah/reports')->name('kepala-sekolah.reports.')->group(function () {
+        // Gunakan POST karena form kamu mengirim method POST
+        Route::post('/preview', [\App\Http\Controllers\Report\ApprovalController::class, 'preview'])
+            ->name('preview')
+            ->middleware('role:Kepala Sekolah');
     });
 
     // ===================================================================

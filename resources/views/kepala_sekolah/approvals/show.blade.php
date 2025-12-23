@@ -1,175 +1,168 @@
 @extends('layouts.app')
 
-@section('title', 'Tinjau Kasus - Persetujuan')
-
 @section('content')
-<div class="container-fluid">
-    
-    <!-- Header & Navigation -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="text-dark font-weight-bold">
-                    <i class="fas fa-file-signature mr-2"></i> Tinjau & Setujui Kasus
-                </h3>
-                <a href="{{ route('kepala-sekolah.approvals.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left mr-1"></i> Kembali
-                </a>
-            </div>
-        </div>
-    </div>
 
-    <div class="row">
-        <!-- Detail Kasus (Main Content) -->
-        <div class="col-lg-8">
-            <div class="card card-outline card-primary shadow-sm">
-                <div class="card-header bg-primary">
-                    <h3 class="card-title text-white font-weight-bold">
-                        Identitas Siswa & Pelanggaran
-                    </h3>
+{{-- 1. TAILWIND CONFIG --}}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#0f172a',
+                    indigo: { 600: '#4f46e5', 50: '#eef2ff', 100: '#e0e7ff', 700: '#4338ca' },
+                    rose: { 50: '#fff1f2', 100: '#ffe4e6', 600: '#e11d48', 700: '#be123c' },
+                    emerald: { 50: '#ecfdf5', 100: '#d1fae5', 600: '#059669', 700: '#047857' }
+                }
+            }
+        },
+        corePlugins: { preflight: false }
+    }
+</script>
+
+<div class="page-wrap-custom min-h-screen p-6 bg-slate-50">
+    <div class="max-w-7xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 pb-1 border-b border-slate-200">
+            <div>
+                <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">Persetujuan Kasus</span>
                 </div>
-
-                <div class="card-body">
-                    <!-- Identitas Siswa -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-dark">Nama Siswa</h6>
-                            <p class="text-primary font-weight-bold text-lg">{{ $kasus->siswa->nama_siswa }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-dark">NISN</h6>
-                            <p class="font-weight-bold text-lg">{{ $kasus->siswa->nisn }}</p>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-dark">Kelas</h6>
-                            <p class="badge badge-info p-2">{{ $kasus->siswa->kelas->nama_kelas ?? 'N/A' }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-dark">Jurusan</h6>
-                            <p class="badge badge-secondary p-2">{{ $kasus->siswa->kelas->jurusan->nama_jurusan ?? 'N/A' }}</p>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Detail Pelanggaran -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="font-weight-bold text-dark">Deskripsi Pelanggaran</h6>
-                            <div class="p-3 bg-light border rounded">
-                                <p class="mb-0">{{ $kasus->pemicu }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-dark">Tanggal Kejadian</h6>
-                            <p>{{ \Carbon\Carbon::parse($kasus->tanggal_kejadian ?? now())->format('d M Y H:i') }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-dark">Dilaporkan Oleh</h6>
-                            <p>{{ $kasus->user->nama ?? 'Unknown' }}</p>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Rekomendasi Sanksi -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="font-weight-bold text-dark">Rekomendasi Sanksi</h6>
-                            <div class="p-3 bg-danger bg-opacity-10 border-left border-4 border-danger rounded">
-                                <p class="font-weight-bold text-danger mb-0">{{ $kasus->sanksi_deskripsi ?? 'Belum ditentukan' }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Surat Panggilan -->
-                    @if($kasus->suratPanggilan)
-                    <hr>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="font-weight-bold text-dark">
-                                <i class="fas fa-file-pdf mr-2 text-danger"></i> Surat Panggilan
-                            </h6>
-                            <div class="p-3 bg-light rounded">
-                                <p><strong>Nomor Surat:</strong> {{ $kasus->suratPanggilan->nomor_surat ?? 'N/A' }}</p>
-                                <p><strong>Tanggal Surat:</strong> {{ $kasus->suratPanggilan->tanggal_surat ? \Carbon\Carbon::parse($kasus->suratPanggilan->tanggal_surat)->format('d M Y') : 'N/A' }}</p>
-                                <a href="{{ route('kasus.cetak', $kasus->id) }}" class="btn btn-danger btn-sm" target="_blank">
-                                    <i class="fas fa-download mr-1"></i> Unduh Surat
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-                </div>
+                <h1 class="text-2xl font-bold text-slate-800 m-0 tracking-tight flex items-center gap-3">
+                    <i class="fas fa-file-signature text-indigo-600"></i> Tinjau & Setujui Kasus
+                </h1>
             </div>
+            
+            <a href="{{ route('tindak-lanjut.pending-approval') }}" class="btn-clean-action no-underline">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
         </div>
 
-        <!-- Form Approval (Sidebar) -->
-        <div class="col-lg-4">
-            <div class="card card-outline card-success shadow-sm">
-                <div class="card-header bg-success">
-                    <h3 class="card-title text-white font-weight-bold">
-                        <i class="fas fa-check-circle mr-2"></i> Keputusan
-                    </h3>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-8 space-y-6">
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100">
+                        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 m-0">Identitas Siswa</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl font-black shadow-indigo-200 shadow-lg">
+                                {{ substr($kasus->siswa->nama_siswa, 0, 1) }}
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-black text-slate-800 tracking-tight leading-none mb-2">{{ $kasus->siswa->nama_siswa }}</h2>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[11px] font-mono text-slate-400">NISN: {{ $kasus->siswa->nisn }}</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200 uppercase">{{ $kasus->siswa->kelas->nama_kelas }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <form action="{{ route('kepala-sekolah.approvals.process', $kasus->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="card-body">
-                        <!-- Catatan -->
-                        <div class="form-group">
-                            <label for="catatan" class="font-weight-bold">Catatan / Alasan (Opsional)</label>
-                            <textarea class="form-control form-control-sm" id="catatan" name="catatan_kepala_sekolah" rows="4" placeholder="Tuliskan catatan atau alasan keputusan Anda..."></textarea>
-                            <small class="form-text text-muted">Catatan akan dicatat dalam arsip.</small>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100">
+                        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 m-0">Deskripsi Kasus & Sanksi</h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Pemicu / Kejadian</span>
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-sm text-slate-600 leading-relaxed">
+                                "{{ $kasus->pemicu }}"
+                            </div>
                         </div>
 
-                        <!-- Approval Buttons -->
-                        <div class="form-group">
-                            <label class="font-weight-bold">Keputusan Anda:</label>
-                            <div class="btn-group btn-group-toggle w-100" role="group">
-                                <label class="btn btn-outline-danger w-50">
-                                    <input type="radio" name="action" id="reject" value="reject"> 
-                                    <i class="fas fa-times-circle mr-1"></i> Tolak
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-2xl bg-rose-50 border border-rose-100">
+                                <span class="block text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-1">Rekomendasi Sanksi</span>
+                                <span class="text-sm font-black text-rose-700">{{ $kasus->sanksi_deskripsi ?? 'Belum ditentukan' }}</span>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+                                <span class="block text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Dilaporkan Oleh</span>
+                                <span class="text-sm font-black text-indigo-700">{{ $kasus->user->nama ?? 'Sistem' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden sticky top-6">
+                    <div class="p-6 bg-slate-900 text-white">
+                        <h3 class="text-lg font-black tracking-tight m-0 flex items-center gap-2">
+                            <i class="fas fa-check-circle text-emerald-400"></i> Keputusan Akhir
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-1">Silakan tinjau dan berikan validasi anda.</p>
+                    </div>
+
+                    <form id="approvalForm" method="POST" class="p-6 space-y-6">
+                        @csrf
+                        
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Pilih Tindakan</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="relative group cursor-pointer">
+                                    <input type="radio" name="action_type" value="approve" checked onclick="updateAction('approve')" class="peer sr-only">
+                                    <div class="p-3 text-center rounded-xl border-2 border-slate-100 bg-slate-50 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 transition-all">
+                                        <i class="fas fa-check text-slate-300 peer-checked:text-emerald-600 mb-1"></i>
+                                        <span class="block text-[10px] font-black uppercase text-slate-400 peer-checked:text-emerald-700">Setujui</span>
+                                    </div>
                                 </label>
-                                <label class="btn btn-outline-success w-50 active">
-                                    <input type="radio" name="action" id="approve" value="approve" checked> 
-                                    <i class="fas fa-check-circle mr-1"></i> Setujui
+                                <label class="relative group cursor-pointer">
+                                    <input type="radio" name="action_type" value="reject" onclick="updateAction('reject')" class="peer sr-only">
+                                    <div class="p-3 text-center rounded-xl border-2 border-slate-100 bg-slate-50 peer-checked:border-rose-500 peer-checked:bg-rose-50 transition-all">
+                                        <i class="fas fa-times text-slate-300 peer-checked:text-rose-600 mb-1"></i>
+                                        <span class="block text-[10px] font-black uppercase text-slate-400 peer-checked:text-rose-700">Tolak</span>
+                                    </div>
                                 </label>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-primary btn-block font-weight-bold">
-                            <i class="fas fa-paper-plane mr-1"></i> Kirim Keputusan
+                        <div>
+                            <label for="reason" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Catatan / Alasan</label>
+                            <textarea name="reason" id="reason" rows="4" 
+                                class="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all"
+                                placeholder="Tuliskan catatan untuk guru/wali murid..."></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 transition-all transform hover:-translate-y-1">
+                            Kirim Keputusan <i class="fas fa-paper-plane ml-2"></i>
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
 
-            <!-- Info Box -->
-            <div class="card card-outline card-info mt-3">
-                <div class="card-header bg-info">
-                    <h6 class="card-title text-white font-weight-bold">
-                        <i class="fas fa-info-circle mr-2"></i> Informasi
-                    </h6>
-                </div>
-                <div class="card-body p-3 text-sm">
-                    <p><strong>Status Saat Ini:</strong> <span class="badge badge-warning">{{ $kasus->status }}</span></p>
-                    <p><strong>Dibuat Pada:</strong> {{ $kasus->created_at->format('d M Y H:i') }}</p>
-                    <p class="mb-0 text-muted"><em>Keputusan Anda akan disimpan dalam sistem dan diberitahukan kepada pihak terkait.</em></p>
-                </div>
-            </div>
         </div>
     </div>
-
 </div>
+
+<script>
+    function updateAction(action) {
+        const form = document.getElementById('approvalForm');
+        const id = "{{ $kasus->id }}"; // Mengambil ID dari variabel $kasus
+        
+        // Kita susun URL-nya secara manual di JS supaya tidak error parameter
+        if (action === 'approve') {
+            form.action = "/tindak-lanjut/" + id + "/approve";
+        } else {
+            form.action = "/tindak-lanjut/" + id + "/reject";
+        }
+    }
+
+    // Inisialisasi action saat pertama kali load
+    window.onload = function() {
+        updateAction('approve');
+    };
+</script>
+
+<style>
+    .page-wrap-custom { font-family: 'Inter', sans-serif; }
+    .btn-clean-action {
+        padding: 0.5rem 1rem; border-radius: 0.75rem; background: #fff; color: #475569; 
+        font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0; transition: 0.2s;
+    }
+    .btn-clean-action:hover { background: #f1f5f9; color: #0f172a; }
+</style>
 @endsection

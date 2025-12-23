@@ -106,11 +106,16 @@ class TindakLanjutController extends Controller
      * 2. Return view
      */
     public function show(int $id): View
-    {
-        $tindakLanjut = $this->tindakLanjutService->getTindakLanjutDetail($id);
+{
+    $tindakLanjut = $this->tindakLanjutService->getTindakLanjutDetail($id);
+    
+    // Tambahkan ini untuk memastikan semua data relasi terbawa
+    $tindakLanjut->load(['siswa.kelas.jurusan', 'siswa.waliMurid']);
 
-        return view('tindak_lanjut.show', compact('tindakLanjut'));
-    }
+    return view('kepala_sekolah.approvals.show', [
+        'kasus' => $tindakLanjut
+    ]);
+}
 
     /**
      * Tampilkan form edit tindak lanjut.

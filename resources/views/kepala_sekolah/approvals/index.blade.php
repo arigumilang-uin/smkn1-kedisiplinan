@@ -120,12 +120,14 @@
 
                             {{-- Aksi --}}
                             <td class="px-6 py-4 text-center pr-8">
-                                <a href="{{ route('kepala-sekolah.approvals.show', $kasus->id) }}" class="btn-action hover:text-indigo-600 hover:border-indigo-100" title="Tinjau Kasus">
+                                {{-- PERBAIKAN: Ganti $item->id menjadi $kasus->id --}}
+                                <a href="{{ route('tindak-lanjut.show', $kasus->id) }}" class="btn-action hover:text-indigo-600 hover:border-indigo-100" title="Tinjau Kasus">
                                     <i class="fas fa-eye w-4 h-4 mr-2"></i> Tinjau
                                 </a>
                             </td>
                         </tr>
                         @endforeach
+
                     </tbody>
                 </table>
             </div>
