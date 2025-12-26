@@ -83,7 +83,10 @@ class JurusanController extends Controller
      */
     public function edit(Jurusan $jurusan)
     {
-        return view('jurusan.edit', compact('jurusan'));
+        // Get all program keahlian for dropdown
+        $programKeahlianList = \App\Models\ProgramKeahlian::orderBy('nama_program')->get();
+        
+        return view('jurusan.edit', compact('jurusan', 'programKeahlianList'));
     }
 
     /**

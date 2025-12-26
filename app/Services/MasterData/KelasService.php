@@ -39,7 +39,10 @@ class KelasService
     public function getDataForCreate(): array
     {
         return [
-            'jurusanList' => Jurusan::orderBy('nama_jurusan')->get(),
+            'jurusanList' => Jurusan::with('programKeahlian')
+                                    ->orderBy('nama_jurusan')
+                                    ->get(),
+            'programKeahlianList' => \App\Models\ProgramKeahlian::orderBy('nama_program')->get(),
             'waliList' => $this->kelasRepository->getAvailableWaliKelas(),
         ];
     }
@@ -51,7 +54,10 @@ class KelasService
     {
         return [
             'kelas' => $kelas,
-            'jurusanList' => Jurusan::orderBy('nama_jurusan')->get(),
+            'jurusanList' => Jurusan::with('programKeahlian')
+                                    ->orderBy('nama_jurusan')
+                                    ->get(),
+            'programKeahlianList' => \App\Models\ProgramKeahlian::orderBy('nama_program')->get(),
             'waliList' => $this->kelasRepository->getAvailableWaliKelas(),
         ];
     }
@@ -91,6 +97,7 @@ class KelasService
         $kelas = $this->kelasRepository->create([
             'tingkat' => $data->tingkat,
             'jurusan_id' => $data->jurusan_id,
+            'program_keahlian_id' => $data->program_keahlian_id, // NEW: konsentrasi opsional
             'wali_kelas_user_id' => $data->wali_kelas_user_id,
             'nama_kelas' => $namaKelas,
         ]);
@@ -146,6 +153,7 @@ class KelasService
             'nama_kelas' => $namaKelas, // Use auto-generated if tingkat/jurusan changed
             'tingkat' => $data->tingkat,
             'jurusan_id' => $data->jurusan_id,
+            'program_keahlian_id' => $data->program_keahlian_id, // NEW: konsentrasi update
             'wali_kelas_user_id' => $data->wali_kelas_user_id,
         ]);
         

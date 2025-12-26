@@ -32,7 +32,8 @@ class UpdateKelasRequest extends FormRequest
         return [
             'nama_kelas' => ['required', 'string', 'max:100'],
             'tingkat' => ['required', 'string', 'in:X,XI,XII'],
-            'jurusan_id' => ['required', 'integer'],
+            'jurusan_id' => ['required', 'integer', 'exists:jurusan,id'],
+            'program_keahlian_id' => ['nullable', 'integer', 'exists:program_keahlian,id'],
             'wali_kelas_user_id' => ['nullable', 'integer'],
         ];
     }

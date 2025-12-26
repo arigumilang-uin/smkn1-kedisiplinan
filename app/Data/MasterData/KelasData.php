@@ -9,6 +9,10 @@ use Spatie\LaravelData\Data;
  * 
  * Purpose: Transfer kelas data between layers (Controller → Service → Repository)
  * Pattern: DTO (Data Transfer Object)
+ * 
+ * STRUKTUR KONEKSI (Fleksibel):
+ * - jurusan_id: Koneksi langsung ke Jurusan (wajib)
+ * - program_keahlian_id: Koneksi ke Konsentrasi (opsional)
  */
 class KelasData extends Data
 {
@@ -16,6 +20,7 @@ class KelasData extends Data
         public ?int $id,
         public string $tingkat,
         public int $jurusan_id,
+        public ?int $program_keahlian_id, // NEW: untuk koneksi ke konsentrasi
         public ?int $wali_kelas_user_id,
         public ?string $nama_kelas, // Can be auto-generated or manual
         

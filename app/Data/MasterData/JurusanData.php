@@ -18,7 +18,16 @@ class JurusanData extends Data
         public ?string $kode_jurusan,
         public ?int $kaprodi_user_id,
         
+        // Program Keahlian hierarchy
+        public ?int $program_keahlian_id = null,
+        public ?string $tingkat = null, // X, XI, XII
+        
         // Additional flag for auto-creating kaprodi user
         public bool $create_kaprodi = false,
+        
+        // Additional flag for creating new program keahlian
+        public bool $create_program = false,
+        public ?string $new_program_nama = null,
+        public ?string $new_program_kode = null,
     ) {}
 }

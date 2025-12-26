@@ -63,11 +63,15 @@ class TindakLanjutController extends Controller
             }
         }
         
-        // Kaprodi: hanya kasus siswa di jurusannya
+        // Kaprodi: hanya kasus siswa di jurusan yang dikelola
+        // Support multiple jurusan via Program Keahlian
+        $jurusanIds = null;
         if ($role === 'Kaprodi') {
-            $jurusanBinaan = $user->jurusanDiampu;
-            if ($jurusanBinaan) {
-                $jurusanId = $jurusanBinaan->id;
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            // If only 1 jurusan, use legacy single filter
+            if (count($jurusanIds) === 1) {
+                $jurusanId = $jurusanIds[0];
+                $jurusanIds = null;
             }
         }
         

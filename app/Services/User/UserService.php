@@ -314,6 +314,10 @@ class UserService
      * LOGIC:
      * - Unassign current kaprodi from target jurusan (if any)
      * - Assign this user as kaprodi
+     * - ALWAYS sync nama ke "Kaprodi [Nama Jurusan]"
+     * 
+     * CRITICAL: Menggunakan Eloquent model untuk trigger JurusanObserver
+     * yang akan auto-sync nama User ke "Kaprodi [Nama Jurusan]"
      * 
      * @param int $userId
      * @param int $jurusanId
@@ -324,9 +328,31 @@ class UserService
         DB::beginTransaction();
         
         try {
-            // Update jurusan to set this user as kaprodi
-            \App\Models\Jurusan::where('id', $jurusanId)
-                ->update(['kaprodi_user_id' => $userId]);
+            // Find the jurusan (use Eloquent to trigger Observer)
+            $jurusan = \App\Models\Jurusan::find($jurusanId);
+            
+            if ($jurusan) {
+                $oldKaprodiId = $jurusan->kaprodi_user_id;
+                
+                // Update using Eloquent model to trigger Observer
+                $jurusan->kaprodi_user_id = $userId;
+                $jurusan->save(); // This will trigger JurusanObserver::updated()
+                
+                // FALLBACK: Jika observer tidak ter-trigger (karena nilai sama),
+                // lakukan sync manual
+                if ($oldKaprodiId == $userId) {
+                    // Nilai tidak berubah, Observer mungkin tidak sync nama
+                    // Sync manual disini
+                    $user = \App\Models\User::find($userId);
+                    if ($user && $user->role && $user->role->nama_role !== 'Developer') {
+                        $newName = "Kaprodi {$jurusan->nama_jurusan}";
+                        if ($user->nama !== $newName) {
+                            $user->nama = $newName;
+                            $user->saveQuietly();
+                        }
+                    }
+                }
+            }
             
             DB::commit();
         } catch (\Exception $e) {

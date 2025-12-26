@@ -4,6 +4,7 @@ namespace App\Services\MasterData;
 
 use App\Data\MasterData\JurusanData;
 use App\Models\Jurusan;
+use App\Models\ProgramKeahlian;
 use App\Models\User;
 use App\Models\Role;
 use App\Repositories\JurusanRepository;
@@ -95,15 +96,33 @@ class JurusanService
             $kodeJurusan = $this->jurusanRepository->generateUniqueKode($baseKode, $jurusan->id);
         }
         
-        // STEP 2: Execute update in transaction (lines 125-222)
-        DB::transaction(function () use ($jurusan, $data, $kodeJurusan) {
+        // STEP 2: Handle Program Keahlian creation if requested
+        $programKeahlianId = $data->program_keahlian_id;
+        
+        if ($data->create_program && !empty($data->new_program_nama)) {
+            $newProgram = ProgramKeahlian::create([
+                'nama_program' => $data->new_program_nama,
+                'kode_program' => $data->new_program_kode,
+                // Note: Tidak perlu kaprodi_user_id, akan inherit dari jurusan
+            ]);
+            $programKeahlianId = $newProgram->id;
+            
+            session()->flash('program_created', [
+                'nama' => $data->new_program_nama,
+            ]);
+        }
+        
+        // STEP 3: Execute update in transaction
+        DB::transaction(function () use ($jurusan, $data, $kodeJurusan, $programKeahlianId) {
             $oldKode = $jurusan->kode_jurusan;
             
-            // Update jurusan (lines 127-128)
+            // Update jurusan with new fields
             $this->jurusanRepository->update($jurusan, [
                 'nama_jurusan' => $data->nama_jurusan,
                 'kode_jurusan' => $kodeJurusan,
                 'kaprodi_user_id' => $data->kaprodi_user_id,
+                'program_keahlian_id' => $programKeahlianId,
+                'tingkat' => $data->tingkat,
             ]);
             
             // Refresh model to get updated data
@@ -111,16 +130,16 @@ class JurusanService
             
             $newKode = $jurusan->kode_jurusan;
             
-            // STEP 3: Propagate kode changes to kelas (lines 132-165)
+            // STEP 4: Propagate kode changes to kelas
             if ($newKode !== $oldKode) {
                 $this->propagateKodeChangeToKelas($jurusan, $newKode);
             }
             
-            // STEP 4: Update Kaprodi user if exists (lines 168-188)
+            // STEP 5: Update Kaprodi user if exists
             if ($jurusan->kaprodi_user_id) {
                 $this->updateKaprodiUser($jurusan);
             } else {
-                // STEP 5: Create Kaprodi if requested during update (lines 191-220)
+                // STEP 6: Create Kaprodi if requested during update
                 if ($data->create_kaprodi) {
                     $this->createKaprodiUser($jurusan, true); // true = from update
                 }

@@ -9,54 +9,69 @@ use Illuminate\Support\Facades\DB;
 use App\Models\RiwayatPelanggaran;
 use App\Models\TindakLanjut;
 use App\Models\Kelas;
+use App\Models\Jurusan;
 
 class KaprodiDashboardController extends Controller
 {
     public function index(Request $request)
     {
         $user = Auth::user();
+        
+        // Get jurusan yang diampu
         $jurusan = $user->jurusanDiampu;
-
+        
+        // Jika tidak punya jurusan, tampilkan no data
         if (!$jurusan) {
             return view('dashboards.kaprodi_no_data');
         }
+        
+        // Get Program Keahlian jika ada (untuk display)
+        $programKeahlian = $jurusan->programKeahlian;
 
         // FILTER (Default: Bulan Ini)
         $startDate = $request->input('start_date', date('Y-m-01'));
         $endDate = $request->input('end_date', date('Y-m-d'));
         $kelasId = $request->input('kelas_id'); // Filter per kelas (optional)
+        $jurusanId = $request->input('jurusan_id'); // Filter per jurusan (NEW)
 
-        // DATA KELAS UNTUK DROPDOWN
-        $kelasJurusan = Kelas::where('jurusan_id', $jurusan->id)->get();
+        // Get all jurusan IDs yang dikelola kaprodi
+        $jurusanIds = $user->getJurusanIdsForKaprodi();
+        
+        // If specific jurusan filter, validate it's in their scope
+        if ($jurusanId && in_array($jurusanId, $jurusanIds)) {
+            $jurusanIds = [$jurusanId];
+        }
+
+        // DATA JURUSAN UNTUK DROPDOWN (NEW)
+        $jurusanList = Jurusan::whereIn('id', $user->getJurusanIdsForKaprodi())->get();
+
+        // DATA KELAS UNTUK DROPDOWN (filter by jurusan scope)
+        $kelasJurusan = Kelas::whereIn('jurusan_id', $jurusanIds)->get();
 
         // SISWA IDS (untuk scope filtering)
         $siswaIds = DB::table('siswa')
             ->join('kelas', 'siswa.kelas_id', '=', 'kelas.id')
-            ->where('kelas.jurusan_id', $jurusan->id)
+            ->whereIn('kelas.jurusan_id', $jurusanIds)
             ->when($kelasId, function($q) use ($kelasId) {
                 return $q->where('kelas.id', $kelasId);
             })
             ->pluck('siswa.id');
 
         // KASUS SURAT (Clean & Informatif)
-        // Hanya tampilkan kasus yang:
-        // 1. Siswa di jurusan ini
-        // 2. Melibatkan Kaprodi
-        // 3. Punya surat panggilan
         $kasusBaru = TindakLanjut::with(['siswa.kelas', 'suratPanggilan'])
             ->whereIn('siswa_id', $siswaIds)
-            ->forPembina('Kaprodi')  // Filter: Hanya yang melibatkan Kaprodi
-            ->whereHas('suratPanggilan')  // Filter: Harus punya surat
+            ->forPembina('Kaprodi')
+            ->whereHas('suratPanggilan')
             ->whereIn('status', ['Baru', 'Menunggu Persetujuan', 'Disetujui', 'Ditangani'])
             ->latest()
             ->get();
 
-        // DIAGRAM: Pelanggaran Populer di Jurusan (Filter Waktu & Kelas)
+        // DIAGRAM: Pelanggaran Populer
         $chartPelanggaran = DB::table('riwayat_pelanggaran')
             ->join('siswa', 'riwayat_pelanggaran.siswa_id', '=', 'siswa.id')
             ->join('kelas', 'siswa.kelas_id', '=', 'kelas.id')
             ->join('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
-            ->where('kelas.jurusan_id', $jurusan->id)
+            ->whereIn('kelas.jurusan_id', $jurusanIds)
             ->when($kelasId, function($q) use ($kelasId) {
                 return $q->where('kelas.id', $kelasId);
             })
@@ -80,7 +95,9 @@ class KaprodiDashboardController extends Controller
             ->count();
 
         return view('dashboards.kaprodi', compact(
-            'jurusan', 
+            'programKeahlian',  // NEW
+            'jurusan',          // Legacy (for backward compat)
+            'jurusanList',      // NEW: dropdown
             'kasusBaru',
             'chartLabels', 
             'chartData',

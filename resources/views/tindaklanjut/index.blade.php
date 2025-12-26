@@ -39,9 +39,10 @@
             $baseQuery->whereHas('siswa', fn($q) => $q->where('kelas_id', $kelasBinaan->id));
         }
     } elseif ($role === 'Kaprodi') {
-        $jurusanBinaan = $user->jurusanDiampu;
-        if ($jurusanBinaan) {
-            $baseQuery->whereHas('siswa.kelas', fn($q) => $q->where('jurusan_id', $jurusanBinaan->id));
+        // Support multiple jurusan via Program Keahlian
+        $jurusanIds = $user->getJurusanIdsForKaprodi();
+        if (!empty($jurusanIds)) {
+            $baseQuery->whereHas('siswa.kelas', fn($q) => $q->whereIn('jurusan_id', $jurusanIds));
         }
     }
     
@@ -80,7 +81,8 @@
                         @if($role === 'Wali Kelas')
                             <i class="fas fa-filter mr-1"></i>{{ $user->kelasDiampu->nama_kelas ?? 'Kelas Saya' }}
                         @elseif($role === 'Kaprodi')
-                            <i class="fas fa-filter mr-1"></i>{{ $user->jurusanDiampu->nama_jurusan ?? 'Jurusan Saya' }}
+                            @php $jurusanDiampu = $user->jurusanDiampu; @endphp
+                            <i class="fas fa-filter mr-1"></i>{{ $jurusanDiampu?->programKeahlian?->nama_program ?? $jurusanDiampu?->nama_jurusan ?? 'Program Saya' }}
                         @endif
                     </span>
                     @endif

@@ -91,17 +91,17 @@ class SiswaPerluPembinaanController extends Controller
                 }
             }
             
-            // Kaprodi: hanya siswa di jurusan binaan (STRICT)
+            // Kaprodi: hanya siswa di jurusan binaan (STRICT) - support multiple jurusan
             if ($userRole === 'Kaprodi') {
-                $jurusanBinaan = $user->jurusanDiampu;
+                $jurusanIds = $user->getJurusanIdsForKaprodi();
                 
                 // If no jurusan assigned, show nothing
-                if (!$jurusanBinaan) {
+                if (empty($jurusanIds)) {
                     return false;
                 }
                 
-                // Strict jurusan match
-                if (!$siswa->kelas || $siswa->kelas->jurusan_id !== $jurusanBinaan->id) {
+                // Strict jurusan match (in any of the managed jurusan)
+                if (!$siswa->kelas || !in_array($siswa->kelas->jurusan_id, $jurusanIds)) {
                     return false;
                 }
             }
@@ -212,10 +212,10 @@ class SiswaPerluPembinaanController extends Controller
                 }
             }
             
-            // Kaprodi: hanya siswa di jurusan binaan
+            // Kaprodi: hanya siswa di jurusan binaan (support multiple jurusan)
             if ($userRole === 'Kaprodi') {
-                $jurusanBinaan = $user->jurusanDiampu;
-                if (!$jurusanBinaan || !$siswa->kelas || $siswa->kelas->jurusan_id !== $jurusanBinaan->id) {
+                $jurusanIds = $user->getJurusanIdsForKaprodi();
+                if (empty($jurusanIds) || !$siswa->kelas || !in_array($siswa->kelas->jurusan_id, $jurusanIds)) {
                     return false;
                 }
             }

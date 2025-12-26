@@ -39,9 +39,10 @@ class SiswaPolicy
             return $siswa->kelas_id === $user->kelasDiampu?->id;
         }
 
-        // Kaprodi bisa lihat siswa di jurusan binaan
+        // Kaprodi bisa lihat siswa di jurusan binaan (termasuk multiple jurusan)
         if ($user->hasRole('Kaprodi')) {
-            return $siswa->kelas?->jurusan_id === $user->jurusanDiampu?->id;
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            return in_array($siswa->kelas?->jurusan_id, $jurusanIds);
         }
 
         // Admin, Kepsek, Waka bisa lihat semua

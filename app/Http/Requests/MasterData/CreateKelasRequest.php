@@ -31,7 +31,8 @@ class CreateKelasRequest extends FormRequest
     {
         return [
             'tingkat' => ['required', 'string', 'in:X,XI,XII'],
-            'jurusan_id' => ['required', 'integer'],
+            'jurusan_id' => ['required', 'integer', 'exists:jurusan,id'],
+            'program_keahlian_id' => ['nullable', 'integer', 'exists:program_keahlian,id'],
             'wali_kelas_user_id' => ['nullable', 'integer'],
             'create_wali' => ['nullable', 'boolean'], // For auto-creating wali kelas user
         ];

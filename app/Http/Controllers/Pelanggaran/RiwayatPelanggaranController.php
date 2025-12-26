@@ -74,10 +74,11 @@ class RiwayatPelanggaranController extends Controller
                 $filterData['kelas_id'] = -1;
             }
         } elseif ($user->hasRole('Kaprodi')) {
-            // Kaprodi: hanya siswa di jurusannya
-            $jurusan = \App\Models\Jurusan::where('kaprodi_user_id', $user->id)->first();
-            if ($jurusan) {
-                $filterData['jurusan_id'] = $jurusan->id;
+            // Kaprodi: hanya siswa di jurusan yang dikelola (support multiple via Program Keahlian)
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            if (!empty($jurusanIds)) {
+                // Use jurusan_ids for filter (supports multiple)
+                $filterData['jurusan_ids'] = $jurusanIds;
             } else {
                 // Jika tidak ada jurusan, set filter impossible
                 $filterData['jurusan_id'] = -1;

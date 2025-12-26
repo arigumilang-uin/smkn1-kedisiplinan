@@ -37,9 +37,10 @@ class RiwayatPelanggaranPolicy
             return $riwayat->siswa?->kelas_id === $user->kelasDiampu?->id;
         }
 
-        // Kaprodi bisa lihat pelanggaran siswa di jurusan binaan
+        // Kaprodi bisa lihat pelanggaran siswa di jurusan binaan (termasuk multiple jurusan)
         if ($user->hasRole('Kaprodi')) {
-            return $riwayat->siswa?->kelas?->jurusan_id === $user->jurusanDiampu?->id;
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            return in_array($riwayat->siswa?->kelas?->jurusan_id, $jurusanIds);
         }
 
         // Admin, Kepsek, Waka bisa lihat semua

@@ -67,6 +67,15 @@
                             <span class="detail-value text-slate-800 font-semibold">{{ $jurusan->kode_jurusan ?? '-' }}</span>
                         </div>
                         
+                        @if($jurusan->tingkat)
+                        <div class="detail-row">
+                            <span class="detail-label">Tingkat:</span>
+                            <span class="detail-value">
+                                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700">Kelas {{ $jurusan->tingkat }}</span>
+                            </span>
+                        </div>
+                        @endif
+                        
                         <div class="detail-row">
                             <span class="detail-label">Kepala Program:</span>
                             <span class="detail-value text-right">
@@ -84,6 +93,58 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- PROGRAM KEAHLIAN INFO (NEW) --}}
+                @if($jurusan->programKeahlian)
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-lg border border-emerald-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-emerald-100 bg-emerald-100/50">
+                         <h3 class="text-base font-bold text-emerald-700 m-0 flex items-center gap-2">
+                             <i class="fas fa-sitemap"></i> Program Keahlian
+                         </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="text-center mb-4">
+                            <span class="inline-block px-4 py-2 rounded-xl text-lg font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                {{ $jurusan->programKeahlian->nama_program }}
+                            </span>
+                            @if($jurusan->programKeahlian->kode_program)
+                            <span class="block text-xs text-emerald-600 mt-1">{{ $jurusan->programKeahlian->kode_program }}</span>
+                            @endif
+                        </div>
+                        
+                        <p class="text-xs text-slate-500 text-center mb-4">
+                            <i class="fas fa-info-circle mr-1"></i> Dikelola oleh Kaprodi jurusan yang tergabung.
+                        </p>
+                        
+                        {{-- Sibling Jurusan dalam Program yang sama --}}
+                        @php
+                            $allJurusan = $jurusan->programKeahlian->jurusan()->orderBy('tingkat')->orderBy('nama_jurusan')->get();
+                        @endphp
+                        @if($allJurusan->count() > 1)
+                        <div class="mt-4 pt-4 border-t border-emerald-200">
+                            <span class="text-xs text-slate-500 uppercase font-bold block mb-2">Konsentrasi dalam Program:</span>
+                            <div class="space-y-2">
+                                @foreach($allJurusan as $sib)
+                                <a href="{{ route('jurusan.show', $sib) }}" class="flex items-center justify-between p-2 rounded-lg {{ $sib->id == $jurusan->id ? 'bg-emerald-200 border border-emerald-300' : 'bg-white border border-slate-100 hover:bg-emerald-50' }} transition no-underline">
+                                    <div class="flex items-center gap-2">
+                                        @if($sib->id == $jurusan->id)
+                                        <i class="fas fa-check-circle text-emerald-600 text-xs"></i>
+                                        @else
+                                        <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                                        @endif
+                                        <span class="text-sm font-semibold {{ $sib->id == $jurusan->id ? 'text-emerald-700' : 'text-slate-700' }}">{{ $sib->nama_jurusan }}</span>
+                                    </div>
+                                    @if($sib->tingkat)
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $sib->id == $jurusan->id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500' }}">{{ $sib->tingkat }}</span>
+                                    @endif
+                                </a>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
 
                 <div class="grid grid-cols-2 gap-4">
                     

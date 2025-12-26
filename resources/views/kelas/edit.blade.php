@@ -54,17 +54,41 @@
                         </select>
                     </div>
 
+                    {{-- Jurusan --}}
                     <div class="form-group">
                         <label class="form-label">Jurusan <span class="text-rose-500">*</span></label>
-                        <select name="jurusan_id" class="form-input cursor-pointer" required>
+                        <select name="jurusan_id" id="jurusanSelect" class="form-input cursor-pointer" required>
                             <option value="">Pilih Jurusan</option>
                             @foreach($jurusanList as $j)
-                                <option value="{{ $j->id }}" {{ $kelas->jurusan_id == $j->id ? 'selected' : '' }}>
+                                <option value="{{ $j->id }}" {{ old('jurusan_id', $kelas->jurusan_id) == $j->id ? 'selected' : '' }}>
                                     {{ $j->nama_jurusan }}
                                 </option>
                             @endforeach
                         </select>
+                        <p class="text-xs text-slate-400 mt-1">
+                            <i class="fas fa-graduation-cap mr-1"></i> Pilih jurusan utama untuk kelas ini.
+                        </p>
                     </div>
+                </div>
+
+                {{-- Program Keahlian / Konsentrasi (Opsional) --}}
+                <div class="form-group bg-indigo-50 border border-indigo-200 rounded-xl p-4 mt-2">
+                    <label class="form-label text-indigo-700">
+                        <i class="fas fa-layer-group mr-1"></i>
+                        Program Keahlian / Konsentrasi 
+                        <span class="text-xs font-normal text-indigo-500">(Opsional)</span>
+                    </label>
+                    <select name="program_keahlian_id" id="programKeahlianSelect" class="form-input cursor-pointer border-indigo-300">
+                        <option value="">-- Tanpa Konsentrasi (Langsung ke Jurusan) --</option>
+                        @foreach($programKeahlianList ?? [] as $pk)
+                            <option value="{{ $pk->id }}" {{ old('program_keahlian_id', $kelas->program_keahlian_id) == $pk->id ? 'selected' : '' }}>
+                                {{ $pk->nama_program }} {{ $pk->kode_program ? '('.$pk->kode_program.')' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-indigo-500 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i> Jika kelas ini merupakan bagian dari konsentrasi tertentu, pilih di sini.
+                    </p>
                 </div>
 
                 <div class="form-group">

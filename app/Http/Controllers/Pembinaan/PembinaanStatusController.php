@@ -80,8 +80,8 @@ class PembinaanStatusController extends Controller
             }
             
             if ($userRole === 'Kaprodi') {
-                $jurusanBinaan = $user->jurusanDiampu;
-                if (!$jurusanBinaan || !$siswa->kelas || $siswa->kelas->jurusan_id !== $jurusanBinaan->id) {
+                $jurusanIds = $user->getJurusanIdsForKaprodi();
+                if (empty($jurusanIds) || !$siswa->kelas || !in_array($siswa->kelas->jurusan_id, $jurusanIds)) {
                     return false;
                 }
             }
@@ -142,9 +142,9 @@ class PembinaanStatusController extends Controller
                 $query->whereHas('siswa', fn($q) => $q->where('kelas_id', $kelasBinaan->id));
             }
         } elseif ($userRole === 'Kaprodi') {
-            $jurusanBinaan = $user->jurusanDiampu;
-            if ($jurusanBinaan) {
-                $query->whereHas('siswa.kelas', fn($q) => $q->where('jurusan_id', $jurusanBinaan->id));
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            if (!empty($jurusanIds)) {
+                $query->whereHas('siswa.kelas', fn($q) => $q->whereIn('jurusan_id', $jurusanIds));
             }
         }
         

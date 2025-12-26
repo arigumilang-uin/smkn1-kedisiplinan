@@ -97,12 +97,37 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Relasi Opsional: User (jika dia Kaprodi) MEMILIKI SATU Jurusan.
+     * Relasi Legacy: User (jika dia Kaprodi) MEMILIKI SATU Jurusan langsung.
+     * DEPRECATED: Gunakan programKeahlianDiampu untuk struktur baru.
      * (Foreign Key di tabel 'jurusan': kaprodi_user_id)
      */
     public function jurusanDiampu(): HasOne
     {
         return $this->hasOne(Jurusan::class, 'kaprodi_user_id');
+    }
+
+    /**
+     * Get all jurusan IDs yang dikelola kaprodi ini.
+     * Termasuk jurusan langsung DAN jurusan lain dalam Program Keahlian yang sama.
+     */
+    public function getJurusanIdsForKaprodi(): array
+    {
+        // Get jurusan yang langsung diampu
+        $jurusan = $this->jurusanDiampu;
+        if (!$jurusan) {
+            return [];
+        }
+        
+        // Jika jurusan punya Program Keahlian, ambil SEMUA jurusan dalam program tersebut
+        if ($jurusan->program_keahlian_id) {
+            $programKeahlian = $jurusan->programKeahlian;
+            if ($programKeahlian) {
+                return $programKeahlian->getJurusanIds();
+            }
+        }
+        
+        // Fallback: hanya jurusan yang diampu langsung
+        return [$jurusan->id];
     }
 
     /**

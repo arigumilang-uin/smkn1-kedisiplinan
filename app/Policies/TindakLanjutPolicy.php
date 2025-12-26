@@ -36,9 +36,10 @@ class TindakLanjutPolicy
             return $tindakLanjut->siswa?->kelas_id === $user->kelasDiampu?->id;
         }
 
-        // Kaprodi bisa lihat tindak lanjut siswa di jurusan binaan
+        // Kaprodi bisa lihat tindak lanjut siswa di jurusan binaan (termasuk multiple jurusan)
         if ($user->hasRole('Kaprodi')) {
-            return $tindakLanjut->siswa?->kelas?->jurusan_id === $user->jurusanDiampu?->id;
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            return in_array($tindakLanjut->siswa?->kelas?->jurusan_id, $jurusanIds);
         }
 
         // Admin, Kepsek, Waka bisa lihat semua
@@ -101,9 +102,10 @@ class TindakLanjutPolicy
             return true;
         }
 
-        // Kaprodi bisa approve untuk siswa di jurusan binaan
+        // Kaprodi bisa approve untuk siswa di jurusan binaan (termasuk multiple jurusan)
         if ($user->hasRole('Kaprodi')) {
-            return $tindakLanjut->siswa?->kelas?->jurusan_id === $user->jurusanDiampu?->id;
+            $jurusanIds = $user->getJurusanIdsForKaprodi();
+            return in_array($tindakLanjut->siswa?->kelas?->jurusan_id, $jurusanIds);
         }
 
         return false;
