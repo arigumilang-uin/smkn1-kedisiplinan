@@ -112,17 +112,6 @@ Route::middleware(['auth'])->group(function () {
     });
 
 
-    Route::prefix('kepala-sekolah/reports')->name('kepala-sekolah.reports.')->group(function () {
-    // Route preview yang sudah ada
-    Route::post('/preview', [\App\Http\Controllers\Report\ApprovalController::class, 'preview'])->name('preview');
-    
-    // TAMBAHKAN INI: Route untuk Export CSV
-    Route::get('/export-csv', [\App\Http\Controllers\Report\ApprovalController::class, 'exportCsv'])->name('export-csv');
-    
-    // (Opsional) Tambahkan juga untuk PDF jika ada di view Anda
-    Route::get('/export-pdf', [\App\Http\Controllers\Report\ApprovalController::class, 'exportPdf'])->name('export-pdf');
-});
-
     // ===================================================================
     // PELANGGARAN SHORTCUTS
     // ===================================================================
@@ -151,14 +140,24 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // ===================================================================
-    // KEPALA SEKOLAH REPORTS
+    // KEPALA SEKOLAH REPORTS (Consolidated - Role Protected)
     // ===================================================================
-    Route::prefix('kepala-sekolah/reports')->name('kepala-sekolah.reports.')->group(function () {
-        // Gunakan POST karena form kamu mengirim method POST
-        Route::post('/preview', [\App\Http\Controllers\Report\ApprovalController::class, 'preview'])
-            ->name('preview')
-            ->middleware('role:Kepala Sekolah');
-    });
+    Route::prefix('kepala-sekolah/reports')
+        ->name('kepala-sekolah.reports.')
+        ->middleware('role:Kepala Sekolah,Waka Kesiswaan')
+        ->group(function () {
+            // Preview report (form submit uses POST) - Uses ReportController for consistent form handling
+            Route::post('/preview', [\App\Http\Controllers\Report\ReportController::class, 'preview'])
+                ->name('preview');
+            
+            // Export CSV
+            Route::get('/export-csv', [\App\Http\Controllers\Report\ReportController::class, 'exportCsv'])
+                ->name('export-csv');
+            
+            // Export PDF
+            Route::get('/export-pdf', [\App\Http\Controllers\Report\ReportController::class, 'exportPdf'])
+                ->name('export-pdf');
+        });
 
     // ===================================================================
     // SETTINGS

@@ -14,12 +14,14 @@ use App\Models\Kelas;
  * RULES:
  * - Kaprodi → "Kaprodi [Nama Jurusan]"
  * - Wali Kelas → "Wali Kelas [Nama Kelas]"
+ * - Wali Murid → "Wali dari [Nama Siswa Pertama]" + username "wali.[nisn_pertama]"
  * - Other roles → Keep original name (unless manually changed)
  * 
  * TRIGGERS:
  * - When user is assigned as Kaprodi (Jurusan.kaprodi_user_id updated)
  * - When user is assigned as Wali Kelas (Kelas.wali_kelas_user_id updated)
  * - When user role changes
+ * - When siswa.wali_murid_user_id changes (via SiswaObserver)
  */
 class UserNameSyncObserver
 {
@@ -90,13 +92,13 @@ class UserNameSyncObserver
     }
     
     /**
-     * Sync user name based on role and assignment.
+     * Sync user name (and username for Wali Murid) based on role and assignment.
      * 
-     * RULES (Updated 2025-12-11):
-     * - Kaprodi → "Kaprodi [Nama Jurusan]"
-     * - Wali Kelas → "Wali Kelas [Nama Kelas]"
-     * - Wali Murid → "Wali dari [Nama Anak Pertama]" (if has siswa)
-     * - Guru/Staff → Generic role name ("Guru", "Operator Sekolah", etc.)
+     * RULES (Updated 2025-12-26):
+     * - Kaprodi → nama = "Kaprodi [Nama Jurusan]"
+     * - Wali Kelas → nama = "Wali Kelas [Nama Kelas]"
+     * - Wali Murid → nama = "Wali dari [Nama Siswa Pertama]", username = "wali.[nisn_pertama]"
+     * - Guru/Staff → nama = Generic role name ("Guru", "Operator Sekolah", etc.)
      * - Developer → SKIP (never auto-synced for testing flexibility)
      * 
      * @param User $user
@@ -116,6 +118,8 @@ class UserNameSyncObserver
         }
         
         $newName = null;
+        $newUsername = null;
+        $newEmail = null;
         
         switch ($role->nama_role) {
             case 'Kaprodi':
@@ -141,15 +145,42 @@ class UserNameSyncObserver
                 break;
                 
             case 'Wali Murid':
-                // Find first siswa where this user is wali murid
+                // Find first siswa where this user is wali murid (ordered by id = siswa pertama)
                 $siswa = \App\Models\Siswa::where('wali_murid_user_id', $user->id)
                     ->orderBy('id')
                     ->first();
                 
                 if ($siswa) {
+                    // Update nama berdasarkan nama siswa pertama
                     $newName = "Wali dari {$siswa->nama_siswa}";
+                    
+                    // IMPORTANT: Hanya update username jika BELUM pernah diubah manual oleh user
+                    // Jika user sudah mengubah username sendiri (hasChangedUsername = true), kita hormati keputusan mereka
+                    if (!$user->hasChangedUsername()) {
+                        $nisnClean = preg_replace('/\D+/', '', $siswa->nisn ?? '');
+                        if ($nisnClean !== '') {
+                            $baseUsername = 'wali.' . $nisnClean;
+                            
+                            // Check if username needs to change
+                            if ($user->username !== $baseUsername) {
+                                // Check if new username is available
+                                $usernameToUse = $baseUsername;
+                                $counter = 1;
+                                
+                                while (User::where('username', $usernameToUse)
+                                    ->where('id', '!=', $user->id)
+                                    ->exists()) {
+                                    $counter++;
+                                    $usernameToUse = $baseUsername . $counter;
+                                }
+                                
+                                $newUsername = $usernameToUse;
+                                $newEmail = $usernameToUse . '@walimurid.local';
+                            }
+                        }
+                    }
                 } else {
-                    // Not assigned yet
+                    // No siswa connected - keep generic name
                     $newName = "Wali Murid";
                 }
                 break;
@@ -161,10 +192,28 @@ class UserNameSyncObserver
                 break;
         }
         
-        // Update name if we have new name and it's different
+        // Build update array
+        $updates = [];
+        
+        // Nama selalu di-update otomatis (tidak ada tracking untuk nama)
         if ($newName && $newName !== $user->nama) {
+            $updates['nama'] = $newName;
+        }
+        
+        // Username hanya di-update jika BELUM pernah diubah manual
+        if ($newUsername && $newUsername !== $user->username && !$user->hasChangedUsername()) {
+            $updates['username'] = $newUsername;
+        }
+        
+        // Email ikut username
+        if ($newEmail && $newEmail !== $user->email && !$user->hasChangedUsername()) {
+            $updates['email'] = $newEmail;
+        }
+        
+        // Update if we have changes
+        if (!empty($updates)) {
             // Use updateQuietly to prevent infinite loop
-            $user->updateQuietly(['nama' => $newName]);
+            $user->updateQuietly($updates);
         }
     }
 }

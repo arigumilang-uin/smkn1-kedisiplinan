@@ -33,7 +33,7 @@
         <h1 class="text-2xl font-bold text-slate-800 mb-2">Kelas Belum Diatur</h1>
         
         <div class="text-slate-500 text-sm mb-6 leading-relaxed">
-            <p class="mb-2">Halo, <span class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">{{ Auth::user()->nama }}</span> 👋</p>
+            <p class="mb-2">Halo, <span class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">{{ Auth::user()->username }}</span> 👋</p>
             <p>
                 Sistem mendeteksi Anda sebagai <strong>Wali Kelas</strong>, namun belum ada data Kelas yang dihubungkan dengan akun Anda.
             </p>

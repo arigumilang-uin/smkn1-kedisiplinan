@@ -46,9 +46,10 @@ class UserNamingService
                 return 'Wali Kelas';
 
             case 'Wali Murid':
-                $anakWali = $user->anakWali()->first();
+                // Nama = "Wali dari {nama_siswa_pertama}"
+                $anakWali = $user->anakWali()->orderBy('id')->first();
                 if ($anakWali) {
-                    return 'Wali Murid ' . $anakWali->nama_siswa;
+                    return 'Wali dari ' . $anakWali->nama_siswa;
                 }
                 return 'Wali Murid';
 
@@ -115,7 +116,8 @@ class UserNamingService
                 return self::ensureUniqueUsername('walikelas', $user->id ?? null);
 
             case 'Wali Murid':
-                $anakWali = $user->anakWali()->first();
+                // Username = "wali.{nisn_siswa_pertama}"
+                $anakWali = $user->anakWali()->orderBy('id')->first();
                 if ($anakWali) {
                     $nisn = preg_replace('/\D+/', '', (string) $anakWali->nisn);
                     if ($nisn === '') {
@@ -184,13 +186,17 @@ class UserNamingService
                 return 'smkn1.walikelas';
 
             case 'Wali Murid':
-                $anakWali = $user->anakWali()->first();
-                if ($anakWali) {
-                    $nisn = preg_replace('/\D+/', '', (string) $anakWali->nisn);
-                    if ($nisn === '') {
-                        $nisn = Str::slug($anakWali->nama_siswa);
+                // Password = "smkn1.walimurid.{nomor_hp}" (lebih mudah diingat)
+                $anakWali = $user->anakWali()->orderBy('id')->first();
+                if ($anakWali && $anakWali->nomor_hp_wali_murid) {
+                    $phoneClean = preg_replace('/\D+/', '', $anakWali->nomor_hp_wali_murid);
+                    if ($phoneClean !== '') {
+                        return 'smkn1.walimurid.' . $phoneClean;
                     }
-                    return 'smkn1.walimurid.' . $nisn;
+                }
+                // Fallback to phone from user if available
+                if ($user->phone) {
+                    return 'smkn1.walimurid.' . $user->phone;
                 }
                 return 'smkn1.walimurid';
 

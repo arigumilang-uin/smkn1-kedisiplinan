@@ -10,11 +10,17 @@ use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
- * TindakLanjutController
+ * TindakLanjutController (LEGACY)
+ *
+ * @deprecated Gunakan App\Http\Controllers\TindakLanjut\TindakLanjutController sebagai gantinya.
+ *             Controller ini dipertahankan untuk backward compatibility dengan route `kasus.*`.
+ *             Akan dihapus setelah semua views di-migrate ke route `tindak-lanjut.*`.
  *
  * Controller untuk pengelolaan tindak lanjut kasus pelanggaran siswa.
  * Fitur: validasi akses berbasis role, update status dengan business rules, cetak surat PDF.
  * Penjaga keamanan: hindari downgrade status illegal, proteksi status "Disetujui" (hanya Kepsek).
+ *
+ * @see \App\Http\Controllers\TindakLanjut\TindakLanjutController - Clean Architecture version
  */
 class TindakLanjutController extends Controller
 {

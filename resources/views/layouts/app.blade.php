@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>@yield('title', 'Sistem Kedisiplinan') | SMKN 1 Siak</title>
+  <title>@yield('title', 'Sistem Kedisiplinan') | {{ school_name() }}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -86,7 +86,7 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <span class="nav-link font-weight-bold text-muted">Tahun Ajaran 2025/2026</span>
+        <span class="nav-link font-weight-bold text-muted">Tahun Ajaran {{ school_year() }}</span>
       </li>
     </ul>
 
@@ -140,7 +140,7 @@
       @auth
       <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
         <div class="image">
-          <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->nama) }}&background=007bff&color=fff" class="img-circle elevation-2" alt="User Image">
+          <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->username) }}&background=007bff&color=fff" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
           <a href="{{ route('account.edit') }}" class="d-block">{{ Str::limit(Auth::user()->username, 18) }}</a>
@@ -389,9 +389,9 @@
 
   <footer class="main-footer">
     <div class="float-right d-none d-sm-inline">
-      Sistem Informasi Kedisiplinan v1.0
+      {{ sistem_info('nama_lengkap') }} v{{ sistem_info('versi') }}
     </div>
-    <strong>&copy; {{ date('Y') }} <a href="#">SMKN 1 Lubuk Dalam</a>.</strong>
+    <strong>&copy; {{ date('Y') }} <a href="#">{{ school_name() }}</a>.</strong>
   </footer>
 </div>
 

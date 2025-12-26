@@ -62,7 +62,8 @@ class PelanggaranRulesEngine
 
         $totalPoinBaru = 0;
         $suratTypes = [];
-        $sanksiList = [];
+        $pemicuList = [];       // Format: "Terlambat 4 kali" atau "Merokok" - untuk field pemicu di TindakLanjut
+        $keperluanList = [];    // Deskripsi sanksi dari rule - untuk field keperluan di Surat
         $pembinaRolesForSurat = [];
 
         // Evaluasi setiap pelanggaran
@@ -76,9 +77,18 @@ class PelanggaranRulesEngine
                     $suratTypes[] = $result['surat_type'];
                     // Simpan pembina roles dari rule yang trigger surat
                     $pembinaRolesForSurat = $result['pembina_roles'] ?? [];
+                    
+                    // Generate pemicu text: "Terlambat 4 kali" atau "Merokok"
+                    $pemicuList[] = $this->generatePemicuText(
+                        $result['nama_pelanggaran'],
+                        $result['frequency']
+                    );
+                    
+                    // Keperluan: deskripsi sanksi dari rule
+                    if (!empty($result['sanksi'])) {
+                        $keperluanList[] = $result['sanksi'];
+                    }
                 }
-
-                $sanksiList[] = $result['sanksi'];
             } else {
                 // Fallback: immediate accumulation (backward compatibility)
                 $totalPoinBaru += $pelanggaran->poin;
@@ -86,9 +96,6 @@ class PelanggaranRulesEngine
                 // REMOVED: Auto-trigger surat berdasarkan poin
                 // REASON: Surat HANYA trigger dari frequency rules dengan trigger_surat=true
                 // Pembinaan Internal (akumulasi poin) HANYA untuk rekomendasi, TIDAK trigger surat
-                
-                // Sanksi description for fallback
-                $sanksiList[] = $pelanggaran->nama_pelanggaran;
             }
         }
 
@@ -97,12 +104,20 @@ class PelanggaranRulesEngine
 
         // Buat/update TindakLanjut jika diperlukan
         if ($tipeSurat) {
-            $pemicu = implode(', ', array_unique(array_filter($sanksiList)));
+            // Pemicu: nama pelanggaran + frekuensi
+            $pemicu = implode(', ', array_unique(array_filter($pemicuList)));
+            
+            // Keperluan: deskripsi sanksi (untuk surat)
+            $keperluan = implode('; ', array_unique(array_filter($keperluanList)));
+            if (empty($keperluan)) {
+                // Fallback jika tidak ada deskripsi sanksi
+                $keperluan = "Pembinaan terkait: {$pemicu}";
+            }
             
             // Tentukan status berdasarkan pembina yang terlibat (bukan tipe surat)
             $status = $this->tentukanStatusBerdasarkanPembina($pembinaRolesForSurat);
 
-            $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, $pemicu, $status, $pembinaRolesForSurat);
+            $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, $pemicu, $keperluan, $status, $pembinaRolesForSurat);
         }
     }
 
@@ -111,7 +126,7 @@ class PelanggaranRulesEngine
      *
      * @param int $siswaId
      * @param JenisPelanggaran $pelanggaran
-     * @return array ['poin_ditambahkan' => int, 'surat_type' => string|null, 'sanksi' => string, 'pembina_roles' => array]
+     * @return array ['poin_ditambahkan' => int, 'surat_type' => string|null, 'sanksi' => string, 'pembina_roles' => array, 'nama_pelanggaran' => string, 'frequency' => int]
      */
     private function evaluateFrequencyRules(int $siswaId, JenisPelanggaran $pelanggaran): array
     {
@@ -130,6 +145,8 @@ class PelanggaranRulesEngine
                 'surat_type' => null,
                 'sanksi' => 'Pembinaan',
                 'pembina_roles' => [],
+                'nama_pelanggaran' => $pelanggaran->nama_pelanggaran,
+                'frequency' => $currentFrequency,
             ];
         }
 
@@ -146,6 +163,8 @@ class PelanggaranRulesEngine
                 'surat_type' => null,
                 'sanksi' => 'Belum mencapai threshold',
                 'pembina_roles' => [],
+                'nama_pelanggaran' => $pelanggaran->nama_pelanggaran,
+                'frequency' => $currentFrequency,
             ];
         }
 
@@ -155,6 +174,8 @@ class PelanggaranRulesEngine
             'surat_type' => $matchedRule->getSuratType(),
             'sanksi' => $matchedRule->sanksi_description,
             'pembina_roles' => $matchedRule->pembina_roles ?? [],
+            'nama_pelanggaran' => $pelanggaran->nama_pelanggaran,
+            'frequency' => $currentFrequency,
         ];
     }
 
@@ -213,6 +234,28 @@ class PelanggaranRulesEngine
         
         // Jika hanya pembina level bawah, langsung proses
         return 'Baru';
+    }
+
+    /**
+     * Generate teks pemicu yang jelas untuk surat panggilan.
+     * 
+     * Format output:
+     * - Jika frekuensi > 1: "Terlambat 4 kali"
+     * - Jika frekuensi = 1: "Merokok" (tanpa "1 kali")
+     * 
+     * @param string $namaPelanggaran Nama jenis pelanggaran
+     * @param int $frequency Frekuensi pelanggaran yang trigger surat
+     * @return string Teks pemicu yang jelas
+     */
+    private function generatePemicuText(string $namaPelanggaran, int $frequency): string
+    {
+        if ($frequency <= 1) {
+            // Frekuensi 1 kali: hanya nama pelanggaran
+            return $namaPelanggaran;
+        }
+        
+        // Frekuensi > 1: "Nama Pelanggaran X kali"
+        return "{$namaPelanggaran} {$frequency} kali";
     }
 
     /**
@@ -464,7 +507,8 @@ class PelanggaranRulesEngine
      *
      * @param int $siswaId
      * @param string $tipeSurat
-     * @param string $pemicu
+     * @param string $pemicu Nama pelanggaran + frekuensi (untuk TindakLanjut)
+     * @param string $keperluan Deskripsi sanksi (untuk SuratPanggilan)
      * @param string $status
      * @param array $pembinaRoles Array of pembina roles from frequency rule
      * @return void
@@ -473,6 +517,7 @@ class PelanggaranRulesEngine
         int $siswaId,
         string $tipeSurat,
         string $pemicu,
+        string $keperluan,
         string $status,
         array $pembinaRoles = []
     ): void {
@@ -525,7 +570,7 @@ class PelanggaranRulesEngine
                     'pembina_roles' => $pembinaRoles,  // ✅ CRITICAL: Untuk template tanda tangan
                     'tanggal_pertemuan' => $meetingSchedule['tanggal_pertemuan'],
                     'waktu_pertemuan' => $meetingSchedule['waktu_pertemuan'],
-                    'keperluan' => $pemicu,
+                    'keperluan' => $keperluan,  // ✅ Keperluan = deskripsi sanksi, bukan pemicu
                 ]);
 
                 // Trigger notifikasi jika butuh approval (Surat 3 & 4)
@@ -548,7 +593,7 @@ class PelanggaranRulesEngine
             }
         } else {
             // Update jika eskalasi diperlukan
-            $this->eskalasiBilaPerluan($kasusAktif, $tipeSurat, $pemicu, $status, $pembinaRoles);
+            $this->akumulasiKasusAktif($kasusAktif, $tipeSurat, $pemicu, $keperluan, $status, $pembinaRoles);
         }
     }
 
@@ -580,6 +625,8 @@ class PelanggaranRulesEngine
 
         $suratTypes = [];
         $pembinaRolesForSurat = [];
+        $pemicuList = [];       // Format: "Terlambat 4 kali" atau "Merokok"
+        $keperluanList = [];    // Deskripsi sanksi dari rule
 
         // Re-evaluasi setiap pelanggaran
         foreach ($pelanggaranObjs as $pelanggaran) {
@@ -588,6 +635,17 @@ class PelanggaranRulesEngine
                 if ($result['surat_type']) {
                     $suratTypes[] = $result['surat_type'];
                     $pembinaRolesForSurat = $result['pembina_roles'] ?? [];
+                    
+                    // Generate pemicu text yang jelas
+                    $pemicuList[] = $this->generatePemicuText(
+                        $result['nama_pelanggaran'],
+                        $result['frequency']
+                    );
+                    
+                    // Keperluan: deskripsi sanksi dari rule
+                    if (!empty($result['sanksi'])) {
+                        $keperluanList[] = $result['sanksi'];
+                    }
                 }
             } else {
                 // Backward compatibility
@@ -599,11 +657,24 @@ class PelanggaranRulesEngine
                     } else {
                         $suratTypes[] = self::SURAT_2;
                     }
+                    $pemicuList[] = $pelanggaran->nama_pelanggaran;
                 }
             }
         }
 
         $tipeSurat = $this->tentukanTipeSuratTertinggi($suratTypes);
+        
+        // Generate pemicu yang jelas
+        $pemicu = implode(', ', array_unique(array_filter($pemicuList)));
+        if (empty($pemicu)) {
+            $pemicu = 'Pelanggaran berulang';  // Fallback jika tidak ada pemicu
+        }
+        
+        // Keperluan: deskripsi sanksi (untuk surat)
+        $keperluan = implode('; ', array_unique(array_filter($keperluanList)));
+        if (empty($keperluan)) {
+            $keperluan = "Pembinaan terkait: {$pemicu}";
+        }
 
         // Cari kasus aktif yang mungkin ada
         $kasusAktif = TindakLanjut::with('suratPanggilan')
@@ -617,7 +688,7 @@ class PelanggaranRulesEngine
             if (!$kasusAktif) {
                 // Tentukan status berdasarkan pembina
                 $status = $this->tentukanStatusBerdasarkanPembina($pembinaRolesForSurat);
-                $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, 'Rekonsiliasi', $status, $pembinaRolesForSurat);
+                $this->buatAtauUpdateTindakLanjut($siswaId, $tipeSurat, $pemicu, $keperluan, $status, $pembinaRolesForSurat);
                 return;
             }
 
@@ -626,7 +697,7 @@ class PelanggaranRulesEngine
             $statusBaru = $this->tentukanStatusBerdasarkanPembina($pembinaRolesForSurat);
             
             $kasusAktif->update([
-                'pemicu' => 'Rekonsiliasi',
+                'pemicu' => $pemicu,
                 'sanksi_deskripsi' => "Pemanggilan Wali Murid ({$tipeSurat})",
                 'status' => $statusBaru,
             ]);
@@ -640,7 +711,7 @@ class PelanggaranRulesEngine
                     'tipe_surat' => $tipeSurat,
                     'pembina_data' => $pembinaData,
                     'pembina_roles' => $pembinaRolesForSurat,
-                    'keperluan' => 'Rekonsiliasi',
+                    'keperluan' => $keperluan,  // ✅ Keperluan = deskripsi sanksi
                 ]);
             } else {
                 // jika sebelumnya tidak ada surat, buat satu
@@ -656,7 +727,7 @@ class PelanggaranRulesEngine
                     'pembina_roles' => $pembinaRolesForSurat,
                     'tanggal_pertemuan' => $meetingSchedule['tanggal_pertemuan'],
                     'waktu_pertemuan' => $meetingSchedule['waktu_pertemuan'],
-                    'keperluan' => 'Rekonsiliasi',
+                    'keperluan' => $keperluan,  // ✅ Keperluan = deskripsi sanksi
                 ]);
             }
 
@@ -685,50 +756,114 @@ class PelanggaranRulesEngine
     }
 
     /**
-     * Update TindakLanjut jika diperlukan eskalasi ke level surat lebih tinggi.
+     * Akumulasi data pelanggaran baru ke kasus aktif yang sudah ada.
+     * 
+     * Logika:
+     * - Pemicu: Gabungan dari semua nama pelanggaran + frekuensi (jika belum ada)
+     * - Keperluan: Gabungan dari semua deskripsi sanksi (jika belum ada)
+     * - Pembina: Union/merge dari semua pembina roles (mengambil yang terbanyak)
+     * - Tipe Surat: Ditentukan dari jumlah pembina terbanyak
      *
-     * @param TindakLanjut $kasusAktif
-     * @param string $tipeSuratBaru
-     * @param string $pemicuBaru
-     * @param string $statusBaru (DEPRECATED - akan dihitung ulang berdasarkan pembina)
-     * @param array $pembinaRoles
+     * @param TindakLanjut $kasusAktif Kasus aktif yang akan di-update
+     * @param string $tipeSuratBaru Tipe surat dari pelanggaran baru
+     * @param string $pemicuBaru Nama pelanggaran + frekuensi baru
+     * @param string $keperluanBaru Deskripsi sanksi baru
+     * @param string $statusBaru (akan dihitung ulang berdasarkan pembina final)
+     * @param array $pembinaRolesBaru Pembina roles dari pelanggaran baru
      * @return void
      */
-    private function eskalasiBilaPerluan(
+    private function akumulasiKasusAktif(
         TindakLanjut $kasusAktif,
         string $tipeSuratBaru,
         string $pemicuBaru,
+        string $keperluanBaru,
         string $statusBaru,
-        array $pembinaRoles = []
+        array $pembinaRolesBaru = []
     ): void {
-        $existingTipe = $kasusAktif->suratPanggilan?->tipe_surat ?? '0';
-        $levelLama = (int) filter_var($existingTipe, FILTER_SANITIZE_NUMBER_INT);
-        $levelBaru = (int) filter_var($tipeSuratBaru, FILTER_SANITIZE_NUMBER_INT);
-
-        if ($levelBaru > $levelLama) {
-            // Tentukan status berdasarkan pembina (bukan parameter $statusBaru)
-            $statusBaru = $this->tentukanStatusBerdasarkanPembina($pembinaRoles);
-            
-            $kasusAktif->update([
-                'pemicu' => $pemicuBaru . ' (Eskalasi)',
-                'sanksi_deskripsi' => "Pemanggilan Wali Murid ({$tipeSuratBaru})",
-                'status' => $statusBaru,
-            ]);
-
-            if ($kasusAktif->suratPanggilan) {
-                // Update pembina data untuk eskalasi
-                $siswa = $kasusAktif->siswa;
-                $suratService = new SuratPanggilanService();
-                $pembinaData = $suratService->buildPembinaData($pembinaRoles, $siswa);
-
-                $kasusAktif->suratPanggilan()->update([
-                    'tipe_surat' => $tipeSuratBaru,
-                    'pembina_data' => $pembinaData,
-                    'pembina_roles' => $pembinaRoles,
-                    'keperluan' => $pemicuBaru,
-                ]);
+        // === 1. AKUMULASI PEMICU ===
+        $pemicuLama = $kasusAktif->pemicu ?? '';
+        $pemicuItems = array_filter(array_map('trim', explode(',', $pemicuLama)));
+        
+        // Tambahkan pemicu baru jika belum ada
+        foreach (array_filter(array_map('trim', explode(',', $pemicuBaru))) as $item) {
+            if (!in_array($item, $pemicuItems)) {
+                $pemicuItems[] = $item;
             }
         }
+        $pemicuFinal = implode(', ', array_unique($pemicuItems));
+
+        // === 2. AKUMULASI KEPERLUAN ===
+        $keperluanLama = $kasusAktif->suratPanggilan?->keperluan ?? '';
+        $keperluanItems = array_filter(array_map('trim', explode(';', $keperluanLama)));
+        
+        // Tambahkan keperluan baru jika belum ada
+        foreach (array_filter(array_map('trim', explode(';', $keperluanBaru))) as $item) {
+            if (!in_array($item, $keperluanItems)) {
+                $keperluanItems[] = $item;
+            }
+        }
+        $keperluanFinal = implode('; ', array_unique($keperluanItems));
+
+        // === 3. AKUMULASI PEMBINA (UNION) ===
+        $pembinaLama = $kasusAktif->pembina_roles ?? [];
+        $pembinaFinal = array_values(array_unique(array_merge($pembinaLama, $pembinaRolesBaru)));
+
+        // === 4. TENTUKAN TIPE SURAT BERDASARKAN JUMLAH PEMBINA ===
+        $tipeSuratFinal = $this->tentukanTipeSuratDariPembina($pembinaFinal);
+
+        // === 5. TENTUKAN STATUS BERDASARKAN PEMBINA FINAL ===
+        $statusFinal = $this->tentukanStatusBerdasarkanPembina($pembinaFinal);
+
+        // === 6. UPDATE TINDAK LANJUT ===
+        $kasusAktif->update([
+            'pemicu' => $pemicuFinal,
+            'sanksi_deskripsi' => "Pemanggilan Wali Murid ({$tipeSuratFinal})",
+            'pembina_roles' => $pembinaFinal,
+            'status' => $statusFinal,
+        ]);
+
+        // === 7. UPDATE SURAT PANGGILAN ===
+        if ($kasusAktif->suratPanggilan) {
+            $siswa = $kasusAktif->siswa;
+            $suratService = new SuratPanggilanService();
+            $pembinaData = $suratService->buildPembinaData($pembinaFinal, $siswa);
+
+            $kasusAktif->suratPanggilan()->update([
+                'tipe_surat' => $tipeSuratFinal,
+                'pembina_data' => $pembinaData,
+                'pembina_roles' => $pembinaFinal,
+                'keperluan' => $keperluanFinal,
+            ]);
+        }
+
+        // === 8. NOTIFIKASI JIKA KEPALA SEKOLAH BARU TERLIBAT ===
+        $kepsekBaruTerlibat = in_array('Kepala Sekolah', $pembinaRolesBaru) && 
+                              !in_array('Kepala Sekolah', $pembinaLama);
+        
+        if ($kepsekBaruTerlibat) {
+            $this->notificationService->notifyKasusButuhApproval($kasusAktif);
+        }
+    }
+
+    /**
+     * Tentukan tipe surat berdasarkan jumlah pembina yang terlibat.
+     * 
+     * @param array $pembinaRoles
+     * @return string Tipe surat (Surat 1, 2, 3, atau 4)
+     */
+    private function tentukanTipeSuratDariPembina(array $pembinaRoles): string
+    {
+        // Hitung pembina yang dihitung (exclude "Semua Guru & Staff")
+        $pembinaCount = count(array_filter($pembinaRoles, function($role) {
+            return $role !== 'Semua Guru & Staff';
+        }));
+
+        return match(true) {
+            $pembinaCount >= 4 => 'Surat 4',
+            $pembinaCount === 3 => 'Surat 3',
+            $pembinaCount === 2 => 'Surat 2',
+            default => 'Surat 1',
+        };
     }
 }
 

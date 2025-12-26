@@ -92,7 +92,7 @@
 
                         {{-- Wali Kelas --}}
                         <td class="px-6 py-4 col-wali-kelas text-sm text-slate-600">
-                            {{ $k->waliKelas?->nama ?? '-' }}
+                            {{ $k->waliKelas?->username ?? '-' }}
                         </td>
 
                         {{-- Jumlah Siswa --}}

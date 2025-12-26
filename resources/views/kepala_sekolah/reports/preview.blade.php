@@ -53,15 +53,27 @@
                     <span class="text-sm font-black text-emerald-700">{{ $data->count() }} Records</span>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-3 py-1 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-600">CSV</button>
-                    <button class="px-3 py-1 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-600">PDF</button>
+                    <a href="{{ route('kepala-sekolah.reports.export-csv') }}" 
+                       class="px-3 py-1.5 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 transition no-underline flex items-center gap-1">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </a>
+                    <a href="{{ route('kepala-sekolah.reports.export-pdf') }}" 
+                       class="px-3 py-1.5 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 transition no-underline flex items-center gap-1">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </a>
                 </div>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 m-0">Daftar Siswa & Tindakan</h3>
+                <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 m-0">
+                    @if($reportType === 'Laporan Pelanggaran')
+                        Daftar Riwayat Pelanggaran
+                    @else
+                        Daftar Siswa & Tindakan
+                    @endif
+                </h3>
             </div>
             
             <div class="overflow-x-auto">
@@ -70,9 +82,21 @@
                         <tr>
                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">Siswa</th>
                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">Kelas</th>
-                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">Keterangan</th>
+                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                @if($reportType === 'Laporan Pelanggaran')
+                                    Jenis Pelanggaran
+                                @else
+                                    Keterangan
+                                @endif
+                            </th>
                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">Waktu</th>
-                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 text-center">Status</th>
+                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 text-center">
+                                @if($reportType === 'Laporan Pelanggaran')
+                                    Dicatat Oleh
+                                @else
+                                    Status
+                                @endif
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -81,36 +105,64 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm font-black shadow-md">
-                                        {{ substr($row->siswa->nama_siswa, 0, 1) }}
+                                        {{ substr($row->siswa->nama_siswa ?? '-', 0, 1) }}
                                     </div>
                                     <div>
-                                        <div class="text-sm font-black text-slate-800 leading-none mb-1">{{ $row->siswa->nama_siswa }}</div>
-                                        <div class="text-[10px] font-mono text-slate-400 tracking-tight">NISN: {{ $row->siswa->nisn }}</div>
+                                        <div class="text-sm font-black text-slate-800 leading-none mb-1">{{ $row->siswa->nama_siswa ?? '-' }}</div>
+                                        <div class="text-[10px] font-mono text-slate-400 tracking-tight">NISN: {{ $row->siswa->nisn ?? '-' }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200 uppercase">
-                                    {{ $row->siswa->kelas->nama_kelas }}
+                                    {{ $row->siswa->kelas->nama_kelas ?? '-' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                <p class="text-[11px] text-slate-600 leading-relaxed italic m-0">
-                                    "{{ $row->sanksi_deskripsi ?? $row->pemicu }}"
-                                </p>
+                                @if($reportType === 'Laporan Pelanggaran')
+                                    {{-- RiwayatPelanggaran model --}}
+                                    <p class="text-[11px] text-slate-600 leading-relaxed m-0">
+                                        <span class="font-bold">{{ $row->jenisPelanggaran->nama ?? '-' }}</span>
+                                    </p>
+                                @else
+                                    {{-- TindakLanjut model --}}
+                                    <p class="text-[11px] text-slate-600 leading-relaxed italic m-0">
+                                        "{{ $row->sanksi_deskripsi ?? $row->pemicu ?? '-' }}"
+                                    </p>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-[10px] font-bold text-slate-500">{{ $row->created_at->format('d M Y') }}</div>
-                                <div class="text-[9px] text-slate-400 uppercase tracking-tighter">{{ $row->created_at->format('H:i') }} WIB</div>
+                                @php
+                                    $date = $reportType === 'Laporan Pelanggaran' 
+                                        ? ($row->tanggal_kejadian ?? $row->created_at) 
+                                        : $row->created_at;
+                                    $dateObj = $date instanceof \Carbon\Carbon ? $date : \Carbon\Carbon::parse($date);
+                                @endphp
+                                <div class="text-[10px] font-bold text-slate-500">{{ $dateObj->format('d M Y') }}</div>
+                                <div class="text-[9px] text-slate-400 uppercase tracking-tighter">{{ $dateObj->format('H:i') }} WIB</div>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @php
-                                    $isDisetujui = $row->status == 'Disetujui';
-                                    $badgeColor = $isDisetujui ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100';
-                                @endphp
-                                <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border {{ $badgeColor }}">
-                                    {{ $row->status }}
-                                </span>
+                                @if($reportType === 'Laporan Pelanggaran')
+                                    {{-- Show pencatat for RiwayatPelanggaran --}}
+                                    <span class="text-[10px] text-slate-500 font-medium">
+                                        {{ $row->user->nama ?? $row->user->username ?? '-' }}
+                                    </span>
+                                @else
+                                    {{-- Show status badge for TindakLanjut --}}
+                                    @php
+                                        $statusValue = is_object($row->status) ? $row->status->value : $row->status;
+                                        $badgeColor = match($statusValue) {
+                                            'Disetujui' => 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                            'Selesai' => 'bg-slate-50 text-slate-600 border-slate-200',
+                                            'Ditolak' => 'bg-red-50 text-red-600 border-red-100',
+                                            'Menunggu Persetujuan' => 'bg-amber-50 text-amber-600 border-amber-100',
+                                            default => 'bg-blue-50 text-blue-600 border-blue-100',
+                                        };
+                                    @endphp
+                                    <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border {{ $badgeColor }}">
+                                        {{ $statusValue }}
+                                    </span>
+                                @endif
                             </td>
                         </tr>
                         @empty

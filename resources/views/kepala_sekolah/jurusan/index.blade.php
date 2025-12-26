@@ -91,7 +91,7 @@
                         <td class="px-6 py-4 col-kaprodi">
                             @if($j->kaprodi)
                                 <div class="flex items-center gap-2">
-                                    <span class="text-sm font-medium text-slate-600">{{ $j->kaprodi->nama ?? $j->kaprodi->username }}</span>
+                                    <span class="text-sm font-medium text-slate-600">{{ $j->kaprodi->username }}</span>
                                 </div>
                             @else
                                 <span class="text-xs text-slate-300 italic flex items-center gap-1">

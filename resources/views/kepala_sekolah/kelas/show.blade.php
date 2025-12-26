@@ -113,7 +113,7 @@
                             </tr>
                             <tr>
                                 <th class="custom-detail-th">Wali Kelas:</th>
-                                <td class="text-sm font-medium text-slate-600">{{ $kelas->waliKelas?->nama ?? 'Belum ditentukan' }}</td>
+                                <td class="text-sm font-medium text-slate-600">{{ $kelas->waliKelas?->username ?? 'Belum ditentukan' }}</td>
                             </tr>
                         </table>
                     </div>

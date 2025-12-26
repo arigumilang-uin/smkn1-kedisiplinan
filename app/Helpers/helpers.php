@@ -74,3 +74,64 @@ if (!function_exists('formatForExport')) {
         return DateTimeHelper::formatForExport($timestamp);
     }
 }
+
+// ============================================================================
+// SCHOOL CONFIGURATION HELPERS
+// ============================================================================
+
+if (!function_exists('school_name')) {
+    /**
+     * Get school name
+     * 
+     * @param string $type 'short' (default), 'full', or 'abbr'
+     * @return string
+     */
+    function school_name(string $type = 'short'): string
+    {
+        return match($type) {
+            'full' => config('school.nama_lengkap'),
+            'abbr' => config('school.singkatan'),
+            default => config('school.nama'),
+        };
+    }
+}
+
+if (!function_exists('school_year')) {
+    /**
+     * Get current academic year
+     * 
+     * @return string
+     */
+    function school_year(): string
+    {
+        return config('school.tahun_ajaran');
+    }
+}
+
+if (!function_exists('school_config')) {
+    /**
+     * Get any school configuration
+     * 
+     * @param string $key Config key (e.g., 'alamat', 'kabupaten')
+     * @param mixed $default Default value if key not found
+     * @return mixed
+     */
+    function school_config(string $key, $default = null)
+    {
+        return config("school.{$key}", $default);
+    }
+}
+
+if (!function_exists('sistem_info')) {
+    /**
+     * Get system information
+     * 
+     * @param string $key 'nama', 'nama_lengkap', or 'versi'
+     * @return string
+     */
+    function sistem_info(string $key = 'nama'): string
+    {
+        return config("school.sistem.{$key}", '');
+    }
+}
+

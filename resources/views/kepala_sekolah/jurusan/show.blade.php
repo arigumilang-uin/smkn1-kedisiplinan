@@ -113,7 +113,7 @@
                             </tr>
                             <tr>
                                 <th class="custom-detail-th">Kaprodi:</th>
-                                <td class="text-sm font-medium text-slate-600">{{ $jurusan->kaprodi?->nama ?? 'Belum ditentukan' }}</td>
+                                <td class="text-sm font-medium text-slate-600">{{ $jurusan->kaprodi?->username ?? 'Belum ditentukan' }}</td>
                             </tr>
                         </table>
                     </div>
@@ -140,7 +140,7 @@
                         @forelse($jurusan->kelas as $kelas)
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-6 py-3 font-semibold text-slate-800">{{ $kelas->nama_kelas }}</td>
-                            <td class="px-6 py-3 text-sm text-slate-600">{{ $kelas->waliKelas?->nama ?? '-' }}</td>
+                            <td class="px-6 py-3 text-sm text-slate-600">{{ $kelas->waliKelas?->username ?? '-' }}</td>
                             <td class="px-6 py-3 text-center col-jml-siswa">
                                 <span class="custom-badge-base bg-indigo-50 text-indigo-700">{{ $kelas->siswa_count }} siswa</span>
                             </td>

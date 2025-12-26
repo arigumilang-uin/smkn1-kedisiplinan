@@ -35,13 +35,24 @@ class SuratPanggilanService
             $pembina = $this->getPembinaByRole($role, $siswa);
             
             if ($pembina) {
-                // Priority: NIP > NUPTK > null
-                $tandaPengenal = $pembina->nip ?? $pembina->nuptk ?? null;
+                // Priority: NIP > NUPTK > kosong
+                $tandaPengenal = null;
+                $tandaPengenalLabel = 'NIP.'; // Default label
+                
+                if (!empty($pembina->nip)) {
+                    $tandaPengenal = $pembina->nip;
+                    $tandaPengenalLabel = 'NIP.';
+                } elseif (!empty($pembina->nuptk)) {
+                    $tandaPengenal = $pembina->nuptk;
+                    $tandaPengenalLabel = 'NUPTK.';
+                }
                 
                 $pembinaData[] = [
                     'jabatan' => $role,
-                    'nama' => $pembina->nama,
-                    'nip' => $tandaPengenal,
+                    'username' => $pembina->username,  // Username untuk ditampilkan
+                    'nama' => $pembina->nama,          // Nama (untuk backward compat)
+                    'nip' => $tandaPengenal,           // Nomor identitas
+                    'nip_label' => $tandaPengenalLabel, // Label: NIP. atau NUPTK.
                 ];
             }
         }

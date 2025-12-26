@@ -28,6 +28,11 @@ class ReportController extends Controller
 
     /**
      * Generate report preview (HTML)
+     * 
+     * Support multiple report types:
+     * - pelanggaran: Daftar riwayat pelanggaran
+     * - siswa: Daftar siswa bermasalah (dari tindak lanjut)
+     * - tindakan: Daftar tindak lanjut
      */
     public function preview(Request $request)
     {
@@ -39,9 +44,38 @@ class ReportController extends Controller
             'periode_akhir' => 'nullable|date',
         ]);
 
+        $reportType = $request->report_type;
+        $filters = $request->all();
+
+        // Choose model based on report type
+        if ($reportType === 'pelanggaran') {
+            $data = $this->getPelanggaranData($request);
+        } else {
+            // For 'siswa' and 'tindakan', use TindakLanjut model
+            $data = $this->getTindakLanjutData($request, $reportType);
+        }
+
+        // Store in session for export
+        session([
+            'report_data' => $data, 
+            'report_filters' => $filters,
+            'report_type' => $reportType
+        ]);
+
+        return view('kepala_sekolah.reports.preview', [
+            'data' => $data,
+            'filters' => $filters,
+            'reportType' => $this->getReportTypeLabel($reportType),
+        ]);
+    }
+
+    /**
+     * Get Pelanggaran data for report
+     */
+    private function getPelanggaranData(Request $request)
+    {
         $query = RiwayatPelanggaran::query();
 
-        // Apply filters
         if ($request->filled('jurusan_id')) {
             $query->whereHas('siswa.kelas', function($q) use ($request) {
                 $q->where('jurusan_id', $request->jurusan_id);
@@ -62,52 +96,114 @@ class ReportController extends Controller
             $query->where('tanggal_kejadian', '<=', $request->periode_akhir);
         }
 
-        $data = $query->with(['siswa.kelas.jurusan', 'jenisPelanggaran', 'user'])
-                      ->orderBy('tanggal_kejadian', 'desc')
-                      ->get();
-
-        // Store in session for export
-        session(['report_data' => $data, 'report_filters' => $request->all()]);
-
-        return view('kepala_sekolah.reports.preview', [
-            'data' => $data,
-            'filters' => $request->all(),
-            'reportType' => $request->report_type,
-        ]);
+        return $query->with(['siswa.kelas.jurusan', 'jenisPelanggaran', 'user'])
+                     ->orderBy('tanggal_kejadian', 'desc')
+                     ->get();
     }
 
     /**
-     * Export to CSV
+     * Get TindakLanjut data for report
+     */
+    private function getTindakLanjutData(Request $request, string $reportType)
+    {
+        $query = \App\Models\TindakLanjut::with(['siswa.kelas.jurusan']);
+
+        if ($request->filled('jurusan_id')) {
+            $query->whereHas('siswa.kelas', function($q) use ($request) {
+                $q->where('jurusan_id', $request->jurusan_id);
+            });
+        }
+
+        if ($request->filled('kelas_id')) {
+            $query->whereHas('siswa', function($q) use ($request) {
+                $q->where('kelas_id', $request->kelas_id);
+            });
+        }
+
+        if ($request->filled('periode_mulai')) {
+            $query->where('created_at', '>=', $request->periode_mulai . ' 00:00:00');
+        }
+
+        if ($request->filled('periode_akhir')) {
+            $query->where('created_at', '<=', $request->periode_akhir . ' 23:59:59');
+        }
+
+        // Filter by status based on report type
+        if ($reportType === 'siswa') {
+            // Siswa bermasalah: semua yang punya tindak lanjut aktif
+            $query->whereIn('status', ['Menunggu Persetujuan', 'Disetujui', 'Ditangani']);
+        }
+
+        return $query->orderBy('created_at', 'desc')->get();
+    }
+
+    /**
+     * Get human-readable report type label
+     */
+    private function getReportTypeLabel(string $type): string
+    {
+        return match($type) {
+            'pelanggaran' => 'Laporan Pelanggaran',
+            'siswa' => 'Laporan Siswa Bermasalah',
+            'tindakan' => 'Laporan Tindak Lanjut',
+            default => 'Laporan',
+        };
+    }
+
+    /**
+     * Export to CSV - Supports both RiwayatPelanggaran and TindakLanjut data
      */
     public function exportCsv()
     {
         $data = session('report_data', []);
         $filters = session('report_filters', []);
+        $reportType = session('report_type', 'pelanggaran');
 
-        if (empty($data)) {
+        if (empty($data) || (is_countable($data) && count($data) === 0)) {
             return redirect()->route('kepala-sekolah.reports.index')
                 ->with('error', 'Tidak ada data untuk diexport. Buat laporan terlebih dahulu.');
         }
 
-        $filename = 'laporan_pelanggaran_' . now()->format('Ymd_His') . '.csv';
+        $typeSlug = str_replace(' ', '_', strtolower($reportType));
+        $filename = "laporan_{$typeSlug}_" . now()->format('Ymd_His') . '.csv';
 
-        $callback = function() use ($data) {
+        $callback = function() use ($data, $reportType) {
             // UTF-16LE BOM untuk Excel
             echo "\xFF\xFE";
             
-            $headerRow = "NISN\tNama Siswa\tKelas\tJurusan\tJenis Pelanggaran\tTanggal\tDikategorikan Oleh\n";
+            // Header based on report type
+            if ($reportType === 'pelanggaran') {
+                $headerRow = "NISN\tNama Siswa\tKelas\tJurusan\tJenis Pelanggaran\tTanggal Kejadian\tDicatat Oleh\n";
+            } else {
+                $headerRow = "NISN\tNama Siswa\tKelas\tJurusan\tKeterangan\tTanggal\tStatus\n";
+            }
             echo mb_convert_encoding($headerRow, 'UTF-16LE', 'UTF-8');
             
             foreach ($data as $row) {
-                $dataRow = (
-                    ($row->siswa->nisn ?? '') . "\t" .
-                    ($row->siswa->nama_siswa ?? '') . "\t" .
-                    ($row->siswa->kelas->nama_kelas ?? '') . "\t" .
-                    ($row->siswa->kelas->jurusan->nama_jurusan ?? '') . "\t" .
-                    ($row->jenisPelanggaran->nama ?? '') . "\t" .
-                    ($row->tanggal_kejadian ?? '') . "\t" .
-                    ($row->user->nama ?? '') . "\n"
-                );
+                if ($reportType === 'pelanggaran') {
+                    // RiwayatPelanggaran model
+                    $dataRow = (
+                        ($row->siswa->nisn ?? '') . "\t" .
+                        ($row->siswa->nama_siswa ?? '') . "\t" .
+                        ($row->siswa->kelas->nama_kelas ?? '') . "\t" .
+                        ($row->siswa->kelas->jurusan->nama_jurusan ?? '') . "\t" .
+                        ($row->jenisPelanggaran->nama ?? '') . "\t" .
+                        ($row->tanggal_kejadian ?? '') . "\t" .
+                        ($row->user->nama ?? $row->user->username ?? '') . "\n"
+                    );
+                } else {
+                    // TindakLanjut model
+                    $statusValue = is_object($row->status) ? $row->status->value : $row->status;
+                    $dataRow = (
+                        ($row->siswa->nisn ?? '') . "\t" .
+                        ($row->siswa->nama_siswa ?? '') . "\t" .
+                        ($row->siswa->kelas->nama_kelas ?? '') . "\t" .
+                        ($row->siswa->kelas->jurusan->nama_jurusan ?? '') . "\t" .
+                        ($row->sanksi_deskripsi ?? $row->pemicu ?? '') . "\t" .
+                        ($row->created_at ? $row->created_at->format('Y-m-d H:i') : '') . "\t" .
+                        $statusValue . "\n"
+                    );
+                }
                 echo mb_convert_encoding($dataRow, 'UTF-16LE', 'UTF-8');
             }
         };
@@ -119,15 +215,16 @@ class ReportController extends Controller
     }
 
     /**
-     * Export to PDF (requires mailable/dompdf)
+     * Export to PDF - Supports both RiwayatPelanggaran and TindakLanjut data
      * Note: Install via: composer require barryvdh/laravel-dompdf
      */
     public function exportPdf()
     {
         $data = session('report_data', []);
         $filters = session('report_filters', []);
+        $reportType = session('report_type', 'pelanggaran');
 
-        if (empty($data)) {
+        if (empty($data) || (is_countable($data) && count($data) === 0)) {
             return redirect()->route('kepala-sekolah.reports.index')
                 ->with('error', 'Tidak ada data untuk diexport. Buat laporan terlebih dahulu.');
         }
@@ -141,9 +238,11 @@ class ReportController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kepala_sekolah.reports.pdf', [
             'data' => $data,
             'filters' => $filters,
+            'reportType' => $this->getReportTypeLabel($reportType),
         ]);
 
-        return $pdf->download('laporan_pelanggaran_' . now()->format('Ymd_His') . '.pdf');
+        $typeSlug = str_replace(' ', '_', strtolower($reportType));
+        return $pdf->download("laporan_{$typeSlug}_" . now()->format('Ymd_His') . '.pdf');
     }
 }
 

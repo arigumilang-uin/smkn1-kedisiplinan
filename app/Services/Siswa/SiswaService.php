@@ -33,7 +33,8 @@ class SiswaService
             if ($createWali && !$waliMuridUserId) {
                 $waliCredentials = $this->findOrCreateWaliByPhone(
                     $siswaData->nomor_hp_wali_murid,
-                    $siswaData->nama_siswa
+                    $siswaData->nama_siswa,
+                    $siswaData->nisn  // Add NISN for username
                 );
                 
                 $waliMuridUserId = $waliCredentials['user_id'];
@@ -218,19 +219,24 @@ $waliId = $siswa->wali_murid_user_id;
     /**
      * Find existing wali or create new wali based on phone number.
      * 
-     * PHONE-BASED LOGIC:
-     * - 1 phone number = 1 wali account (shared by siblings)
-     * - Check existing wali by phone before creating
-     * - Username: wali.{phone_clean}
-     * - Password: smkn1.walimurid.{phone_clean}
-     * - Nama: Wali Murid {phone} (neutral, not based on siswa name)
+     * UPDATED LOGIC (2025-12-26):
+     * - Pencarian akun existing: Berdasarkan NOMOR HP (untuk handle sibling/kakak-adik)
+     * - Nama akun: "Wali dari {nama_siswa_pertama}" 
+     * - Username akun: "wali.{nisn_siswa_pertama}"
+     * - Email: "{username}@walimurid.local"
+     * 
+     * SIBLING HANDLING:
+     * - Jika ada siswa baru dengan nomor HP sama → Connect ke akun wali yang sudah ada
+     * - Nama dan username tetap dari siswa pertama yang terhubung
+     * - Jika siswa pertama dihapus → Nama dan username diupdate via Observer
      *
-     * @param string $nomorHp
-     * @param string $namaSiswa (for reference, not used in naming)
+     * @param string $nomorHp Nomor HP wali murid (untuk lookup existing)
+     * @param string $namaSiswa Nama siswa (untuk display name)
+     * @param string|null $nisn NISN siswa (untuk username)
      * @return array{user_id: int, username: string, password: string, is_new: bool}
      * @throws BusinessValidationException
      */
-    private function findOrCreateWaliByPhone(string $nomorHp, string $namaSiswa): array
+    private function findOrCreateWaliByPhone(string $nomorHp, string $namaSiswa, ?string $nisn = null): array
     {
         $phoneClean = preg_replace('/\D+/', '', $nomorHp);
         
@@ -241,7 +247,12 @@ $waliId = $siswa->wali_murid_user_id;
         }
         
         // Check if wali with this phone already exists
-        $existingWali = $this->userRepository->findByUsername('wali.' . $phoneClean);
+        // Store phone in user's 'phone' column for lookup
+        $existingWali = \App\Models\User::where('phone', $phoneClean)
+            ->whereHas('role', function($q) {
+                $q->where('nama_role', 'Wali Murid');
+            })
+            ->first();
         
         if ($existingWali) {
             // Reuse existing wali account (sibling case)
@@ -254,7 +265,9 @@ $waliId = $siswa->wali_murid_user_id;
         }
         
         // Create new wali account
-        $baseUsername = 'wali.' . $phoneClean;
+        // Username berdasarkan NISN, bukan nomor HP
+        $nisnClean = $nisn ? preg_replace('/\D+/', '', $nisn) : $phoneClean;
+        $baseUsername = 'wali.' . $nisnClean;
         $username = $baseUsername;
         $counter = 1;
         
@@ -263,9 +276,14 @@ $waliId = $siswa->wali_murid_user_id;
             $username = $baseUsername . $counter;
         }
         
+        // Password berdasarkan nomor HP (lebih mudah diingat wali)
         $password = 'smkn1.walimurid.' . $phoneClean;
-        $email = $username . '@no-reply.local';
-        $nama = 'Wali Murid ' . $nomorHp;
+        
+        // Email menggunakan username
+        $email = $username . '@walimurid.local';
+        
+        // Nama = "Wali dari {nama_siswa}"
+        $nama = 'Wali dari ' . $namaSiswa;
         
         $role = Role::where('nama_role', 'Wali Murid')->first();
         
@@ -280,6 +298,7 @@ $waliId = $siswa->wali_murid_user_id;
             'nama' => $nama,
             'username' => $username,
             'email' => $email,
+            'phone' => $phoneClean, // Store phone for sibling lookup
             'password' => $password,
             'is_active' => true,
         ];
@@ -308,7 +327,8 @@ $waliId = $siswa->wali_murid_user_id;
                 if ($createWaliAll) {
                     $waliCred = $this->findOrCreateWaliByPhone(
                         $row['nomor_hp_wali_murid'] ?? '',
-                        $row['nama']
+                        $row['nama'],
+                        $row['nisn'] ?? null  // Add NISN for username
                     );
                     
                     $waliMuridUserId = $waliCred['user_id'];

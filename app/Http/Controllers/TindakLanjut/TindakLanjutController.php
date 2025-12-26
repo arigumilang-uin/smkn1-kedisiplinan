@@ -345,4 +345,30 @@ class TindakLanjutController extends Controller
 
         return back()->with('success', 'Kasus berhasil dimulai penanganannya!');
     }
+
+    /**
+     * Selesaikan kasus (change status: Ditangani -> Selesai).
+     */
+    public function selesaikan(int $id): RedirectResponse
+    {
+        $kasus = \App\Models\TindakLanjut::findOrFail($id);
+
+        if ($kasus->status->value !== 'Ditangani') {
+            return back()->with('error', 'Hanya kasus yang sedang ditangani yang bisa diselesaikan.');
+        }
+
+        $kasus->update([
+            'status' => 'Selesai',
+            'tanggal_tindak_lanjut' => now(),
+        ]);
+
+        // Log activity
+        activity()
+            ->performedOn($kasus)
+            ->causedBy(auth()->user())
+            ->withProperties(['old_status' => 'Ditangani', 'new_status' => 'Selesai'])
+            ->log('Kasus berhasil diselesaikan');
+
+        return back()->with('success', 'Kasus berhasil diselesaikan!');
+    }
 }

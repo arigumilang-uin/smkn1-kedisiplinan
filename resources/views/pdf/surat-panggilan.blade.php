@@ -160,12 +160,12 @@
                     <tr>
                         <td>Lamp</td>
                         <td>:</td>
-                        <td>-</td>
+                        <td>{{ $surat->lampiran ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>Hal</td>
                         <td>:</td>
-                        <td><strong>Panggilan</strong></td>
+                        <td><strong>{{ $surat->hal ?? 'Panggilan' }}</strong></td>
                     </tr>
                 </table>
             </td>
@@ -224,7 +224,7 @@
                 <tr>
                     <td>Tempat</td>
                     <td>:</td>
-                    <td>Kampus SMKN 1 Lubuk Dalam</td>
+                    <td>{{ $surat->tempat_pertemuan ?? 'Kampus SMKN 1 Lubuk Dalam' }}</td>
                 </tr>
                 <tr>
                     <td>Keperluan</td>
@@ -259,6 +259,54 @@
         } else {
             $templateType = 'full'; // Template penuh (tanpa Kaprodi, hanya Wali+Waka+Kepsek)
         }
+        
+        // Helper function untuk mendapatkan data pembina dari pembina_data
+        $getPembinaData = function($jabatan) use ($surat, $siswa) {
+            // Cari di pembina_data
+            if (isset($surat->pembina_data) && is_array($surat->pembina_data)) {
+                foreach ($surat->pembina_data as $pembina) {
+                    if (($pembina['jabatan'] ?? '') === $jabatan) {
+                        return $pembina;
+                    }
+                }
+            }
+            
+            // Fallback ke relasi jika tidak ada di pembina_data
+            switch ($jabatan) {
+                case 'Wali Kelas':
+                    $user = $siswa->kelas->waliKelas ?? null;
+                    break;
+                case 'Kaprodi':
+                    $user = $siswa->kelas->jurusan->kaprodi ?? null;
+                    break;
+                case 'Waka Kesiswaan':
+                    $user = \App\Models\User::whereHas('role', fn($q) => $q->where('nama_role', 'Waka Kesiswaan'))->first();
+                    break;
+                case 'Kepala Sekolah':
+                    $user = \App\Models\User::whereHas('role', fn($q) => $q->where('nama_role', 'Kepala Sekolah'))->first();
+                    break;
+                default:
+                    $user = null;
+            }
+            
+            if ($user) {
+                $nipLabel = !empty($user->nip) ? 'NIP.' : (!empty($user->nuptk) ? 'NUPTK.' : 'NIP.');
+                return [
+                    'username' => $user->username,
+                    'nama' => $user->nama,
+                    'nip' => $user->nip ?? $user->nuptk ?? null,
+                    'nip_label' => $nipLabel,
+                ];
+            }
+            
+            return null;
+        };
+        
+        // Get pembina data
+        $waliKelas = $getPembinaData('Wali Kelas');
+        $kaprodi = $getPembinaData('Kaprodi');
+        $wakaKesiswaan = $getPembinaData('Waka Kesiswaan');
+        $kepalaSekolah = $getPembinaData('Kepala Sekolah');
     @endphp
     
     <table width="100%" border="0" style="margin-top: 40px;">
@@ -272,7 +320,8 @@
                 <td width="50%" align="center">
                     Wali Kelas
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->waliKelas->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $waliKelas['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $waliKelas['nip_label'] ?? 'NIP.' }} {{ $waliKelas['nip'] ?? '' }}
                 </td>
             </tr>
             
@@ -282,27 +331,31 @@
                 <td width="50%" align="center">
                     Ketua Program Keahlian
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->jurusan->kaprodi->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $kaprodi['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $kaprodi['nip_label'] ?? 'NIP.' }} {{ $kaprodi['nip'] ?? '' }}
                 </td>
                 <td width="50%" align="center">
                     Wali Kelas
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->waliKelas->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $waliKelas['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $waliKelas['nip_label'] ?? 'NIP.' }} {{ $waliKelas['nip'] ?? '' }}
                 </td>
             </tr>
             
         @elseif($templateType === 'wali_waka')
-            {{-- Template 3: Wali Kelas + Waka Kesiswaan (TIDAK DIUBAH) --}}
+            {{-- Template 3: Wali Kelas + Waka Kesiswaan --}}
             <tr>
                 <td width="50%" align="center">
                     Wali Kelas
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->waliKelas->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $waliKelas['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $waliKelas['nip_label'] ?? 'NIP.' }} {{ $waliKelas['nip'] ?? '' }}
                 </td>
                 <td width="50%" align="center">
                     Waka. Kesiswaan
                     <div style="height: 70px;"></div>
-                    <strong>(.................................................)</strong>
+                    <strong style="text-decoration: underline;">{{ $wakaKesiswaan['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $wakaKesiswaan['nip_label'] ?? 'NIP.' }} {{ $wakaKesiswaan['nip'] ?? '' }}
                 </td>
             </tr>
             
@@ -312,34 +365,39 @@
                 <td width="50%" align="center">
                     Ketua Program Keahlian
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->jurusan->kaprodi->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $kaprodi['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $kaprodi['nip_label'] ?? 'NIP.' }} {{ $kaprodi['nip'] ?? '' }}
                 </td>
                 <td width="50%" align="center">
                     Wali Kelas
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->waliKelas->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $waliKelas['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $waliKelas['nip_label'] ?? 'NIP.' }} {{ $waliKelas['nip'] ?? '' }}
                 </td>
             </tr>
             <tr>
                 <td colspan="2" align="center" style="padding-top: 40px;">
                     Waka. Kesiswaan
                     <div style="height: 70px;"></div>
-                    <strong>(.................................................)</strong>
+                    <strong style="text-decoration: underline;">{{ $wakaKesiswaan['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $wakaKesiswaan['nip_label'] ?? 'NIP.' }} {{ $wakaKesiswaan['nip'] ?? '' }}
                 </td>
             </tr>
             
         @else
-            {{-- Template 5: FULL (Waka KIRI + Wali KANAN, Kepsek BAWAH) - SUDAH BENAR --}}
+            {{-- Template 5: FULL (Waka KIRI + Wali KANAN, Kepsek BAWAH) --}}
             <tr>
                 <td width="50%" align="center">
                     Waka. Kesiswaan
                     <div style="height: 70px;"></div>
-                    <strong>(.................................................)</strong>
+                    <strong style="text-decoration: underline;">{{ $wakaKesiswaan['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $wakaKesiswaan['nip_label'] ?? 'NIP.' }} {{ $wakaKesiswaan['nip'] ?? '' }}
                 </td>
                 <td width="50%" align="center">
                     Wali Kelas
                     <div style="height: 70px;"></div>
-                    <strong>{{ $siswa->kelas->waliKelas->username ?? '(.................................................)' }}</strong>
+                    <strong style="text-decoration: underline;">{{ $waliKelas['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $waliKelas['nip_label'] ?? 'NIP.' }} {{ $waliKelas['nip'] ?? '' }}
                 </td>
             </tr>
             <tr>
@@ -347,8 +405,8 @@
                     Mengetahui<br>
                     Kepala Sekolah
                     <div style="height: 70px;"></div>
-                    <strong style="text-decoration: underline;">SALMIAH, S.Pd.MM</strong><br>
-                    NIP. 19730322 200012 2 002
+                    <strong style="text-decoration: underline;">{{ $kepalaSekolah['username'] ?? '(.................................................)' }}</strong><br>
+                    {{ $kepalaSekolah['nip_label'] ?? 'NIP.' }} {{ $kepalaSekolah['nip'] ?? '' }}
                 </td>
             </tr>
         @endif

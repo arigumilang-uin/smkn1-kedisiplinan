@@ -53,15 +53,15 @@
                 <div class="relative z-10 flex-1 flex flex-col items-center justify-center w-full">
                     <div class="mb-6 relative inline-block">
                         <div class="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-cyan-400 shadow-2xl mx-auto flex items-center justify-center">
-                            {{-- Avatar menggunakan Nama --}}
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($user->nama) }}&background=0f172a&color=fff&size=256&bold=true" 
+                            {{-- Avatar menggunakan Username (nama asli user) --}}
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($user->username) }}&background=0f172a&color=fff&size=256&bold=true" 
                                     class="w-full h-full rounded-full border-4 border-slate-900 object-cover">
                         </div>
                         <div class="absolute bottom-2 right-2 w-6 h-6 bg-emerald-500 border-4 border-slate-900 rounded-full" title="Online"></div>
                     </div>
                     
-                    {{-- SIDEBAR: Menampilkan NAMA LENGKAP --}}
-                    <h2 class="text-2xl font-bold tracking-tight mb-1">{{ $user->nama }}</h2>
+                    {{-- SIDEBAR: Menampilkan USERNAME (nama asli user) --}}
+                    <h2 class="text-2xl font-bold tracking-tight mb-1">{{ $user->username }}</h2>
                     <p class="text-blue-200 text-sm mb-6 font-medium">{{ $user->email }}</p>
                     
                     <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 shadow-sm mx-auto">
@@ -89,14 +89,13 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        {{-- PERBAIKAN 1: Nama Lengkap sebagai teks statis (Display Field) --}}
+                        {{-- Role Info (read-only) --}}
                         <div class="md:col-span-2">
                             <div class="group">
-                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nama Lengkap</label>
-                                
-                                {{-- Menampilkan Nama Lengkap di luar input form --}}
-                                <div class="px-1 py-2 font-medium-bold">
-                                    {{ $user->nama }}
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Peran</label>
+                                <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500 mr-3"></span>
+                                    <span class="font-semibold text-slate-700">{{ $userRoleName }}</span>
                                 </div>
                             </div>
                         </div>

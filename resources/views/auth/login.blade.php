@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SMKN 1 Siak Lubuk Dalam</title>
+    <title>Login - {{ school_name() }}</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,7 +63,7 @@
                 </div>
                 <h2 class="text-4xl font-bold text-white mb-4 tracking-tight">Sistem Kedisiplinan</h2>
                 <p class="text-blue-100 text-lg leading-relaxed">
-                    SMKN 1 Siak Lubuk Dalam.<br>
+                    {{ school_name() }}.<br>
                     Mewujudkan lingkungan sekolah yang tertib, disiplin, dan berkarakter.
                 </p>
             </div>
@@ -139,7 +139,7 @@
                 </form>
 
                 <p class="mt-8 text-center text-sm text-slate-400">
-                    &copy; {{ date('Y') }} SMKN 1 Siak Lubuk Dalam v1.0
+                    &copy; {{ date('Y') }} {{ school_name() }} v{{ sistem_info('versi') }}
                 </p>
             </div>
         </div>

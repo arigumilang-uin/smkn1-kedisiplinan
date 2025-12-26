@@ -118,8 +118,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Report\ReportController::class, 'index'])
                 ->name('index');
 
-            Route::get('/preview', [\App\Http\Controllers\Report\ReportController::class, 'preview'])
-                ->name('preview');
+            // Note: Preview route uses POST and is defined in web.php
+            // GET preview removed to avoid duplicate route name conflict
 
             Route::get('/pelanggaran', [\App\Http\Controllers\Report\ReportController::class, 'pelanggaranReport'])
                 ->name('pelanggaran');

@@ -88,5 +88,9 @@ Route::middleware(['auth'])->group(function () {
         // Mulai Tangani (Change status: Baru -> Sedang Ditangani)
         Route::put('/mulai-tangani', [TindakLanjutController::class, 'mulaiTangani'])
             ->name('mulai-tangani');
+        
+        // Selesaikan Kasus (Change status: Ditangani -> Selesai)
+        Route::put('/selesaikan', [TindakLanjutController::class, 'selesaikan'])
+            ->name('selesaikan');
     });
 });
