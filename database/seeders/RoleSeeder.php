@@ -22,7 +22,7 @@ class RoleSeeder extends Seeder
             'Wali Kelas',
             'Guru',
             'Wali Murid',
-            'Operator',
+            'Operator Sekolah',
             'Developer',
         ];
 

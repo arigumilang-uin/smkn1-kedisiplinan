@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         // GET ROLES
         // =====================================================================
         $roleKepsek = Role::where('nama_role', 'Kepala Sekolah')->first();
-        $roleOperator = Role::where('nama_role', 'Operator')->first();
+        $roleOperator = Role::where('nama_role', 'Operator Sekolah')->first();
         $roleWakaKesiswaan = Role::where('nama_role', 'Waka Kesiswaan')->first();
         $roleWakaSarana = Role::where('nama_role', 'Waka Sarana')->first();
         $roleKaprodi = Role::where('nama_role', 'Kaprodi')->first();
