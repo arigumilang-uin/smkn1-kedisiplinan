@@ -80,7 +80,7 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
     // SISWA PERLU PEMBINAAN REPORT
     // ===================================================================
     
-    Route::prefix('pembinaan')->name('pembinaan.')->middleware('role:Kepala Sekolah,Waka Kesiswaan,Kaprodi,Wali Kelas')->group(function () {
+    Route::prefix('pembinaan')->name('report.pembinaan.')->middleware('role:Kepala Sekolah,Waka Kesiswaan,Kaprodi,Wali Kelas')->group(function () {
         // List siswa perlu pembinaan
         Route::get('/', [SiswaPerluPembinaanController::class, 'index'])
             ->name('index');
