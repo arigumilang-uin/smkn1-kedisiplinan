@@ -54,6 +54,31 @@ Route::get('/install-storage', function () {
     ]);
 });
 
+Route::get('/clean-app', function () {
+    // Akses route ini dengan: /clean-app?key=smkn1-deploy-2024
+    if (request('key') !== 'smkn1-deploy-2024') {
+        abort(403, 'Unauthorized');
+    }
+
+    try {
+        \Artisan::call('config:clear');
+        \Artisan::call('route:clear');
+        \Artisan::call('view:clear');
+        \Artisan::call('cache:clear');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Semua cache berhasil dihapus! Silakan coba buka website lagi.',
+            'cleared' => ['config', 'route', 'view', 'cache']
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+});
+
 // ===================================================================
 // AUTHENTICATION ROUTES (Guest)
 // ===================================================================
