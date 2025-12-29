@@ -18,6 +18,43 @@ use App\Http\Controllers\Auth\LoginController;
 */
 
 // ===================================================================
+// INSTALLATION HELPER (For Shared Hosting)
+// ===================================================================
+
+Route::get('/install-storage', function () {
+    // Akses route ini dengan: /install-storage?key=smkn1-deploy-2024
+    if (request('key') !== 'smkn1-deploy-2024') {
+        abort(403, 'Unauthorized');
+    }
+
+    $target = storage_path('app/public');
+    $shortcut = public_path('storage');
+    
+    if (!file_exists($shortcut)) {
+        try {
+            symlink($target, $shortcut);
+            return response()->json([
+                'success' => true,
+                'message' => 'Storage link created successfully!',
+                'target' => $target,
+                'link' => $shortcut
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create storage link: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Storage link already exists.',
+        'link' => $shortcut
+    ]);
+});
+
+// ===================================================================
 // AUTHENTICATION ROUTES (Guest)
 // ===================================================================
 
