@@ -1,337 +1,231 @@
 @extends('layouts.app')
 
+@section('title', 'Dashboard Kepala Sekolah')
+@section('subtitle', 'Ringkasan eksekutif dan monitoring kedisiplinan siswa.')
+@section('page-header', true)
+
 @section('content')
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: { primary: '#4f46e5', slate: { 800: '#1e293b', 900: '#0f172a' } },
-                screens: { 'xs': '375px' }
-            }
-        },
-        corePlugins: { preflight: false }
-    }
-</script>
-
-<script>
-    function toggleFilterKepsek() {
-        const content = document.getElementById('filterContentKepsek');
-        content.classList.toggle('hidden');
-    }
-</script>
-
-<div class="page-wrap">
-
-    <div class="relative rounded-2xl bg-gradient-to-r from-slate-800 to-blue-900 p-6 shadow-lg mb-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 border border-blue-800/50 overflow-hidden">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500 opacity-10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-40 h-40 bg-cyan-400 opacity-10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
-        <div class="relative z-10 w-full md:w-auto">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-[10px] font-medium text-blue-200 mb-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Kepala Sekolah Panel
+<div class="space-y-6">
+    {{-- Statistics Cards --}}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {{-- Total Siswa --}}
+        <div class="stat-card">
+            <div class="stat-card-icon primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
             </div>
-            <h1 class="text-xl md:text-2xl font-bold leading-tight">Halo, {{ auth()->user()->username }}! 👋</h1>
-            <p class="text-blue-100 text-xs md:text-sm opacity-80 mt-1">Dashboard khusus untuk monitoring dan persetujuan kasus surat panggilan seluruh sekolah.</p>
-        </div>
-        <div class="hidden xs:flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 shadow-inner min-w-[140px] relative z-10">
-            <div class="bg-blue-500/20 p-2 rounded-lg text-blue-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            </div>
-            <div>
-                <span class="block text-2xl font-bold leading-none tracking-tight">{{ date('d') }}</span>
-                <span class="block text-[10px] uppercase tracking-wider text-blue-200">{{ date('F Y') }}</span>
+            <div class="stat-card-content">
+                <p class="stat-card-label">Total Siswa</p>
+                <p class="stat-card-value">{{ number_format($totalSiswa ?? 0) }}</p>
             </div>
         </div>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleFilterKepsek()">
-            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0 flex items-center gap-2">
-                <span class="p-1.5 bg-blue-50 border border-blue-100 rounded-lg text-blue-600"><i class="fas fa-calendar-alt"></i></span>
-                Filter Periode Laporan
-            </h3>
-            <i class="fas fa-chevron-down text-slate-400"></i>
-        </div>
-        <div id="filterContentKepsek" class="p-6 transition-all">
-            <form action="{{ route('dashboard.kepsek') }}" method="GET" class="w-full">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Dari Tanggal</label>
-                        <input type="date" name="start_date" value="{{ $startDate }}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none transition-all">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Sampai Tanggal</label>
-                        <input type="date" name="end_date" value="{{ $endDate }}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none transition-all">
-                    </div>
-                    <div class="md:col-span-1 flex gap-3">
-                        <button type="submit" class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase rounded-xl transition-all h-[42px] border-none cursor-pointer">Filter</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    
-    <div class="group hover-lift bg-white rounded-xl p-4 shadow-sm border border-slate-100 relative overflow-hidden">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Populasi</span>
-            <div class="text-emerald-500 bg-emerald-50 p-2 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-            </div>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-700 mb-1">{{ $totalSiswa }}</h3>
-        <p class="text-xs text-slate-500">Total Siswa Sekolah</p>
-        <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-    </div>
-
-    <div class="group hover-lift bg-white rounded-xl p-4 shadow-sm border border-slate-100 relative overflow-hidden text-decoration-none">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kasus Surat</span>
-            <div class="text-rose-500 bg-rose-50 p-2 rounded-lg group-hover:bg-rose-500 group-hover:text-white transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-            </div>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-700 mb-1">{{ $totalKasus }}</h3>
-        <p class="text-xs text-slate-500">Melibatkan Saya</p>
-        <div class="absolute bottom-0 left-0 w-full h-1 bg-rose-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-    </div>
-
-    <div class="group hover-lift bg-white rounded-xl p-4 shadow-sm border border-slate-100 relative overflow-hidden">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Menunggu</span>
-            <div class="text-amber-500 bg-amber-50 p-2 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-700 mb-1">{{ $totalKasusMenunggu }}</h3>
-        <p class="text-xs text-slate-500">Perlu Persetujuan</p>
-        <div class="absolute bottom-0 left-0 w-full h-1 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-    </div>
-
-    <div class="group hover-lift bg-white rounded-xl p-4 shadow-sm border border-slate-100 relative overflow-hidden">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pelanggaran</span>
-            <div class="text-blue-500 bg-blue-50 p-2 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
-            </div>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-700 mb-1">{{ $totalPelanggaran }}</h3>
-        <p class="text-xs text-slate-500">Total Periode Ini</p>
-        <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-    </div>
-
-</div>
-
-<style>
-    .hover-lift {
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
-    }
-    .hover-lift:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    }
-</style>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-start">
         
-        <div class="lg:col-span-7 bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
-                <h3 class="text-sm font-black text-slate-700 m-0">Kasus Terbaru</h3>
+        {{-- Total Pelanggaran --}}
+        <div class="stat-card">
+            <div class="stat-card-icon danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                </svg>
             </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left table-fixed">
-                    <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest">
+            <div class="stat-card-content">
+                <p class="stat-card-label">Pelanggaran</p>
+                <p class="stat-card-value">{{ number_format($totalPelanggaran ?? 0) }}</p>
+                <p class="text-xs text-gray-500 mt-1">Periode ini</p>
+            </div>
+        </div>
+        
+        {{-- Total Kasus --}}
+        <div class="stat-card">
+            <div class="stat-card-icon warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/>
+                </svg>
+            </div>
+            <div class="stat-card-content">
+                <p class="stat-card-label">Kasus Aktif</p>
+                <p class="stat-card-value">{{ number_format($totalKasus ?? 0) }}</p>
+            </div>
+        </div>
+        
+        {{-- Menunggu Persetujuan --}}
+        <a href="{{ route('kepala-sekolah.approvals.index') }}" class="stat-card group">
+            <div class="stat-card-icon success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="stat-card-content">
+                <p class="stat-card-label">Persetujuan</p>
+                <p class="stat-card-value">{{ number_format($totalKasusMenunggu ?? 0) }}</p>
+                <p class="text-xs text-gray-500 mt-1">Menunggu</p>
+            </div>
+        </a>
+    </div>
+    
+    {{-- Filter & Charts --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {{-- Trend Chart --}}
+        <div class="lg:col-span-2 card">
+            <div class="card-header">
+                <h3 class="card-title">Tren Pelanggaran 6 Bulan Terakhir</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="chartTrend" height="250"></canvas>
+            </div>
+        </div>
+        
+        {{-- Pelanggaran Populer --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Top Pelanggaran</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="chartPelanggaran" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    {{-- Pelanggaran Per Jurusan --}}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Pelanggaran Per Jurusan</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="chartJurusan" height="100"></canvas>
+        </div>
+    </div>
+    
+    {{-- Kasus Menunggu Persetujuan --}}
+    @if(($kasusMenunggu ?? collect())->count() > 0)
+        <div class="card border-amber-200 bg-amber-50/50">
+            <div class="card-header">
+                <h3 class="card-title text-amber-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Menunggu Persetujuan Anda
+                </h3>
+                <a href="{{ route('kepala-sekolah.approvals.index') }}" class="btn btn-sm btn-primary">
+                    Lihat Semua
+                </a>
+            </div>
+            <div class="table-container !rounded-none !border-0 !bg-transparent">
+                <table class="table">
+                    <thead class="bg-amber-100/50">
                         <tr>
-                            <th class="w-1/3 px-4 py-3">Siswa</th>
-                            <th class="w-1/2 px-4 py-3">Pemicu</th>
-                            <th class="w-24 px-4 py-3 text-right">Aksi</th>
+                            <th>Siswa</th>
+                            <th>Kelas</th>
+                            <th>Tanggal</th>
+                            <th class="w-32">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-50">
-                        @forelse($kasusBaru as $kasus)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-4 py-3">
-                                <div class="text-xs font-bold text-slate-800 truncate">{{ $kasus->siswa->nama_siswa }}</div>
-                                <div class="text-[10px] text-slate-500 font-bold tracking-tight">{{ $kasus->siswa->kelas->nama_kelas ?? 'N/A' }}</div>
-                            </td>
-                            <td class="px-4 py-3">
-                                <p class="text-[11px] text-slate-600 leading-snug line-clamp-2 m-0 italic font-medium">
-                                    "{{ $kasus->pemicu }}"
-                                </p>
-                            </td>
-                            <td class="px-4 py-3 text-right text-xs">
-                                <a href="{{ route('kasus.edit', $kasus->id) }}" class="text-blue-600 font-bold hover:underline no-underline uppercase tracking-tighter">Detail</a>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="3" class="text-center py-10 text-slate-400 text-[10px] font-black uppercase italic tracking-widest opacity-50">Kosong</td></tr>
-                        @endforelse
+                    <tbody class="bg-white">
+                        @foreach($kasusMenunggu->take(5) as $kasus)
+                            <tr>
+                                <td class="font-medium">{{ $kasus->siswa->nama_siswa ?? '-' }}</td>
+                                <td><span class="badge badge-primary">{{ $kasus->siswa->kelas->nama_kelas ?? '-' }}</span></td>
+                                <td class="text-gray-500">{{ $kasus->created_at->format('d M Y') }}</td>
+                                <td>
+                                    <a href="{{ route('tindak-lanjut.show', $kasus->id) }}" class="btn btn-sm btn-primary">
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
         </div>
-
-        <div class="lg:col-span-5 flex flex-col gap-6">
-            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 relative overflow-hidden group">
-                <div class="flex items-center justify-between mb-5">
-                    <div class="border-l-4 border-indigo-500 pl-3">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Statistik</h3>
-                        <h4 class="text-sm font-black text-slate-800 m-0">Pelanggaran Populer</h4>
-                    </div>
-                    <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    </div>
-                </div>
-                <div class="h-64 relative"><canvas id="chartPelanggaran"></canvas></div>
-            </div>
-
-            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 relative overflow-hidden group">
-                <div class="flex items-center justify-between mb-5">
-                    <div class="border-l-4 border-emerald-500 pl-3">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Distribusi</h3>
-                        <h4 class="text-sm font-black text-slate-800 m-0">Per Jurusan</h4>
-                    </div>
-                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    </div>
-                </div>
-                <div class="h-40 relative"><canvas id="chartJurusan"></canvas></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 mb-8 overflow-hidden">
-        <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-gradient-to-r from-slate-50/50 to-white">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-slate-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-black text-slate-800 m-0 tracking-tight">Trend Pelanggaran</h3>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Laporan 6 Bulan Terakhir</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 rounded-full border border-indigo-100">
-                <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
-                <span class="text-[10px] font-black text-indigo-600 uppercase">Live Monitor</span>
-            </div>
-        </div>
-        <div class="p-8">
-            <div class="relative w-full h-[220px]"> 
-                <canvas id="chartTrend"></canvas>
-            </div>
-        </div>
-    </div>
-
+    @endif
 </div>
+@endsection
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Chart 1: Pelanggaran Populer (DIBUAT HORIZONTAL AGAR TULISAN TERBACA JELAS)
-new Chart(document.getElementById('chartPelanggaran'), {
-    type: 'bar',
-    data: {
-        labels: {!! json_encode($chartLabels) !!},
-        datasets: [{
-            data: {!! json_encode($chartData) !!},
-            backgroundColor: '#3b82f6',
-            borderRadius: 6,
-            barThickness: 12,
-        }]
-    },
-    options: {
-        indexAxis: 'y', // MEMBUAT CHART HORIZONTAL
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { 
-            y: { 
-                grid: { display: false },
-                ticks: { 
-                    font: { size: 10, weight: 'bold' },
-                    color: '#475569',
-                    callback: function(value) {
-                        const label = this.getLabelForValue(value);
-                        return label.length > 20 ? label.substr(0, 20) + '...' : label;
-                    }
-                } 
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart Trend
+    const ctxTrend = document.getElementById('chartTrend');
+    if (ctxTrend) {
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: @json($chartTrendLabels ?? []),
+                datasets: [{
+                    label: 'Jumlah Pelanggaran',
+                    data: @json($chartTrendData ?? []),
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                }]
             },
-            x: { 
-                beginAtZero: true, 
-                grid: { color: '#f1f5f9' },
-                ticks: { font: { size: 9 }, precision: 0 }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
             }
-        }
+        });
     }
-});
-
-// Chart 2: Per Jurusan
-new Chart(document.getElementById('chartJurusan'), {
-    type: 'doughnut',
-    data: {
-        labels: {!! json_encode($chartJurusanLabels) !!},
-        datasets: [{
-            data: {!! json_encode($chartJurusanData) !!},
-            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7'],
-            borderWidth: 0,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: { 
-            legend: { 
-                position: 'right', 
-                labels: { font: { size: 9, weight: 'bold' }, boxWidth: 8, padding: 10 } 
-            } 
-        }
+    
+    // Chart Pelanggaran
+    const ctxPelanggaran = document.getElementById('chartPelanggaran');
+    if (ctxPelanggaran) {
+        new Chart(ctxPelanggaran, {
+            type: 'doughnut',
+            data: {
+                labels: @json($chartLabels ?? []),
+                datasets: [{
+                    data: @json($chartData ?? []),
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)', 'rgba(236, 72, 153, 0.8)',
+                        'rgba(20, 184, 166, 0.8)', 'rgba(249, 115, 22, 0.8)', 'rgba(99, 102, 241, 0.8)',
+                        'rgba(34, 197, 94, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } }
+            }
+        });
     }
-});
-
-// Chart 3: Trend
-new Chart(document.getElementById('chartTrend'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($chartTrendLabels) !!},
-        datasets: [{
-            label: 'Pelanggaran',
-            data: {!! json_encode($chartTrendData) !!},
-            borderColor: '#4f46e5',
-            backgroundColor: 'rgba(79, 70, 229, 0.05)',
-            tension: 0.4,
-            fill: true,
-            pointRadius: 4,
-            pointBackgroundColor: '#fff',
-            pointBorderWidth: 2,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true, grid: { color: '#f8fafc' }, ticks: { font: { size: 10, weight: 'bold' } } },
-            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
-        }
+    
+    // Chart Jurusan
+    const ctxJurusan = document.getElementById('chartJurusan');
+    if (ctxJurusan) {
+        new Chart(ctxJurusan, {
+            type: 'bar',
+            data: {
+                labels: @json($chartJurusanLabels ?? []),
+                datasets: [{
+                    label: 'Jumlah Pelanggaran',
+                    data: @json($chartJurusanData ?? []),
+                    backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
     }
 });
 </script>
-
-<style>
-    .page-wrap { background: #fcfcfd; min-height: 100vh; padding: 1.5rem; font-family: 'Inter', sans-serif; }
-    .hover-lift { transition: all 0.3s ease; }
-    .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05); }
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;  
-        overflow: hidden;
-    }
-</style>
-
-@endsection
+@endpush

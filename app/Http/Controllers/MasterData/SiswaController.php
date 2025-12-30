@@ -486,13 +486,21 @@ class SiswaController extends Controller
     {
         $rows = [];
         $lines = explode("\n", $data);
+        $isFirstLine = true;
         
         foreach ($lines as $line) {
             $line = trim($line);
             if (empty($line)) continue;
             
-            // Support both semicolon and tab delimiter
-            $parts = preg_split('/[;\t]/', $line);
+            // Support comma, semicolon, and tab delimiter
+            $parts = preg_split('/[,;\t]/', $line);
+            
+            // Skip header line if it looks like a header (contains 'nisn')
+            if ($isFirstLine && stripos($parts[0], 'nisn') !== false) {
+                $isFirstLine = false;
+                continue;
+            }
+            $isFirstLine = false;
             
             if (count($parts) >= 2) {
                 $rows[] = [

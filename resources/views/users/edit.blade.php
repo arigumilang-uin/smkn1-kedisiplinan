@@ -1,488 +1,308 @@
 @extends('layouts.app')
 
-{{-- 1. SCRIPT LOGIC (PALING ATAS) --}}
-@push('scripts')
-<script>
-    (function(){
-        // --- LOGIC TOGGLE SECTION ---
-        const roleSelect = document.getElementById('roleSelect');
-        const kaprodiSection = document.getElementById('kaprodiSection');
-        const jurusanSelect = document.getElementById('jurusanSelect');
-        const waliSection = document.getElementById('waliSection');
-        const kelasSelect = document.getElementById('kelasSelect');
-        const nipSection = document.getElementById('nipSection');
-        const siswaSection = document.getElementById('siswaSection');
-        const currentUserId = '{{ $user->id }}';
+@section('title', 'Edit User')
+@section('subtitle', 'Perbarui data pengguna.')
+@section('page-header', true)
 
-        function toggleSections() {
-            const opt = roleSelect.options[roleSelect.selectedIndex];
-            const roleName = opt ? opt.dataset.roleName : '';
-            
-            // Reset Display
-            kaprodiSection.style.display = 'none';
-            waliSection.style.display = 'none';
-            siswaSection.style.display = 'none';
-            if (nipSection) nipSection.style.display = '';
-
-            // Logic Display
-            if (roleName === 'Kaprodi' || roleName === 'Developer') {
-                kaprodiSection.style.display = '';
-            } 
-            
-            if (roleName === 'Wali Kelas' || roleName === 'Developer') {
-                waliSection.style.display = '';
-            } 
-            
-            if (roleName === 'Wali Murid' || roleName === 'Developer') {
-                siswaSection.style.display = '';
-                if (nipSection && roleName === 'Wali Murid') nipSection.style.display = 'none';
-            }
-        }
-
-        // Logic Disable Option (Kecuali Punya Sendiri)
-        function disableAssigned() {
-            if (jurusanSelect) {
-                Array.from(jurusanSelect.options).forEach(opt => {
-                    const kaprodiId = opt.dataset.kaprodiId;
-                    if (kaprodiId && kaprodiId !== '' && kaprodiId !== currentUserId) {
-                        opt.disabled = true;
-                    }
-                });
-            }
-            if (kelasSelect) {
-                Array.from(kelasSelect.options).forEach(opt => {
-                    const waliId = opt.dataset.waliId;
-                    if (waliId && waliId !== '' && waliId !== currentUserId) {
-                        opt.disabled = true;
-                    }
-                });
-            }
-        }
-
-        roleSelect.addEventListener('change', toggleSections);
-        document.addEventListener('DOMContentLoaded', function(){ 
-            toggleSections(); 
-            disableAssigned(); 
-        });
-    })();
-    
-    // --- LOGIC FILTER SISWA ---
-    function filterStudents() {
-        const tingkat = document.getElementById('filterTingkat').value.toLowerCase();
-        const jurusan = document.getElementById('filterJurusan').value;
-        const kelas = document.getElementById('filterKelas').value;
-        const search = document.getElementById('searchSiswa').value.toLowerCase();
-        
-        const items = document.querySelectorAll('.student-card-wrapper');
-        let visibleCount = 0;
-        
-        items.forEach(item => {
-            const iTingkat = item.dataset.tingkat.toLowerCase();
-            const iJurusan = item.dataset.jurusan;
-            const iKelas = item.dataset.kelas;
-            const iSearch = item.dataset.search;
-            
-            let show = true;
-            if (tingkat && !iTingkat.includes(tingkat)) show = false;
-            if (jurusan && iJurusan !== jurusan) show = false;
-            if (kelas && iKelas !== kelas) show = false;
-            if (search && !iSearch.includes(search)) show = false;
-            
-            item.style.display = show ? '' : 'none';
-            if (show) visibleCount++;
-        });
-        
-        const noMsg = document.getElementById('noResultMsg');
-        if(noMsg) noMsg.style.display = visibleCount === 0 ? 'block' : 'none';
-    }
-
-    function resetFilters() {
-        ['filterTingkat', 'filterJurusan', 'filterKelas', 'searchSiswa'].forEach(id => {
-            document.getElementById(id).value = '';
-        });
-        filterStudents();
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        ['filterTingkat', 'filterJurusan', 'filterKelas', 'searchSiswa'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.addEventListener(id === 'searchSiswa' ? 'input' : 'change', filterStudents);
-        });
-    });
-</script>
-@endpush
-
-{{-- 2. CONTENT FORM --}}
 @section('content')
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: { colors: { primary: '#4f46e5', slate: { 800: '#1e293b', 900: '#0f172a' } } }
-        },
-        corePlugins: { preflight: false }
-    }
-</script>
-
-<div class="page-container p-4">
-
-    <form action="{{ route('users.update', $user->id) }}" method="POST">
-        @csrf
-        @method('PUT')
-
-        <div class="row">
-            <div class="col-lg-8">
-                
-                {{-- Alert Error --}}
-                @if ($errors->any())
-                    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-r">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-exclamation-circle text-red-500"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-red-700 font-bold">Gagal memperbarui data:</p>
-                                <ul class="list-disc list-inside text-xs text-red-600 mt-1">
-                                    @foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                        <h3 class="text-sm font-bold text-slate-700 m-0 uppercase tracking-wide flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-primary"></span>
-                            1. Informasi Akun
-                        </h3>
-                    </div>
-                    <div class="p-6">
-                        
-                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-5 text-xs text-blue-700">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            <strong>Catatan:</strong> Nama akan di-generate otomatis sesuai role. Username & Password hanya berubah otomatis jika user belum pernah menggantinya.
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-                            <div class="form-group mb-0">
-                                <label class="form-label-modern">Nama Lengkap <span class="text-red-500">*</span></label>
-                                <input type="text" name="nama" class="form-input-modern w-full" value="{{ old('nama', $user->nama) }}" required>
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label class="form-label-modern">Jabatan (Role) <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <select name="role_id" id="roleSelect" class="form-input-modern w-full appearance-none pr-8" required>
-                                        @foreach($roles as $role)
-                                            @php
-                                                $disabled = ($role->nama_role === 'Kepala Sekolah' && isset($kepsekExists) && $kepsekExists && (!isset($kepsekId) || $kepsekId != $user->id)) ? 'disabled' : '';
-                                            @endphp
-                                            <option value="{{ $role->id }}" data-role-name="{{ $role->nama_role }}" {{ (old('role_id', $user->role_id) == $role->id) ? 'selected' : '' }} {{ $disabled }}>
-                                                {{ $role->nama_role }} @if($disabled) (Sudah Terisi) @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-500">
-                                        <i class="fas fa-chevron-down text-xs"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label class="form-label-modern">Username <span class="text-red-500">*</span></label>
-                                <input type="text" name="username" class="form-input-modern w-full" value="{{ old('username', $user->username) }}" required>
-                                <div class="mt-1">
-                                    @if($user->hasChangedUsername())
-                                        <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded"><i class="fas fa-check"></i> Custom Username</span>
-                                    @else
-                                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Default (Auto-Generate)</span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label class="form-label-modern">Password Baru <span class="text-slate-400 text-xs font-normal">(Opsional)</span></label>
-                                <input type="password" name="password" class="form-input-modern w-full" placeholder="Biarkan kosong jika tetap">
-                                <div class="mt-1">
-                                    @if($user->hasChangedPassword())
-                                        <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded"><i class="fas fa-check"></i> Password Diubah User</span>
-                                    @else
-                                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Password Masih Default</span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label class="form-label-modern">Email Address <span class="text-red-500">*</span></label>
-                                <input type="email" name="email" class="form-input-modern w-full" value="{{ old('email', $user->email) }}" required>
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label class="form-label-modern">No. Handphone</label>
-                                <input type="text" name="phone" class="form-input-modern w-full" value="{{ old('phone', $user->phone) }}" {{ $user->isWaliMurid() ? 'readonly title="Diambil dari data siswa"' : '' }}>
-                                @if($user->isWaliMurid())
-                                    <small class="text-slate-400 text-[10px]">Sinkron otomatis dari data siswa.</small>
-                                @endif
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <div id="nipSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-                    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                        <h3 class="text-sm font-bold text-slate-700 m-0 uppercase tracking-wide flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            2. Data Kepegawaian
-                        </h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="form-label-modern">NIP / NI PPPK</label>
-                                <input type="text" name="nip" class="form-input-modern w-full" value="{{ old('nip', $user->nip) }}" maxlength="18">
-                            </div>
-                            <div>
-                                <label class="form-label-modern">NUPTK</label>
-                                <input type="text" name="nuptk" class="form-input-modern w-full" value="{{ old('nuptk', $user->nuptk) }}" maxlength="18">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="mappingContainer">
-                    
-                    <div id="waliSection" style="display:none;" class="bg-white rounded-2xl shadow-sm border border-blue-200 mb-6">
-                        <div class="bg-blue-50 px-6 py-4 border-b border-blue-100">
-                            <h3 class="text-sm font-bold text-blue-800 m-0 uppercase tracking-wide">Mapping Wali Kelas</h3>
-                        </div>
-                        <div class="p-6">
-                            <label class="form-label-modern text-blue-700">Kelas Binaan</label>
-                            <div class="relative">
-                                <select name="kelas_id" id="kelasSelect" class="form-input-modern w-full border-blue-300 focus:ring-blue-200 appearance-none pr-8">
-                                    <option value="">-- Pilih Kelas --</option>
-                                    @foreach($kelas as $k)
-                                        @php 
-                                            $hasWali = $k->wali_kelas_user_id; 
-                                            $isMine = $hasWali == $user->id;
-                                        @endphp
-                                        <option value="{{ $k->id }}" data-wali-id="{{ $hasWali ?? '' }}" {{ (old('kelas_id', $user->kelasDiampu->id ?? '') == $k->id) ? 'selected' : '' }} {{ ($hasWali && !$isMine) ? 'disabled' : '' }}>
-                                            {{ $k->nama_kelas }} @if($hasWali && !$isMine) (Terisi) @endif
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-blue-500">
-                                    <i class="fas fa-chevron-down text-xs"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="kaprodiSection" style="display:none;" class="bg-white rounded-2xl shadow-sm border border-blue-200 mb-6">
-                        <div class="bg-blue-50 px-6 py-4 border-b border-blue-100">
-                            <h3 class="text-sm font-bold text-blue-800 m-0 uppercase tracking-wide">Mapping Kaprodi</h3>
-                        </div>
-                        <div class="p-6">
-                            <label class="form-label-modern text-blue-700">Program Studi</label>
-                            <div class="relative">
-                                <select name="jurusan_id" id="jurusanSelect" class="form-input-modern w-full border-blue-300 focus:ring-blue-200 appearance-none pr-8">
-                                    <option value="">-- Pilih Jurusan --</option>
-                                    @foreach($jurusan as $j)
-                                        @php 
-                                            $hasKaprodi = $j->kaprodi_user_id; 
-                                            $isMine = $hasKaprodi == $user->id;
-                                        @endphp
-                                        <option value="{{ $j->id }}" data-kaprodi-id="{{ $hasKaprodi ?? '' }}" {{ (old('jurusan_id', $user->jurusanDiampu->id ?? '') == $j->id) ? 'selected' : '' }} {{ ($hasKaprodi && !$isMine) ? 'disabled' : '' }}>
-                                            {{ $j->nama_jurusan }} @if($hasKaprodi && !$isMine) (Terisi) @endif
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-blue-500">
-                                    <i class="fas fa-chevron-down text-xs"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="siswaSection" style="display:none;" class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                            <h3 class="text-sm font-bold text-slate-700 m-0 uppercase tracking-wide flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                                3. Hubungkan Siswa (Anak)
-                            </h3>
-                           <button type="button" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition shadow-sm" onclick="resetFilters()">
-                                <i class="fas fa-undo mr-1"></i> Reset
-                        </button>
-                        </div>
-                        
-                        <div class="p-6">
-                            <div class="flex flex-wrap gap-3 mb-5 p-1">
-                                <select id="filterTingkat" class="form-select-sm-modern">
-                                    <option value="">Semua Tingkat</option>
-                                    <option value="X">Kelas X</option>
-                                    <option value="XI">Kelas XI</option>
-                                    <option value="XII">Kelas XII</option>
-                                </select>
-                                <select id="filterJurusan" class="form-select-sm-modern">
-                                    <option value="">Semua Jurusan</option>
-                                    @foreach($jurusan as $j) <option value="{{ $j->id }}">{{ $j->nama_jurusan }}</option> @endforeach
-                                </select>
-                                <select id="filterKelas" class="form-select-sm-modern">
-                                    <option value="">Semua Kelas</option>
-                                    @foreach($kelas as $k) <option value="{{ $k->id }}" data-jurusan="{{ $k->jurusan_id }}">{{ $k->nama_kelas }}</option> @endforeach
-                                </select>
-                                <input type="text" id="searchSiswa" class="form-input-sm-modern flex-grow" placeholder="Cari Nama / NISN...">
-                            </div>
-
-                            <div class="student-scroll-area">
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="studentGrid">
-                                    
-                                    @php
-                                        // Sort: Connected students first
-                                        $connectedIds = $connectedSiswaIds ?? [];
-                                        $sortedSiswa = $siswa->sortByDesc(function($s) use ($connectedIds) {
-                                            return in_array($s->id, $connectedIds);
-                                        });
-                                    @endphp
-
-                                    @foreach($sortedSiswa as $s)
-                                        @php
-                                            $isChecked = in_array($s->id, $connectedIds);
-                                        @endphp
-                                        <div class="student-card-wrapper" 
-                                             data-tingkat="{{ explode(' ', $s->kelas->nama_kelas ?? '')[0] }}" 
-                                             data-jurusan="{{ $s->kelas->jurusan_id ?? '' }}" 
-                                             data-kelas="{{ $s->kelas_id }}" 
-                                             data-search="{{ strtolower($s->nama_siswa . ' ' . $s->nisn) }}">
-                                            
-                                            <label class="flex items-center p-3 border rounded-xl cursor-pointer transition-all group h-full relative
-                                                          {{ $isChecked ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-slate-200 hover:border-blue-500 hover:shadow-md' }}">
-                                                
-                                                <input type="checkbox" name="siswa_ids[]" value="{{ $s->id }}" class="peer sr-only student-check-input" {{ $isChecked ? 'checked' : '' }}>
-                                                
-                                                <div class="absolute top-0 right-0 p-2 text-emerald-600 {{ $isChecked ? '' : 'opacity-0 peer-checked:opacity-100 text-blue-600' }}">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                                </div>
-
-                                                <div class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 transition-colors
-                                                            {{ $isChecked ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 peer-checked:bg-blue-600 peer-checked:text-white' }}">
-                                                    {{ substr($s->nama_siswa, 0, 1) }}
-                                                </div>
-                                                <div class="ml-3 overflow-hidden">
-                                                    <h6 class="text-sm font-bold truncate transition-colors {{ $isChecked ? 'text-emerald-800' : 'text-slate-700 peer-checked:text-blue-700' }}">
-                                                        {{ $s->nama_siswa }}
-                                                    </h6>
-                                                    <p class="text-[10px] truncate {{ $isChecked ? 'text-emerald-600' : 'text-slate-400' }}">
-                                                        {{ $s->nisn }} • {{ $s->kelas->nama_kelas ?? '-' }}
-                                                    </p>
-                                                </div>
-                                                
-                                                <div class="absolute inset-0 border-2 border-transparent rounded-xl pointer-events-none {{ $isChecked ? 'border-emerald-500' : 'peer-checked:border-blue-500' }}"></div>
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                                <div id="noResultMsg" class="text-center py-8 text-slate-400 text-sm hidden">
-                                    <i class="fas fa-search mb-2 text-2xl opacity-50"></i><br>
-                                    Siswa tidak ditemukan.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-lg-4">
-                
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-4 sticky top-6 z-10">
-                    <div class="p-6">
-                        <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-                            <i class="fas fa-check-circle text-emerald-500"></i> Simpan Perubahan
-                        </h4>
-                        <p class="text-xs text-slate-500 mb-6 leading-relaxed">
-                            Pastikan data yang diubah sudah benar sebelum menyimpan.
-                        </p>
-                        
-                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-amber-200 transition-all transform active:scale-95 mb-3 flex items-center justify-center gap-2">
-                            <i class="fas fa-save"></i> Update User
-                        </button>
-                        
-                        <a href="{{ route('users.index') }}" class="w-full block text-center bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 px-4 rounded-xl transition-colors text-sm">
-                            Batal
-                        </a>
-                    </div>
-                </div>
-
-            </div>
+<div class="max-w-3xl">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Form Edit User</h3>
         </div>
-    </form>
+        <div class="card-body">
+            {{-- Role mapping from PHP to JS --}}
+            @php
+                $roleMap = [];
+                foreach($roles ?? [] as $role) {
+                    $roleMap[$role->id] = strtolower($role->nama_role);
+                }
+            @endphp
+            
+            <form action="{{ route('users.update', $user->id) }}" method="POST" class="space-y-6"
+                  x-data="{ 
+                      roleId: '{{ old('role_id', $user->role_id) }}',
+                      roleMap: {{ json_encode($roleMap) }},
+                      
+                      getRoleName() {
+                          return this.roleMap[this.roleId] || '';
+                      },
+                      needsNipNuptk() {
+                          const roles = ['guru', 'waka kesiswaan', 'waka sarana', 'operator sekolah', 'wali kelas', 'kaprodi', 'kepala sekolah'];
+                          const name = this.getRoleName();
+                          return roles.some(r => name.includes(r));
+                      },
+                      isWaliKelas() {
+                          return this.getRoleName().includes('wali kelas');
+                      },
+                      isKaprodi() {
+                          return this.getRoleName().includes('kaprodi');
+                      },
+                      isWaliMurid() {
+                          return this.getRoleName().includes('wali murid');
+                      },
+                      isDeveloper() {
+                          return this.getRoleName().includes('developer');
+                      }
+                  }"
+            >
+                @csrf
+                @method('PUT')
+                
+                {{-- Basic Information --}}
+                <div class="p-4 bg-gray-50 rounded-xl space-y-4">
+                    <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                        Informasi Dasar
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="username" class="form-label form-label-required">Username</label>
+                            <input type="text" id="username" name="username" value="{{ old('username', $user->username) }}"
+                                   class="form-input @error('username') error @enderror" required>
+                            @error('username')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}"
+                                   class="form-input @error('email') error @enderror">
+                            @error('email')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group" x-data="{ show: false }">
+                            <label for="password" class="form-label">Password Baru</label>
+                            <div class="relative">
+                                <input :type="show ? 'text' : 'password'" id="password" name="password"
+                                       class="form-input !pr-10 @error('password') error @enderror" placeholder="Kosongkan jika tidak diubah">
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
+                                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                </button>
+                            </div>
+                            <p class="form-help">Biarkan kosong jika tidak ingin mengubah password.</p>
+                            @error('password')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <div class="form-group" x-data="{ show: false }">
+                            <label for="password_confirmation" class="form-label">Konfirmasi Password</label>
+                            <div class="relative">
+                                <input :type="show ? 'text' : 'password'" id="password_confirmation" name="password_confirmation"
+                                       class="form-input !pr-10">
+                                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
+                                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Role Selection --}}
+                <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <div class="form-group mb-0">
+                        <label for="role_id" class="form-label form-label-required">Role Pengguna</label>
+                        <select id="role_id" name="role_id" x-model="roleId"
+                                class="form-input form-select @error('role_id') error @enderror" required>
+                            <option value="">Pilih Role</option>
+                            @foreach($roles ?? [] as $role)
+                                <option value="{{ $role->id }}" {{ old('role_id', $user->role_id) == $role->id ? 'selected' : '' }}>{{ $role->nama_role }}</option>
+                            @endforeach
+                        </select>
+                        @error('role_id')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                
+                {{-- NIP & NUPTK (untuk Guru, Waka, Kepala Sekolah, etc) --}}
+                <div x-show="needsNipNuptk() || isDeveloper()" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform -translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="p-4 bg-amber-50 rounded-xl border border-amber-100 space-y-4">
+                    <h4 class="font-semibold text-amber-800 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                        Data Kepegawaian
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="nip" class="form-label">NIP</label>
+                            <input type="text" id="nip" name="nip" value="{{ old('nip', $user->nip) }}"
+                                   class="form-input @error('nip') error @enderror" placeholder="18 digit NIP">
+                            @error('nip')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="nuptk" class="form-label">NUPTK</label>
+                            <input type="text" id="nuptk" name="nuptk" value="{{ old('nuptk', $user->nuptk) }}"
+                                   class="form-input @error('nuptk') error @enderror" placeholder="16 digit NUPTK">
+                            @error('nuptk')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Kelas (untuk Wali Kelas) --}}
+                <div x-show="isWaliKelas() || isDeveloper()" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform -translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <div class="form-group mb-0">
+                        <label for="kelas_id" class="form-label">
+                            Kelas yang Diampu
+                            <span x-show="isWaliKelas()" class="text-red-500">*</span>
+                        </label>
+                        <select id="kelas_id" name="kelas_id" class="form-input form-select @error('kelas_id') error @enderror">
+                            <option value="">-- Pilih Kelas --</option>
+                            @foreach($kelas ?? [] as $k)
+                                @php
+                                    $isSelected = old('kelas_id', $user->kelasDiampu?->id) == $k->id;
+                                @endphp
+                                <option value="{{ $k->id }}" {{ $isSelected ? 'selected' : '' }}>
+                                    {{ $k->nama_kelas }} {{ isset($k->jurusan) ? '(' . $k->jurusan->nama_jurusan . ')' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="form-help">Pilih kelas yang akan menjadi tanggung jawab wali kelas ini.</p>
+                        @error('kelas_id')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                
+                {{-- Jurusan (untuk Kaprodi) --}}
+                <div x-show="isKaprodi() || isDeveloper()" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform -translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                    <div class="form-group mb-0">
+                        <label for="jurusan_id" class="form-label">
+                            Jurusan yang Diampu
+                            <span x-show="isKaprodi()" class="text-red-500">*</span>
+                        </label>
+                        <select id="jurusan_id" name="jurusan_id" class="form-input form-select @error('jurusan_id') error @enderror">
+                            <option value="">-- Pilih Jurusan --</option>
+                            @foreach($jurusan ?? [] as $j)
+                                @php
+                                    $isSelected = old('jurusan_id', $user->jurusanDiampu?->id) == $j->id;
+                                @endphp
+                                <option value="{{ $j->id }}" {{ $isSelected ? 'selected' : '' }}>
+                                    {{ $j->nama_jurusan }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="form-help">Pilih jurusan yang akan menjadi tanggung jawab Kaprodi ini.</p>
+                        @error('jurusan_id')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                
+                {{-- Siswa/Anak (untuk Wali Murid) --}}
+                <div x-show="isWaliMurid() || isDeveloper()" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform -translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                    <div class="form-group mb-0">
+                        <label for="siswa_ids" class="form-label">
+                            Siswa/Anak yang Diasuh
+                            <span x-show="isWaliMurid()" class="text-red-500">*</span>
+                        </label>
+                        <p class="text-sm text-gray-500 mb-3">Pilih siswa yang menjadi anak dari wali murid ini.</p>
+                        <div class="max-h-48 overflow-y-auto border border-rose-200 rounded-lg p-3 bg-white space-y-2">
+                            @php
+                                $currentSiswaIds = $user->anakWali->pluck('id')->toArray();
+                            @endphp
+                            @forelse($siswa ?? [] as $s)
+                                <label class="flex items-center gap-3 p-2 hover:bg-rose-50 rounded-lg cursor-pointer">
+                                    <input type="checkbox" name="siswa_ids[]" value="{{ $s->id }}" 
+                                           {{ in_array($s->id, old('siswa_ids', $currentSiswaIds)) ? 'checked' : '' }}
+                                           class="w-4 h-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-800">{{ $s->nama_siswa }}</p>
+                                        <p class="text-sm text-gray-500">{{ $s->nisn }} • {{ $s->kelas->nama_kelas ?? '-' }}</p>
+                                    </div>
+                                </label>
+                            @empty
+                                <p class="text-gray-400 text-sm text-center py-4">Tidak ada data siswa</p>
+                            @endforelse
+                        </div>
+                        @error('siswa_ids')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                
+                {{-- Phone & Status --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="phone" class="form-label">No. Telepon</label>
+                        <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
+                               class="form-input @error('phone') error @enderror" placeholder="08xxxxxxxxxx">
+                        @error('phone')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="form-group flex items-end">
+                        <label class="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-lg w-full">
+                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', $user->is_active) ? 'checked' : '' }}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Akun Aktif</span>
+                        </label>
+                    </div>
+                </div>
+                
+                {{-- User Info --}}
+                <div class="p-4 bg-gray-50 rounded-xl">
+                    <h4 class="font-semibold text-gray-700 mb-3">Info Akun</h4>
+                    <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <dt class="text-gray-500">Dibuat</dt>
+                            <dd class="font-medium">{{ $user->created_at?->format('d M Y H:i') ?? '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Login Terakhir</dt>
+                            <dd class="font-medium">{{ $user->last_login_at?->format('d M Y H:i') ?? 'Belum pernah' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Password Diubah</dt>
+                            <dd class="font-medium">{{ $user->password_changed_at?->format('d M Y') ?? 'Belum' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Profil Lengkap</dt>
+                            <dd class="font-medium">{{ $user->profile_completed_at?->format('d M Y') ?? 'Belum' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+                
+                {{-- Actions --}}
+                <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                    <button type="submit" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        <span>Simpan Perubahan</span>
+                    </button>
+                    <a href="{{ route('users.index') }}" class="btn btn-secondary">Batal</a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
-@endsection
-
-{{-- 3. STYLE CSS --}}
-@section('styles')
-<style>
-    /* Styling Manual untuk komponen form yang Modern & Clean */
-    
-    .form-label-modern {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.025em;
-    }
-
-    .form-input-modern {
-        display: block;
-        width: 100%;
-        padding: 0.75rem 1rem; /* Lebih tinggi dan lega */
-        font-size: 0.875rem;
-        line-height: 1.25;
-        color: #1e293b;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #e2e8f0; /* Border sangat halus */
-        border-radius: 0.75rem; /* Rounded modern */
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-
-    .form-input-modern:focus {
-        border-color: #6366f1; /* Primary indigo/blue */
-        outline: 0;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-    }
-
-    /* Small Input untuk Filter */
-    .form-select-sm-modern, .form-input-sm-modern {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.5rem;
-        color: #475569;
-        background-color: #fff;
-    }
-    .form-select-sm-modern:focus, .form-input-sm-modern:focus {
-        border-color: #6366f1;
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
-    }
-
-    /* Scroll Area untuk Siswa */
-    .student-scroll-area {
-        max-height: 400px;
-        overflow-y: auto;
-        padding-right: 5px;
-    }
-    .student-scroll-area::-webkit-scrollbar { width: 5px; }
-    .student-scroll-area::-webkit-scrollbar-track { background: #f8fafc; }
-    .student-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .student-scroll-area::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-</style>
 @endsection

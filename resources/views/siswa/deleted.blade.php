@@ -1,355 +1,275 @@
 @extends('layouts.app')
 
+@section('title', 'Arsip Siswa')
+@section('subtitle', 'Siswa yang telah dihapus (soft-delete). Dapat di-restore atau dihapus permanen.')
+@section('page-header', true)
+
+@section('actions')
+    <a href="{{ route('siswa.index') }}" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
+        </svg>
+        <span>Kembali ke Data Siswa</span>
+    </a>
+@endsection
+
 @section('content')
-
-{{-- 1. TAILWIND CONFIG & SETUP --}}
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    primary: '#0f172a',
-                    indigo: { 600: '#4f46e5', 50: '#eef2ff', 100: '#e0e7ff', 700: '#4338ca' },
-                    emerald: { 500: '#10b981', 600: '#059669' },
-                    rose: { 500: '#f43f5e', 600: '#e11d48' },
-                    amber: { 500: '#f59e0b', 600: '#d97706' }
-                }
-            }
-        },
-        corePlugins: { preflight: false }
-    }
-</script>
-
-<div class="page-wrap-custom min-h-screen p-6">
-    <div class="max-w-7xl mx-auto">
-        
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 gap-1 pb-1 custom-header-row">
+<div class="space-y-6">
+    {{-- Info Banner --}}
+    <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+        <div class="flex gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600 shrink-0 mt-0.5">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+            </svg>
             <div>
-                <h1 class="text-2xl font-bold text-slate-800 m-0 tracking-tight flex items-center gap-3">
-                    <i class="fas fa-trash-restore text-amber-500"></i> Data Siswa Terhapus
-                </h1>
-                <p class="text-slate-500 text-sm mt-1">Daftar arsip siswa yang dapat dikembalikan atau dihapus permanen.</p>
-            </div>
-            
-            <a href="{{ route('siswa.index') }}" class="btn-clean-action no-underline">
-                <i class="fas fa-arrow-left"></i> Kembali ke Daftar
-            </a>
-        </div>
-
-        {{-- ALERTS --}}
-        @if(session('success'))
-            <div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3 shadow-sm">
-                <i class="fas fa-check-circle text-emerald-600"></i>
-                <span class="font-medium text-sm">{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="mb-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3 shadow-sm">
-                <i class="fas fa-exclamation-circle text-rose-600"></i>
-                <span class="font-medium text-sm">{{ session('error') }}</span>
-            </div>
-        @endif
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-            <div class="p-6">
-                <form method="GET" action="{{ route('siswa.deleted') }}" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div class="md:col-span-3">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Cari Siswa</label>
-                        <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" 
-                               class="custom-input-clean w-full" placeholder="Nama atau NISN...">
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Alasan Keluar</label>
-                        <select name="alasan_keluar" class="custom-select-clean w-full">
-                            <option value="">Semua Alasan</option>
-                            @foreach($alasanOptions as $option)
-                                <option value="{{ $option }}" {{ ($filters['alasan_keluar'] ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Kelas</label>
-                        <select name="kelas_id" class="custom-select-clean w-full">
-                            <option value="">Semua Kelas</option>
-                            @foreach($allKelas as $k)
-                                <option value="{{ $k->id }}" {{ ($filters['kelas_id'] ?? '') == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="md:col-span-3 flex items-end gap-2">
-                        <button type="submit" class="btn-filter-primary flex-1">
-                            <i class="fas fa-filter mr-1"></i> Filter
-                        </button>
-                        <a href="{{ route('siswa.deleted') }}" class="btn-filter-secondary px-4 no-underline flex items-center justify-center">
-                            <i class="fas fa-redo"></i>
-                        </a>
-                    </div>
-                </form>
+                <p class="font-medium text-amber-800">Catatan Penting</p>
+                <p class="text-sm text-amber-700 mt-1">
+                    Halaman ini menampilkan siswa yang telah dihapus. Anda dapat me-<strong>restore</strong> siswa kembali ke daftar aktif, 
+                    atau menghapus secara <strong>permanen</strong> dari database (tidak dapat dikembalikan).
+                </p>
             </div>
         </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            @if($deletedSiswa->count() > 0)
-                {{-- Bulk Action Bar --}}
-                <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4">
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer m-0">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-indigo-600">
-                            <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Pilih Semua</span>
-                        </label>
-                        <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase shadow-sm" id="selectedCount">0 dipilih</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="bulkRestore()" id="btnBulkRestore" disabled 
-                                class="btn-bulk-restore bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fas fa-undo mr-1.5 text-xs"></i> Restore Terpilih
-                        </button>
-                        <button type="button" onclick="bulkPermanentDelete()" id="btnBulkPermanentDelete" disabled 
-                                class="btn-bulk-delete bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fas fa-times-circle mr-1.5 text-xs"></i> Delete Permanent
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse custom-solid-table">
-                        <thead>
-                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                                <th class="px-6 py-4 w-12"></th>
-                                <th class="px-6 py-4 w-64">Identitas Siswa</th>
-                                <th class="px-6 py-4 w-32">Kelas</th>
-                                <th class="px-6 py-4 w-44">Alasan & Keterangan</th>
-                                <th class="px-6 py-4 w-44">Waktu Dihapus</th>
-                                <th class="px-6 py-4 text-center w-32 pr-8">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-50">
-                            @foreach($deletedSiswa as $siswa)
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-6 py-4 text-center">
-                                        <input type="checkbox" value="{{ $siswa->id }}" onchange="updateSelection()" 
-                                               class="siswa-checkbox w-4 h-4 rounded border-slate-300 text-indigo-600 shadow-sm">
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="text-sm font-bold text-slate-700 leading-tight">{{ $siswa->nama_siswa }}</span>
-                                            <span class="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-tighter">NISN: {{ $siswa->nisn }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase border border-indigo-100">
-                                            {{ $siswa->kelas->nama_kelas ?? '-' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @php
-                                            $badgeStyle = match($siswa->alasan_keluar) {
-                                                'Alumni' => 'bg-emerald-50 text-emerald-600 border-emerald-100',
-                                                'Dikeluarkan' => 'bg-rose-50 text-rose-600 border-rose-100',
-                                                'Pindah Sekolah' => 'bg-amber-50 text-amber-600 border-amber-100',
-                                                default => 'bg-slate-50 text-slate-500 border-slate-100'
-                                            };
-                                        @endphp
-                                        <div class="flex flex-col gap-1.5">
-                                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border w-fit {{ $badgeStyle }}">
-                                                {{ $siswa->alasan_keluar }}
-                                            </span>
-                                            <span class="text-[10px] text-slate-400 italic line-clamp-1">
-                                                {{ $siswa->keterangan_keluar ?? '-' }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs font-bold text-slate-700 leading-tight">{{ $siswa->deleted_at->format('d M Y') }}</span>
-                                            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{{ $siswa->deleted_at->diffForHumans() }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-center pr-8">
-                                        <div class="flex items-center justify-center gap-1.5">
-                                            <form action="{{ route('siswa.restore', $siswa->id) }}" method="POST" class="m-0">
-                                                @csrf
-                                                <button type="submit" class="btn-action hover:text-emerald-500 hover:border-emerald-100" 
-                                                        onclick="return confirm('Restore siswa {{ addslashes($siswa->nama_siswa) }}?')" title="Restore">
-                                                    <i class="fas fa-undo"></i>
-                                                </button>
-                                            </form>
-                                            <button type="button" class="btn-action hover:text-rose-500 hover:border-rose-100" 
-                                                    onclick="showPermanentDeleteModal({{ $siswa->id }}, '{{ addslashes($siswa->nama_siswa) }}')" title="Hapus Permanen">
-                                                <i class="fas fa-times-circle"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/30">
-                    {{ $deletedSiswa->links('pagination::bootstrap-4') }}
-                </div>
-            @else
-                <div class="py-24 text-center">
-                    <div class="flex flex-col items-center opacity-40">
-                        <i class="fas fa-inbox text-5xl mb-4 text-slate-300"></i>
-                        <p class="text-sm font-bold uppercase tracking-widest text-slate-400 m-0">Tidak ada arsip siswa terhapus</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-
     </div>
+
+    {{-- Filter Card --}}
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ route('siswa.deleted') }}" method="GET" class="flex flex-wrap gap-4 items-end">
+                <div class="form-group flex-1 min-w-[150px]">
+                    <label for="search" class="form-label">Cari</label>
+                    <input type="text" id="search" name="search" value="{{ $filters['search'] ?? '' }}" class="form-input" placeholder="Nama atau NISN...">
+                </div>
+                <div class="form-group min-w-[150px]">
+                    <label for="alasan_keluar" class="form-label">Alasan Keluar</label>
+                    <select id="alasan_keluar" name="alasan_keluar" class="form-input form-select">
+                        <option value="">Semua Alasan</option>
+                        @foreach($alasanOptions ?? [] as $alasan)
+                            <option value="{{ $alasan }}" {{ ($filters['alasan_keluar'] ?? '') == $alasan ? 'selected' : '' }}>{{ $alasan }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group min-w-[150px]">
+                    <label for="kelas_id" class="form-label">Kelas</label>
+                    <select id="kelas_id" name="kelas_id" class="form-input form-select">
+                        <option value="">Semua Kelas</option>
+                        @foreach($allKelas ?? [] as $k)
+                            <option value="{{ $k->id }}" {{ ($filters['kelas_id'] ?? '') == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{{ route('siswa.deleted') }}" class="btn btn-secondary">Reset</a>
+            </form>
+        </div>
+    </div>
+
+    {{-- Data Table --}}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="w-12">No</th>
+                    <th>NISN</th>
+                    <th>Nama Siswa</th>
+                    <th>Kelas Terakhir</th>
+                    <th>Alasan Keluar</th>
+                    <th>Tanggal Dihapus</th>
+                    <th class="w-40 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($deletedSiswa ?? [] as $index => $s)
+                    <tr>
+                        <td class="text-gray-500">{{ ($deletedSiswa->currentPage() - 1) * $deletedSiswa->perPage() + $index + 1 }}</td>
+                        <td>
+                            <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded-md">{{ $s->nisn }}</span>
+                        </td>
+                        <td class="font-medium text-gray-800">{{ $s->nama_siswa }}</td>
+                        <td>
+                            <span class="badge badge-neutral">{{ $s->kelas->nama_kelas ?? '-' }}</span>
+                        </td>
+                        <td>
+                            @php
+                                $alasanColors = [
+                                    'Alumni' => 'badge-success',
+                                    'Dikeluarkan' => 'badge-danger',
+                                    'Pindah Sekolah' => 'badge-warning',
+                                    'Lainnya' => 'badge-neutral',
+                                ];
+                            @endphp
+                            <span class="badge {{ $alasanColors[$s->alasan_keluar] ?? 'badge-neutral' }}">{{ $s->alasan_keluar ?? '-' }}</span>
+                            @if($s->keterangan_keluar)
+                                <p class="text-xs text-gray-500 mt-1">{{ Str::limit($s->keterangan_keluar, 30) }}</p>
+                            @endif
+                        </td>
+                        <td class="text-gray-500 text-sm">{{ $s->deleted_at ? $s->deleted_at->format('d M Y H:i') : '-' }}</td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1">
+                                {{-- Restore Button --}}
+                                <form action="{{ route('siswa.restore', $s->id) }}" method="POST" class="inline" onsubmit="return confirm('Restore siswa ini ke daftar aktif?')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-icon btn-outline text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200" title="Restore">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                                
+                                {{-- Permanent Delete Button --}}
+                                <button 
+                                    type="button" 
+                                    class="btn btn-icon btn-outline text-red-600 hover:bg-red-50 hover:border-red-200" 
+                                    title="Hapus Permanen"
+                                    @click="$dispatch('open-permanent-delete-modal', { id: {{ $s->id }}, nama: '{{ addslashes($s->nama_siswa) }}', nisn: '{{ $s->nisn }}' })"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
+                                </svg>
+                                <h3 class="empty-state-title">Tidak Ada Data Arsip</h3>
+                                <p class="empty-state-description">Tidak ada siswa yang telah dihapus.</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Pagination --}}
+    @if(method_exists($deletedSiswa ?? [], 'hasPages') && $deletedSiswa->hasPages())
+        <div class="flex justify-between items-center">
+            <p class="text-sm text-gray-500">Menampilkan {{ $deletedSiswa->firstItem() }} - {{ $deletedSiswa->lastItem() }} dari {{ $deletedSiswa->total() }}</p>
+            {{ $deletedSiswa->links() }}
+        </div>
+    @endif
 </div>
 
-{{-- MODAL PERMANENT DELETE --}}
-<div class="modal fade" id="permanentDeleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-2xl rounded-2xl overflow-hidden">
-            <form id="permanentDeleteForm" method="POST">
+{{-- Permanent Delete Modal --}}
+<div 
+    x-data="{ 
+        open: false, 
+        siswaId: null, 
+        siswaName: '', 
+        siswaNisn: '',
+        confirmed: false
+    }"
+    @open-permanent-delete-modal.window="
+        open = true; 
+        siswaId = $event.detail.id; 
+        siswaName = $event.detail.nama; 
+        siswaNisn = $event.detail.nisn;
+        confirmed = false;
+    "
+    x-show="open"
+    x-cloak
+    class="fixed inset-0 z-50 overflow-y-auto"
+>
+    {{-- Backdrop --}}
+    <div 
+        x-show="open" 
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm"
+        @click="open = false"
+    ></div>
+    
+    {{-- Modal Content --}}
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div 
+            x-show="open"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+            class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl"
+            @click.stop
+        >
+            {{-- Header --}}
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-red-600">⚠️ Hapus Permanen</h3>
+                        <p class="text-sm text-gray-500">Data tidak dapat dikembalikan!</p>
+                    </div>
+                </div>
+            </div>
+            
+            {{-- Body --}}
+            <form :action="'/siswa/' + siswaId + '/force-delete'" method="POST">
                 @csrf
                 @method('DELETE')
-                <div class="bg-rose-600 p-6 text-center">
-                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white/30">
-                        <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                
+                <div class="p-6 space-y-4">
+                    {{-- Siswa Info --}}
+                    <div class="p-4 bg-red-50 rounded-xl border border-red-100">
+                        <p class="text-sm text-red-600">Siswa yang akan dihapus permanen:</p>
+                        <p class="font-semibold text-red-800" x-text="siswaName"></p>
+                        <p class="text-sm text-red-600 font-mono" x-text="'NISN: ' + siswaNisn"></p>
                     </div>
-                    <h5 class="text-white font-black uppercase tracking-widest m-0">Penghapusan Permanen</h5>
-                </div>
-                <div class="p-8 text-center">
-                    <p class="text-slate-500 text-sm mb-4 leading-relaxed">
-                        Anda akan menghapus <strong id="permanentDeleteName" class="text-slate-800"></strong> secara permanen. Data ini <span class="text-rose-600 font-bold uppercase underline">tidak bisa dipulihkan kembali</span>.
-                    </p>
                     
-                    <div class="bg-rose-50 p-4 rounded-xl border border-rose-100 flex items-center justify-center mb-6">
-                        <label class="flex items-center gap-3 cursor-pointer m-0">
-                            <input type="checkbox" name="confirm_permanent" value="1" id="confirmPermanent" required class="w-5 h-5 rounded text-rose-600 border-rose-200">
-                            <span class="text-xs font-bold text-rose-700 uppercase tracking-tight">Saya sadar data akan hilang selamanya</span>
-                        </label>
+                    {{-- Warning --}}
+                    <div class="p-4 bg-gray-50 rounded-xl space-y-2">
+                        <p class="text-sm font-medium text-gray-800">⚠️ Tindakan ini akan menghapus:</p>
+                        <ul class="text-sm text-gray-600 space-y-1 pl-4">
+                            <li>• Data siswa secara permanen</li>
+                            <li>• Semua riwayat pelanggaran terkait</li>
+                            <li>• Semua kasus tindak lanjut terkait</li>
+                        </ul>
                     </div>
-
-                    <div class="flex gap-3 justify-center">
-                        <button type="button" class="btn-filter-secondary px-6" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn-filter-primary bg-rose-600 hover:bg-rose-700 border-none px-8 font-black uppercase">
-                            HAPUS PERMANENT
-                        </button>
-                    </div>
+                    
+                    {{-- Confirmation Checkbox --}}
+                    <label class="flex items-start gap-3 cursor-pointer p-3 bg-amber-50 rounded-lg border border-amber-100">
+                        <input 
+                            type="checkbox" 
+                            name="confirm_permanent" 
+                            value="1" 
+                            x-model="confirmed"
+                            class="w-4 h-4 mt-0.5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                        >
+                        <span class="text-sm text-amber-800">
+                            Saya mengerti bahwa tindakan ini <strong>TIDAK DAPAT DIBATALKAN</strong> dan semua data akan dihapus permanen.
+                        </span>
+                    </label>
+                </div>
+                
+                {{-- Footer --}}
+                <div class="p-6 border-t border-gray-100 flex gap-3 justify-end">
+                    <button type="button" @click="open = false" class="btn btn-secondary">Batal</button>
+                    <button 
+                        type="submit" 
+                        class="btn btn-danger"
+                        :disabled="!confirmed"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        </svg>
+                        <span>Hapus Permanen</span>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 @endsection
-
-@section('styles')
-<style>
-    .page-wrap-custom { background: #f8fafc; font-family: 'Inter', sans-serif; }
-    .custom-header-row { border-bottom: 1px solid #e2e8f0; }
-
-    /* Inputs */
-    .custom-input-clean, .custom-select-clean {
-        height: 42px; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0 1rem;
-        font-size: 0.85rem; background-color: #ffffff; transition: 0.2s; outline: none;
-    }
-    .custom-input-clean:focus, .custom-select-clean:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-
-    /* Buttons */
-    .btn-filter-primary {
-        height: 42px; background-color: #4f46e5; color: white !important; border: none;
-        border-radius: 0.75rem; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; transition: 0.2s;
-    }
-    .btn-filter-secondary {
-        height: 42px; background-color: #f1f5f9; color: #64748b !important; border-radius: 0.75rem;
-        font-weight: 800; font-size: 0.75rem; text-transform: uppercase; transition: 0.2s; border: none;
-    }
-    .btn-bulk-restore, .btn-bulk-delete {
-        padding: 0.6rem 1.2rem; color: white !important; font-weight: 800; font-size: 0.7rem; 
-        text-transform: uppercase; border-radius: 0.75rem; border: none; transition: 0.2s;
-    }
-    .btn-action { 
-        width: 32px; height: 32px; border-radius: 8px; transition: 0.2s; color: #94a3b8; border: 1px solid transparent; 
-        background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-    }
-    .btn-action:hover { background: #f8fafc; border-color: #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .btn-clean-action {
-        padding: 0.65rem 1.2rem; border-radius: 0.75rem; background-color: #f1f5f9; color: #475569 !important; font-size: 0.8rem; font-weight: 800; border: 1px solid #e2e8f0;
-    }
-
-    /* Modal Fix */
-    .modal-backdrop { opacity: 0.5 !important; background-color: #0f172a !important; }
-</style>
-@endsection
-
-{{-- LOGIKA JAVASCRIPT (DIJAGA KEASLIANNYA) --}}
-@push('scripts')
-<script>
-let selectedIds = [];
-
-function toggleSelectAll(checkbox) {
-    const checkboxes = document.querySelectorAll('.siswa-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = checkbox.checked;
-    });
-    updateSelection();
-}
-
-function updateSelection() {
-    const checkboxes = document.querySelectorAll('.siswa-checkbox:checked');
-    selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-    
-    document.getElementById('selectedCount').textContent = selectedIds.length + ' dipilih';
-    
-    const btnRestore = document.getElementById('btnBulkRestore');
-    const btnDelete = document.getElementById('btnBulkPermanentDelete');
-    const shouldEnable = selectedIds.length > 0;
-    
-    btnRestore.disabled = !shouldEnable;
-    btnDelete.disabled = !shouldEnable;
-    
-    const selectAll = document.getElementById('selectAll');
-    const allCheckboxes = document.querySelectorAll('.siswa-checkbox');
-    if (allCheckboxes.length > 0) {
-        selectAll.checked = checkboxes.length === allCheckboxes.length;
-    }
-}
-
-function bulkRestore() {
-    if (selectedIds.length === 0) return;
-    if (confirm(`Restore ${selectedIds.length} siswa?\n\nSemua data terkait akan di-restore.`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/siswa/${selectedIds[0]}/restore`; // Note: In logic matches original
-        form.innerHTML = `@csrf <input type="hidden" name="siswa_ids" value="${selectedIds.join(',')}">`; // Note: Fixed for bulk consistency
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function bulkPermanentDelete() {
-    if (selectedIds.length === 0) return;
-    const confirmation = prompt(`⚠️ PERMANENT DELETE ${selectedIds.length} siswa?\n\nKetik "HAPUS PERMANENT" untuk confirm:`);
-    if (confirmation === 'HAPUS PERMANENT') {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route("siswa.bulk-force-delete") }}';
-        form.innerHTML = `@csrf @method('DELETE') <input type="hidden" name="confirm_permanent" value="1">`;
-        selectedIds.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden'; input.name = 'siswa_ids[]'; input.value = id;
-            form.appendChild(input);
-        });
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function showPermanentDeleteModal(id, name) {
-    document.getElementById('permanentDeleteName').textContent = name;
-    document.getElementById('permanentDeleteForm').action = `/siswa/${id}/force-delete`;
-    document.getElementById('confirmPermanent').checked = false;
-    $('#permanentDeleteModal').modal('show');
-}
-</script>
-@endpush

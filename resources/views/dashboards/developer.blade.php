@@ -1,258 +1,147 @@
 @extends('layouts.app')
 
-@section('title', 'DEV MODE: WHITE GACOR')
-
-@section('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-    <style>
-        /* --- TRIK RAHASIA BIAR FULL SCREEN --- */
-        /* Kita paksa elemen ini keluar dari layout bawaan */
-        .fullscreen-overlay {
-            position: fixed; /* Kunci posisi ke layar browser */
-            top: 0;
-            left: 0;
-            width: 100vw; /* Lebar 100% viewport */
-            height: 100vh; /* Tinggi 100% viewport */
-            z-index: 99999; /* Pastikan di atas segalanya (Sidebar, Navbar, dll) */
-            background-color: #f8fafc;
-            overflow-y: auto; /* Biar bisa discroll kalau konten panjang */
-        }
-
-        /* --- BACKGROUND & DEKORASI --- */
-        .white-gacor-scene {
-            background-image: 
-                linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-            font-family: 'Rajdhani', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .white-gacor-scene::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, rgba(248, 250, 252, 0.9) 80%);
-            pointer-events: none;
-        }
-
-        /* --- CARD STYLE --- */
-        .dev-card-wrapper {
-            perspective: 1000px;
-            z-index: 10;
-            max-width: 900px;
-            width: 90%;
-            position: relative;
-        }
-
-        .dev-card {
-            position: relative;
-            background: rgba(255, 255, 255, 0.85);
-            border-radius: 24px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            box-shadow: 
-                0 25px 50px -12px rgba(59, 130, 246, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-            overflow: hidden;
-            transform-style: preserve-3d;
-            animation: cardFloat 6s ease-in-out infinite alternate;
-        }
-
-        @keyframes cardFloat {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-15px); }
-        }
-
-        /* --- SCANNER LINE --- */
-        .dev-card::after {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.1) 48%, rgba(59, 130, 246, 0.4) 50%, rgba(59, 130, 246, 0.1) 52%, transparent);
-            transform: rotate(45deg);
-            animation: scanline 4s linear infinite;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-
-        @keyframes scanline {
-            0% { transform: translateY(-100%) rotate(45deg); }
-            100% { transform: translateY(100%) rotate(45deg); }
-        }
-
-        /* --- TYPOGRAPHY --- */
-        .dev-title {
-            font-weight: 800;
-            font-size: 4.5rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            color: #1e293b;
-            line-height: 1;
-            margin-bottom: 10px;
-            text-shadow: 3px 3px 0px rgba(59, 130, 246, 0.2);
-            position: relative;
-            display: inline-block;
-        }
-
-        /* Efek Glitch pada Judul */
-        .dev-title:hover {
-            animation: glitchText 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
-            color: #3b82f6;
-        }
-
-        @keyframes glitchText {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
-
-        .highlight-role {
-            color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-
-        /* --- TOMBOL --- */
-        .cyber-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #fff;
-            background: #1e293b;
-            padding: 14px 30px;
-            margin: 10px;
-            border-radius: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 20px -5px rgba(30, 41, 59, 0.3);
-        }
-
-        .cyber-link:hover {
-            transform: translateY(-3px);
-            background: #3b82f6;
-            box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.4);
-            color: white;
-        }
-
-        .cyber-link.danger {
-            background: white;
-            color: #ef4444;
-            border: 1px solid #fee2e2;
-            box-shadow: 0 5px 15px -5px rgba(239, 68, 68, 0.2);
-        }
-        .cyber-link.danger:hover {
-            background: #ef4444;
-            color: white;
-            border-color: #ef4444;
-            box-shadow: 0 15px 30px -5px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Tombol Balik ke Dashboard (Pojok Kiri Atas) */
-        .back-btn {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            z-index: 20;
-            background: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            text-decoration: none;
-            color: #64748b;
-            font-weight: 700;
-            font-size: 0.8rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: 0.3s;
-        }
-        .back-btn:hover {
-            background: #f1f5f9;
-            color: #334155;
-            transform: translateX(-3px);
-        }
-
-    </style>
-@endsection
+@section('title', 'Developer Console')
+@section('subtitle', 'Development tools and debugging.')
+@section('page-header', true)
 
 @section('content')
-
-<div class="fullscreen-overlay">
+<div class="space-y-6">
+    {{-- Warning Banner --}}
+    @if($isProduction)
+        <div class="alert alert-danger">
+            <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+            </svg>
+            <div class="alert-content">
+                <p class="alert-title">⚠️ Production Environment</p>
+                <p class="alert-message">You are accessing the developer console in a production environment. Be careful!</p>
+            </div>
+        </div>
+    @endif
     
-    <div class="white-gacor-scene">
+    {{-- System Info --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="stat-card">
+            <div class="stat-card-icon primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                </svg>
+            </div>
+            <div class="stat-card-content">
+                <p class="stat-card-label">Laravel Version</p>
+                <p class="stat-card-value text-xl">{{ app()->version() }}</p>
+            </div>
+        </div>
         
-        <a href="{{ route('dashboard.admin') }}" class="back-btn">
-            ← DASHBOARD UTAMA
-        </a>
-
-        <div class="dev-card-wrapper">
-            <div class="dev-card">
-                
-                <div class="p-10 md:p-16 text-center relative z-10">
-                    
-                    <div style="font-size: 5rem; margin-bottom: -20px; animation: bounce 3s infinite;">
-                        👨‍💻🔥
-                    </div>
-                    
-                    <h1 class="dev-title">
-                        GASSS DEVELOPER<br>GANTENG
-                    </h1>
-                    
-                    <p style="font-size: 1.25rem; color: #64748b; font-weight: 600; margin-top: 10px;">
-                        System Status: <span style="color:#ef4444;">UNSTABLE</span>. 
-                        Mode: <span class="highlight-role">GOD MODE</span>
-                    </p>
-                    
-                    <div style="width: 100px; height: 4px; background: #e2e8f0; margin: 30px auto; border-radius: 2px;"></div>
-
-                    <p style="color: #94a3b8; font-size: 1rem; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                        "Area khusus untuk eksperimen tanpa batas. Jangan lupa balikin role sebelum dimarahin klien."
-                    </p>
-
-                    <div style="display: flex; justify-content: center; flex-wrap: wrap;">
-                        <a href="{{ route('developer.status') }}" class="cyber-link">
-                            🔍 Cek Status Impersonate
-                        </a>
-                        
-                        <a href="{{ route('developer.impersonate.clear') }}" class="cyber-link danger">
-                            💥 Hapus Impersonate (Normal)
-                        </a>
-                    </div>
-
-                </div>
-
-                <div style="background: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #f1f5f9;">
-                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; letter-spacing: 2px;">SECURE CONNECTION // ENCRYPTED</span>
-                </div>
-
+        <div class="stat-card">
+            <div class="stat-card-icon warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/><path d="M17 4a2 2 0 0 0 2 2a2 2 0 0 0 -2 2a2 2 0 0 0 -2 -2a2 2 0 0 0 2 -2"/><path d="M19 11h2m-1 -1v2"/>
+                </svg>
+            </div>
+            <div class="stat-card-content">
+                <p class="stat-card-label">PHP Version</p>
+                <p class="stat-card-value text-xl">{{ phpversion() }}</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-card-icon {{ $isProduction ? 'danger' : 'success' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <div class="stat-card-content">
+                <p class="stat-card-label">Environment</p>
+                <p class="stat-card-value text-xl">{{ app()->environment() }}</p>
             </div>
         </div>
     </div>
-
+    
+    {{-- Role Switcher --}}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Role Switcher
+            </h3>
+        </div>
+        <div class="card-body">
+            <p class="text-gray-600 mb-4">Switch between roles to test different dashboard views.</p>
+            
+            @php
+                $roles = \App\Models\Role::all();
+                $currentOverride = session('developer_role_override');
+            @endphp
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                @foreach($roles as $role)
+                    <form action="{{ route('developer.switch-role') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="role_id" value="{{ $role->id }}">
+                        <button type="submit" class="w-full btn {{ $currentOverride == $role->id ? 'btn-primary' : 'btn-secondary' }}">
+                            {{ $role->nama_role }}
+                        </button>
+                    </form>
+                @endforeach
+            </div>
+            
+            @if($currentOverride)
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <form action="{{ route('developer.reset-role') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-outline">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+                            </svg>
+                            <span>Reset to Developer</span>
+                        </button>
+                    </form>
+                </div>
+            @endif
+        </div>
+    </div>
+    
+    {{-- Quick Links --}}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Tools</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{{ route('audit.activity.index') }}" class="card flex items-center gap-4 p-4 hover:border-blue-200 transition-all">
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M12 7a5 5 0 1 0 5 5"/><path d="M13 3.055A9 9 0 1 0 20.941 11"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Audit Log</h4>
+                        <p class="text-sm text-gray-500">View system activity</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('users.index') }}" class="card flex items-center gap-4 p-4 hover:border-emerald-200 transition-all">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Manage Users</h4>
+                        <p class="text-sm text-gray-500">User administration</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('frequency-rules.index') }}" class="card flex items-center gap-4 p-4 hover:border-violet-200 transition-all">
+                    <div class="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 15-9-9-9 9"/><path d="M3 21h18"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Rules Engine</h4>
+                        <p class="text-sm text-gray-500">Configure rules</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
-
-<style>
-    @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
-</style>
-
 @endsection

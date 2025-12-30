@@ -1,147 +1,248 @@
 @extends('layouts.app')
 
-@section('title', 'Akun Saya')
+@section('title', 'Profil Saya')
+@section('subtitle', 'Kelola informasi akun dan keamanan Anda.')
+@section('page-header', true)
 
 @section('content')
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card card-info card-outline">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-cog mr-1"></i> Pengaturan Akun</h3>
-            </div>
-            <form method="POST" action="{{ route('account.update') }}">
-                @csrf
-                @method('PUT')
-                <div class="card-body">
-                    @if (session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
-                    @if(! $user->hasVerifiedEmail())
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            <h5><i class="icon fas fa-exclamation-triangle"></i> Email Belum Terverifikasi</h5>
-                            <p class="mb-1">
-                                Email akun Anda (<strong>{{ $user->email }}</strong>) belum terverifikasi.
-                                Sistem tetap dapat digunakan, namun sebaiknya verifikasi email untuk memastikan
-                                reset password & notifikasi berjalan lancar.
-                            </p>
-                            <form method="POST" action="{{ route('verification.send') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-outline-dark">
-                                    <i class="fas fa-paper-plane mr-1"></i> Kirim Ulang Link Verifikasi
-                                </button>
-                            </form>
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
-
-                    <div class="form-group">
-                        <label>Username <span class="text-danger">*</span></label>
-                        <input
-                            type="text"
-                            name="username"
-                            class="form-control @error('username') is-invalid @enderror"
-                            value="{{ old('username', $user->username) }}"
-                            required
-                        >
-                        @error('username')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
-                        <small class="form-text text-muted">
-                            Username digunakan untuk login. Anda bisa mengubahnya menjadi nama Anda agar lebih mudah diingat.
-                            <strong>Username harus unik</strong> dan tidak boleh sama dengan username user lain.
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Email Akun <span class="text-danger">*</span></label>
-                        <input
-                            type="email"
-                            name="email"
-                            class="form-control @error('email') is-invalid @enderror"
-                            value="{{ old('email', $user->email) }}"
-                            required
-                        >
-                        @error('email')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
-                        <small class="form-text text-muted">
-                            Email ini digunakan untuk reset password dan notifikasi penting.
-                        </small>
-                        @if(! $user->hasVerifiedEmail())
-                            <small class="text-warning d-block mt-1">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Email Anda belum terverifikasi. Silakan cek inbox/spam atau kirim ulang link verifikasi.
-                            </small>
-                        @endif
-                    </div>
-
-                    @if (! $isWaliMurid)
-                        <div class="form-group">
-                            <label>Nomor HP / Kontak (Opsional)</label>
-                            <input
-                                type="text"
-                                name="phone"
-                                class="form-control @error('phone') is-invalid @enderror"
-                                value="{{ old('phone', $user->phone) }}"
-                                placeholder="Contoh: 0812xxxxxxx"
-                            >
-                            @error('phone')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                            <small class="form-text text-muted">
-                                Kontak ini digunakan sebagai informasi internal agar pihak sekolah mudah menghubungi Anda.
-                            </small>
-                        </div>
-                    @else
-                        <div class="form-group">
-                            <label>Nomor HP / WA Wali Murid (Dari Data Siswa)</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ $waliMuridContact ?? 'Belum diisi pada data siswa' }}"
-                                disabled
-                            >
-                            <small class="form-text text-muted">
-                                Nomor kontak wali murid dikelola melalui data siswa.
-                                Jika ingin memperbarui, silakan hubungi wali kelas atau operator sekolah.
-                            </small>
-                        </div>
-                    @endif
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {{-- Profile Card --}}
+    <div class="lg:col-span-1">
+        <div class="card">
+            <div class="card-body text-center">
+                {{-- Avatar --}}
+                <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-blue-500/30">
+                    {{ strtoupper(substr(Auth::user()->username ?? 'U', 0, 1)) }}
                 </div>
-                <div class="card-footer d-flex justify-content-between">
-                    <a href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}" class="btn btn-default">
-                        <i class="fas fa-arrow-left mr-1"></i> Kembali
-                    </a>
-                    <div class="d-flex align-items-center">
-                        @if(! $user->hasVerifiedEmail())
-                            <form method="POST" action="{{ route('verification.send') }}" class="mr-2">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-paper-plane mr-1"></i> Kirim Ulang Verifikasi
-                                </button>
-                            </form>
-                        @endif
+                
+                <h3 class="text-xl font-bold text-gray-800 mt-4">{{ Auth::user()->username }}</h3>
+                <p class="text-gray-500">{{ Auth::user()->email ?? 'Email belum diatur' }}</p>
+                
+                <div class="mt-4">
+                    <span class="badge badge-primary text-sm">
+                        {{ Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role ?? 'User' }}
+                    </span>
+                </div>
+                
+                {{-- Stats --}}
+                <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800">{{ Auth::user()->created_at?->diffInDays(now()) ?? 0 }}</p>
+                        <p class="text-xs text-gray-500">Hari Bergabung</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800">{{ Auth::user()->last_login_at?->diffForHumans() ?? '-' }}</p>
+                        <p class="text-xs text-gray-500">Login Terakhir</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{-- Edit Forms --}}
+    <div class="lg:col-span-2 space-y-6">
+        {{-- Profile Information --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+                        <circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>
+                    </svg>
+                    Informasi Profil
+                </h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('account.update') }}" method="POST" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- Username (readonly) --}}
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" value="{{ Auth::user()->username }}" class="form-input bg-gray-50" readonly disabled>
+                            <p class="form-help">Username tidak dapat diubah.</p>
+                        </div>
+                        
+                        {{-- Email --}}
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                value="{{ old('email', Auth::user()->email) }}"
+                                class="form-input @error('email') error @enderror" 
+                                placeholder="contoh@email.com"
+                            >
+                            @error('email')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                    
+                    {{-- NIP/NUPTK (for teachers) --}}
+                    @if(Auth::user()->hasAnyRole(['Guru', 'Wali Kelas', 'Kaprodi', 'Waka Kesiswaan', 'Kepala Sekolah']))
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="nip" class="form-label">NIP</label>
+                            <input 
+                                type="text" 
+                                id="nip" 
+                                name="nip" 
+                                value="{{ old('nip', Auth::user()->nip) }}"
+                                class="form-input @error('nip') error @enderror" 
+                                placeholder="Nomor Induk Pegawai"
+                            >
+                            @error('nip')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="nuptk" class="form-label">NUPTK</label>
+                            <input 
+                                type="text" 
+                                id="nuptk" 
+                                name="nuptk" 
+                                value="{{ old('nuptk', Auth::user()->nuptk) }}"
+                                class="form-input @error('nuptk') error @enderror" 
+                                placeholder="Nomor Unik Pendidik dan Tenaga Kependidikan"
+                            >
+                            @error('nuptk')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                    @endif
+                    
+                    <div class="flex justify-end pt-4">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save mr-1"></i> Simpan Perubahan
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                            </svg>
+                            <span>Simpan Perubahan</span>
                         </button>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
+        </div>
+        
+        {{-- Change Password --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Ubah Password
+                </h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('account.password.update') }}" method="POST" class="space-y-4">
+                    @csrf
+                    @method('POST')
+                    
+                    {{-- Current Password --}}
+                    <div class="form-group" x-data="{ show: false }">
+                        <label for="current_password" class="form-label form-label-required">Password Saat Ini</label>
+                        <div class="relative">
+                            <input 
+                                :type="show ? 'text' : 'password'" 
+                                id="current_password" 
+                                name="current_password" 
+                                class="form-input !pr-10 @error('current_password') error @enderror" 
+                                placeholder="Masukkan password saat ini"
+                                required
+                            >
+                            <button 
+                                type="button" 
+                                @click="show = !show"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                            >
+                                <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>
+                                </svg>
+                            </button>
+                        </div>
+                        @error('current_password')
+                            <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- New Password --}}
+                        <div class="form-group" x-data="{ show: false }">
+                            <label for="password" class="form-label form-label-required">Password Baru</label>
+                            <div class="relative">
+                                <input 
+                                    :type="show ? 'text' : 'password'" 
+                                    id="password" 
+                                    name="password" 
+                                    class="form-input !pr-10 @error('password') error @enderror" 
+                                    placeholder="Minimal 8 karakter"
+                                    required
+                                >
+                                <button 
+                                    type="button" 
+                                    @click="show = !show"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            @error('password')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        {{-- Confirm Password --}}
+                        <div class="form-group" x-data="{ show: false }">
+                            <label for="password_confirmation" class="form-label form-label-required">Konfirmasi Password</label>
+                            <div class="relative">
+                                <input 
+                                    :type="show ? 'text' : 'password'" 
+                                    id="password_confirmation" 
+                                    name="password_confirmation" 
+                                    class="form-input !pr-10" 
+                                    placeholder="Ulangi password baru"
+                                    required
+                                >
+                                <button 
+                                    type="button" 
+                                    @click="show = !show"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end pt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+                            </svg>
+                            <span>Ubah Password</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 @endsection
-
-
-
