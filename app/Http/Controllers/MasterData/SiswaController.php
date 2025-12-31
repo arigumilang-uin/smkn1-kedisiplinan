@@ -86,7 +86,20 @@ class SiswaController extends Controller
         $allKelas = $this->siswaService->getAllKelasForFilter();
         $allJurusan = $this->siswaService->getAllJurusanForFilter();
 
-        return view('siswa.index', compact('siswa', 'allKelas', 'allJurusan'));
+        // Jika request AJAX atau ada parameter render_partial, return hanya partial table
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('siswa._table', [
+                'siswa' => $siswa,
+            ]);
+        }
+        
+        // Return view full page
+        return view('siswa.index', [
+            'siswa' => $siswa,
+            'allJurusan' => $allJurusan,
+            'allKelas' => $allKelas,
+            'filters' => $filterData, // Kirim data filter ke view untuk repopulate form
+        ]);
     }
 
     /**
@@ -526,6 +539,12 @@ class SiswaController extends Controller
         ];
         
         $deletedSiswa = $this->siswaService->getDeletedSiswa($filters);
+        
+        // Return partial view if requested
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('siswa._table_deleted', compact('deletedSiswa'));
+        }
+
         $allKelas = $this->siswaService->getAllKelasForFilter();
         $alasanOptions = ['Alumni', 'Dikeluarkan', 'Pindah Sekolah', 'Lainnya'];
         

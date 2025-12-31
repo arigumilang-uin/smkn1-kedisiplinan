@@ -28,9 +28,9 @@
 @endsection
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="siswaPage()">
     {{-- Filter Card --}}
-    <div class="card" x-data="{ expanded: false }">
+    <div class="card" x-data="{ expanded: {{ request()->hasAny(['search', 'jurusan_id', 'kelas_id']) ? 'true' : 'false' }} }">
         <div class="card-header cursor-pointer" @click="expanded = !expanded">
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
@@ -38,35 +38,43 @@
                 </svg>
                 <span class="card-title">Filter Data</span>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
-                <path d="m6 9 6 6 6-6"/>
-            </svg>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500" x-show="isLoading">Memuat...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
         </div>
         
         <div class="card-body" x-show="expanded" x-collapse>
-            <form action="{{ route('siswa.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {{-- Search --}}
                 <div class="form-group md:col-span-2">
                     <label for="search" class="form-label">Cari</label>
-                    <input 
-                        type="text" 
-                        id="search" 
-                        name="search" 
-                        value="{{ request('search') }}"
-                        class="form-input" 
-                        placeholder="Nama atau NISN..."
-                    >
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="search" 
+                            x-model.debounce.500ms="filters.search"
+                            class="form-input pr-10" 
+                            placeholder="Nama atau NISN..."
+                        >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" x-show="isLoading">
+                            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
                 
                 {{-- Jurusan --}}
                 <div class="form-group">
                     <label for="jurusan_id" class="form-label">Jurusan</label>
-                    <select id="jurusan_id" name="jurusan_id" class="form-input form-select">
+                    <select id="jurusan_id" x-model="filters.jurusan_id" class="form-input form-select">
                         <option value="">Semua Jurusan</option>
                         @foreach($allJurusan ?? [] as $j)
-                            <option value="{{ $j->id }}" {{ request('jurusan_id') == $j->id ? 'selected' : '' }}>
-                                {{ $j->nama_jurusan }}
-                            </option>
+                            <option value="{{ $j->id }}">{{ $j->nama_jurusan }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -74,179 +82,31 @@
                 {{-- Kelas --}}
                 <div class="form-group">
                     <label for="kelas_id" class="form-label">Kelas</label>
-                    <select id="kelas_id" name="kelas_id" class="form-input form-select">
+                    <select id="kelas_id" x-model="filters.kelas_id" class="form-input form-select">
                         <option value="">Semua Kelas</option>
                         @foreach($allKelas ?? [] as $k)
-                            <option value="{{ $k->id }}" {{ request('kelas_id') == $k->id ? 'selected' : '' }}>
-                                {{ $k->nama_kelas }}
-                            </option>
+                            <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
                         @endforeach
                     </select>
                 </div>
                 
                 {{-- Actions --}}
-                <div class="md:col-span-4 flex gap-3">
-                    <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                        </svg>
-                        <span>Terapkan Filter</span>
-                    </button>
-                    <a href="{{ route('siswa.index') }}" class="btn btn-secondary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <div class="md:col-span-4 flex justify-end">
+                    <button type="button" @click="resetFilters()" class="btn btn-secondary text-xs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
                         </svg>
-                        <span>Reset</span>
-                    </a>
+                        <span>Reset Filter</span>
+                    </button>
                 </div>
-            </form>
-        </div>
-    </div>
-    
-    {{-- Data Table --}}
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th class="w-12">No</th>
-                    <th>NISN</th>
-                    <th>Nama Siswa</th>
-                    <th>Kelas</th>
-                    <th>Kontak Wali</th>
-                    <th class="w-32 text-center">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($siswa as $index => $s)
-                    <tr>
-                        <td class="text-gray-500">{{ $siswa->firstItem() + $index }}</td>
-                        <td>
-                            <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded-md">
-                                {{ $s->nisn }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{{ route('siswa.show', $s->id) }}" class="font-medium text-gray-800 hover:text-blue-600">
-                                {{ $s->nama_siswa }}
-                            </a>
-                        </td>
-                        <td>
-                            <span class="badge badge-primary">
-                                {{ $s->kelas->nama_kelas ?? '-' }}
-                            </span>
-                        </td>
-                        <td>
-                            @if($s->nomor_hp_wali_murid)
-                                <a href="https://wa.me/62{{ ltrim($s->nomor_hp_wali_murid, '0') }}" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                                    </svg>
-                                    {{ $s->nomor_hp_wali_murid }}
-                                </a>
-                            @else
-                                <span class="text-gray-400 text-sm">-</span>
-                            @endif
-                        </td>
-                        <td>
-                            <div class="flex items-center justify-center gap-1">
-                                <a href="{{ route('siswa.show', $s->id) }}" class="btn btn-icon btn-outline" title="Detail">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </a>
-                                @can('update', $s)
-                                    <a href="{{ route('siswa.edit', $s->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                                        </svg>
-                                    </a>
-                                @endcan
-                                @can('delete', $s)
-                                    <button 
-                                        type="button" 
-                                        class="btn btn-icon btn-outline text-red-500 hover:bg-red-50 hover:border-red-200" 
-                                        title="Hapus"
-                                        @click="$dispatch('open-delete-modal', { id: {{ $s->id }}, nama: '{{ $s->nama_siswa }}', nisn: '{{ $s->nisn }}' })"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                        </svg>
-                                    </button>
-                                @endcan
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                                </svg>
-                                <h3 class="empty-state-title">Data Tidak Ditemukan</h3>
-                                <p class="empty-state-description">Tidak ada data siswa yang sesuai dengan filter Anda.</p>
-                                @can('create', App\Models\Siswa::class)
-                                    <a href="{{ route('siswa.create') }}" class="btn btn-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M5 12h14"/><path d="M12 5v14"/>
-                                        </svg>
-                                        <span>Tambah Siswa Baru</span>
-                                    </a>
-                                @endcan
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    
-    {{-- Pagination --}}
-    @if($siswa->hasPages())
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p class="text-sm text-gray-500">
-                Menampilkan {{ $siswa->firstItem() }} sampai {{ $siswa->lastItem() }} dari {{ $siswa->total() }} data
-            </p>
-            <div class="pagination">
-                {{-- Previous --}}
-                @if($siswa->onFirstPage())
-                    <span class="pagination-btn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m15 18-6-6 6-6"/>
-                        </svg>
-                    </span>
-                @else
-                    <a href="{{ $siswa->previousPageUrl() }}" class="pagination-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m15 18-6-6 6-6"/>
-                        </svg>
-                    </a>
-                @endif
-                
-                {{-- Page Numbers --}}
-                @foreach($siswa->getUrlRange(max(1, $siswa->currentPage() - 2), min($siswa->lastPage(), $siswa->currentPage() + 2)) as $page => $url)
-                    <a href="{{ $url }}" class="pagination-btn {{ $page == $siswa->currentPage() ? 'active' : '' }}">
-                        {{ $page }}
-                    </a>
-                @endforeach
-                
-                {{-- Next --}}
-                @if($siswa->hasMorePages())
-                    <a href="{{ $siswa->nextPageUrl() }}" class="pagination-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m9 18 6-6-6-6"/>
-                        </svg>
-                    </a>
-                @else
-                    <span class="pagination-btn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m9 18 6-6-6-6"/>
-                        </svg>
-                    </span>
-                @endif
             </div>
         </div>
-    @endif
+    </div>
+    
+    {{-- Data Table Container --}}
+    <div id="siswa-table-container" class="transition-opacity duration-200" :class="{ 'opacity-50': isLoading }">
+        @include('siswa._table')
+    </div>
 </div>
 
 {{-- Delete Siswa Modal --}}
@@ -383,3 +243,104 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('siswaPage', () => ({
+            isLoading: false,
+            filters: {
+                search: '{{ request('search') }}',
+                jurusan_id: '{{ request('jurusan_id') }}',
+                kelas_id: '{{ request('kelas_id') }}'
+            },
+
+            init() {
+                // Watchers for cleaner filtering logic
+                this.$watch('filters.search', () => this.fetchData());
+                this.$watch('filters.jurusan_id', () => this.fetchData());
+                this.$watch('filters.kelas_id', () => this.fetchData());
+
+                // Initialize popstate listener for back/forward button support
+                window.addEventListener('popstate', (event) => {
+                    this.fetchData(window.location.href, false);
+                });
+
+                // Handle pagination clicks within the table container using event delegation
+                const container = document.getElementById('siswa-table-container');
+                if (container) {
+                     container.addEventListener('click', (e) => {
+                        const link = e.target.closest('.pagination a');
+                        if (link) {
+                            e.preventDefault();
+                            this.fetchData(link.href);
+                        }
+                    });
+                }
+            },
+
+            async fetchData(url = null, updatePushState = true) {
+                this.isLoading = true;
+                
+                // Build URL if not provided
+                if (!url) {
+                    const params = new URLSearchParams();
+                    if (this.filters.search) params.append('search', this.filters.search);
+                    if (this.filters.jurusan_id) params.append('jurusan_id', this.filters.jurusan_id);
+                    if (this.filters.kelas_id) params.append('kelas_id', this.filters.kelas_id);
+                    
+                    // Add render_partial param only for the fetch, but we want clean URL in browser
+                    // So we construct two URLs
+                    url = `{{ route('siswa.index') }}?${params.toString()}`;
+                
+                    // Update browser URL without reload (clean URL)
+                    if (updatePushState) {
+                        window.history.pushState({}, '', url);
+                    }
+                    
+                    // Add partial param for fetching
+                    params.append('render_partial', '1');
+                    fetchUrl = `{{ route('siswa.index') }}?${params.toString()}`;
+                } else {
+                    // If url is provided (pagination), append render_partial
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.append('render_partial', '1');
+                    fetchUrl = urlObj.toString();
+                    
+                    if (updatePushState) {
+                         window.history.pushState({}, '', url);
+                    }
+                }
+
+                try {
+                    // Add X-Requested-With header to request partial view
+                    const response = await fetch(fetchUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const html = await response.text();
+                        const container = document.getElementById('siswa-table-container');
+                        container.innerHTML = html;
+                    } else {
+                        console.error('Failed to fetch data:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            resetFilters() {
+                this.filters.search = '';
+                this.filters.jurusan_id = '';
+                this.filters.kelas_id = '';
+            }
+        }));
+    });
+</script>
+@endpush

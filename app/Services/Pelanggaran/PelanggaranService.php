@@ -337,17 +337,25 @@ class PelanggaranService
      */
     public function getAllJurusanForFilter()
     {
-        return \App\Models\Jurusan::all();
+        // OPTIMIZATION: Use Query Builder to avoid Model Hydration overhead
+        return DB::table('jurusan')
+            ->select('id', 'nama_jurusan', 'kode_jurusan')
+            ->orderBy('nama_jurusan')
+            ->get();
     }
 
     /**
      * Dapatkan semua kelas untuk dropdown filter.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Support\Collection
      */
     public function getAllKelasForFilter()
     {
-        return \App\Models\Kelas::all();
+        // OPTIMIZATION: Use Query Builder to avoid Model Hydration overhead
+        return DB::table('kelas')
+            ->select('id', 'nama_kelas')
+            ->orderBy('nama_kelas')
+            ->get();
     }
 
     /**

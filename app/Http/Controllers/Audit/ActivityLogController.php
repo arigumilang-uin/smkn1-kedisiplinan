@@ -66,6 +66,13 @@ class ActivityLogController extends Controller
 
         $activityTypes = Activity::distinct('log_name')->pluck('log_name');
 
+        // Return partial view if requested (only for activity tab)
+        if (($request->ajax() || $request->has('render_partial')) && $tab === 'activity') {
+            return view('kepala_sekolah.activity._table_logs', [
+                'logs' => $logs,
+            ]);
+        }
+
         return view('kepala_sekolah.activity.index', [
             'logs' => $logs,
             'activityTypes' => $activityTypes,
@@ -172,6 +179,12 @@ class ActivityLogController extends Controller
 
         $roles = \App\Models\Role::all();
 
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('kepala_sekolah.activity._table_last_login', [
+                'users' => $users,
+            ]);
+        }
+
         return view('kepala_sekolah.activity.index', [
             'tab' => 'last-login',
             'users' => $users,
@@ -212,6 +225,12 @@ class ActivityLogController extends Controller
                        ->withQueryString();
 
         $roles = \App\Models\Role::all();
+
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('kepala_sekolah.activity._table_status', [
+                'users' => $users,
+            ]);
+        }
 
         return view('kepala_sekolah.activity.index', [
             'tab' => 'status',

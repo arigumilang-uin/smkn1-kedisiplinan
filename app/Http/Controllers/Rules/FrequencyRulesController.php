@@ -47,6 +47,11 @@ class FrequencyRulesController extends Controller
         
         $jenisPelanggaran = $query->orderBy('kategori_id')->orderBy('nama_pelanggaran')->get();
         
+        // Return partial view if requested
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('frequency-rules._table', compact('jenisPelanggaran'));
+        }
+        
         // Get kategori for filter
         $kategoris = \App\Models\KategoriPelanggaran::orderBy('nama_kategori')->get();
         

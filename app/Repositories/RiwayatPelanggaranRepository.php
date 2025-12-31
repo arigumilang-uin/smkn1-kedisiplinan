@@ -141,9 +141,27 @@ class RiwayatPelanggaranRepository extends BaseRepository implements RiwayatPela
     public function filterAndPaginate(RiwayatPelanggaranFilterData $filters): LengthAwarePaginator
     {
         // Start building query dengan eager loading untuk prevent N+1 queries
+        // OPTIMISASI QUERY: 
+        // 1. Eager load 'jenisPelanggaran.frequencyRules' untuk hindari query loop di display helper
+        // 2. Subquery 'calculated_frequency' untuk hindari N+1 COUNT query di display helper
         $query = $this->model
             ->newQuery()
-            ->with(['siswa.kelas.jurusan', 'jenisPelanggaran.kategoriPelanggaran', 'guruPencatat']);
+            ->select('riwayat_pelanggaran.*')
+            ->with(['siswa.kelas.jurusan', 'jenisPelanggaran.kategoriPelanggaran', 'jenisPelanggaran.frequencyRules', 'guruPencatat.role'])
+            ->addSelect(['calculated_frequency' => function ($sub) {
+                $sub->selectRaw('count(*)')
+                    ->from('riwayat_pelanggaran as sub')
+                    ->whereColumn('sub.siswa_id', 'riwayat_pelanggaran.siswa_id')
+                    ->whereColumn('sub.jenis_pelanggaran_id', 'riwayat_pelanggaran.jenis_pelanggaran_id')
+                    ->whereNull('sub.deleted_at') // Respect SoftDelete
+                    ->where(function ($q) {
+                        $q->whereColumn('sub.tanggal_kejadian', '<', 'riwayat_pelanggaran.tanggal_kejadian')
+                          ->orWhere(function ($q2) {
+                              $q2->whereColumn('sub.tanggal_kejadian', '=', 'riwayat_pelanggaran.tanggal_kejadian')
+                                 ->whereColumn('sub.id', '<=', 'riwayat_pelanggaran.id');
+                          });
+                    });
+            }]);
 
         // Apply filter by siswa
         if ($filters->siswa_id) {

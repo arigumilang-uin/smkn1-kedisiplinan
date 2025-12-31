@@ -130,7 +130,7 @@ class RiwayatPelanggaranController extends Controller
      * 4. Panggil service->catatPelanggaran()
      * 5. Redirect dengan success message
      */
-    public function store(CatatPelanggaranRequest $request): RedirectResponse
+    public function store(CatatPelanggaranRequest $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         // Handle file upload
         $buktiFotoPath = null;
@@ -145,11 +145,17 @@ class RiwayatPelanggaranController extends Controller
         // Counter for success message
         $totalRecorded = 0;
 
+        $savedResults = [];
+
         try {
             // Loop through each selected siswa
             foreach ($request->siswa_id as $siswaId) {
+                $siswaObj = \App\Models\Siswa::find($siswaId);
+
                 // Loop through each selected jenis pelanggaran
                 foreach ($request->jenis_pelanggaran_id as $jenisPelanggaranId) {
+                    $jenisObj = \App\Models\JenisPelanggaran::find($jenisPelanggaranId);
+
                     // Create DTO for this combination
                     $riwayatData = RiwayatPelanggaranData::from([
                         'id' => null,
@@ -166,10 +172,28 @@ class RiwayatPelanggaranController extends Controller
                     $this->pelanggaranService->catatPelanggaran($riwayatData);
 
                     $totalRecorded++;
+                    
+                    // Collect saved data for response
+                    if ($siswaObj && $jenisObj) {
+                        $savedResults[] = [
+                            'siswa_nama' => $siswaObj->nama_siswa,
+                            'pelanggaran_nama' => $jenisObj->nama_pelanggaran,
+                            'poin' => $jenisObj->poin
+                        ];
+                    }
                 }
             }
 
             // Success - redirect with success message
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => "Berhasil mencatat {$totalRecorded} pelanggaran.",
+                    'total' => $totalRecorded,
+                    'data' => $savedResults
+                ]);
+            }
+
             return redirect()
                 ->route('riwayat.create')
                 ->with('success', "Berhasil mencatat {$totalRecorded} pelanggaran.");
@@ -180,6 +204,13 @@ class RiwayatPelanggaranController extends Controller
                 'error' => $e->getMessage(),
             ]);
             
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -192,6 +223,13 @@ class RiwayatPelanggaranController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Terjadi kesalahan saat mencatat pelanggaran. Silakan coba lagi atau hubungi administrator.'
+                ], 500);
+            }
+
             return redirect()
                 ->back()
                 ->withInput()

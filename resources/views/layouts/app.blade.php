@@ -47,8 +47,8 @@
                 
                 <!-- Page Header -->
                 @hasSection('page-header')
-                    <div class="page-header flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
+                    <div class="page-header">
+                        <div class="page-header-info">
                             <h1 class="page-title">@yield('title')</h1>
                             @hasSection('subtitle')
                                 <p class="page-subtitle">@yield('subtitle')</p>

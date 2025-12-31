@@ -49,9 +49,15 @@ class UserController extends Controller
         ];
 
         $users = $this->userService->getPaginatedUsers(20, $filters);
+        
+        // Return partial view if requested
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('users._table', compact('users'));
+        }
+
         $roles = $this->userService->getAllRoles();
 
-        return view('users.index', compact('users', 'roles'));
+        return view('users.index', compact('users', 'roles', 'filters'));
     }
 
     /**

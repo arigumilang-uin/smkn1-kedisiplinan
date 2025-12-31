@@ -21,7 +21,7 @@ class AdminDashboardController extends Controller
 {
     use HasStatistics;
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -44,32 +44,22 @@ class AdminDashboardController extends Controller
         // SCENARIO B: WAKA KESISWAAN
         // =============================================================
         
-        // 1. SIAPKAN DATA FILTER
-        $allJurusan = Jurusan::all();
-        $allKelas = Kelas::all();
-        
         // Tangkap Input Filter
         $startDate = $request->input('start_date', date('Y-m-01'));
         $endDate = $request->input('end_date', date('Y-m-d'));
         $jurusanId = $request->input('jurusan_id');
         $kelasId = $request->input('kelas_id');
-        $angkatan = $request->input('angkatan');
-        $chartType = $request->input('chart_type', 'doughnut');
 
-        // 2. KASUS SURAT (Clean & Informatif)
-        // Waka Kesiswaan: SEMUA kasus yang melibatkan dia
-        // Filter tambahan: jurusan/kelas/angkatan (optional)
+        // 2. KASUS SURAT
         $daftarKasus = TindakLanjut::with(['siswa.kelas', 'suratPanggilan'])
-            ->forPembina('Waka Kesiswaan')  // ✅ Filter: Hanya yang melibatkan Waka
-            ->whereHas('suratPanggilan')    // ✅ Filter: Harus punya surat
-            ->when($kelasId || $jurusanId || $angkatan, function($q) use ($kelasId, $jurusanId, $angkatan) {
-                // Apply optional filter (hierarki: kelas > jurusan > angkatan)
-                $q->whereHas('siswa.kelas', function($sq) use ($kelasId, $jurusanId, $angkatan) {
+            ->forPembina('Waka Kesiswaan')
+            ->whereHas('suratPanggilan')
+            ->when($kelasId || $jurusanId, function($q) use ($kelasId, $jurusanId) {
+                $q->whereHas('siswa.kelas', function($sq) use ($kelasId, $jurusanId) {
                     if ($kelasId) {
                         $sq->where('id', $kelasId);
-                    } else {
-                        if ($jurusanId) $sq->where('jurusan_id', $jurusanId);
-                        if ($angkatan) $sq->where('nama_kelas', 'like', $angkatan . ' %');
+                    } elseif ($jurusanId) {
+                        $sq->where('jurusan_id', $jurusanId);
                     }
                 });
             })
@@ -80,22 +70,19 @@ class AdminDashboardController extends Controller
             ->take(20)
             ->get();
 
-        // 3. DIAGRAM: Pelanggaran Populer (SEMUA SISWA, dengan optional filter)
+        // 3. DIAGRAM: Pelanggaran Populer
         $queryChart = DB::table('riwayat_pelanggaran')
             ->join('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
             ->whereDate('riwayat_pelanggaran.tanggal_kejadian', '>=', $startDate)
             ->whereDate('riwayat_pelanggaran.tanggal_kejadian', '<=', $endDate);
 
-        // Apply optional filter
         if ($kelasId) {
             $queryChart->join('siswa', 'riwayat_pelanggaran.siswa_id', '=', 'siswa.id')
                 ->where('siswa.kelas_id', $kelasId);
-        } elseif ($jurusanId || $angkatan) {
+        } elseif ($jurusanId) {
             $queryChart->join('siswa', 'riwayat_pelanggaran.siswa_id', '=', 'siswa.id')
-                ->join('kelas', 'siswa.kelas_id', '=', 'kelas.id');
-            
-            if ($jurusanId) $queryChart->where('kelas.jurusan_id', $jurusanId);
-            if ($angkatan) $queryChart->where('kelas.nama_kelas', 'like', $angkatan . ' %');
+                ->join('kelas', 'siswa.kelas_id', '=', 'kelas.id')
+                ->where('kelas.jurusan_id', $jurusanId);
         }
 
         $statistikPelanggaran = $queryChart
@@ -108,18 +95,18 @@ class AdminDashboardController extends Controller
         $chartLabels = $statistikPelanggaran->pluck('nama_pelanggaran');
         $chartData = $statistikPelanggaran->pluck('total');
 
-        // 4. DIAGRAM 2: Kelas Ternakal (Top 10)
-        $chartKelas = DB::table('riwayat_pelanggaran')
+        // 4. DIAGRAM 2: Kelas Ternakal
+        $queryKelas = DB::table('riwayat_pelanggaran')
             ->join('siswa', 'riwayat_pelanggaran.siswa_id', '=', 'siswa.id')
             ->join('kelas', 'siswa.kelas_id', '=', 'kelas.id')
             ->whereDate('riwayat_pelanggaran.tanggal_kejadian', '>=', $startDate)
-            ->whereDate('riwayat_pelanggaran.tanggal_kejadian', '<=', $endDate)
-            ->when($jurusanId, function($q) use ($jurusanId) {
-                return $q->where('kelas.jurusan_id', $jurusanId);
-            })
-            ->when($angkatan, function($q) use ($angkatan) {
-                return $q->where('kelas.nama_kelas', 'like', $angkatan . ' %');
-            })
+            ->whereDate('riwayat_pelanggaran.tanggal_kejadian', '<=', $endDate);
+
+        if ($jurusanId) {
+            $queryKelas->where('kelas.jurusan_id', $jurusanId);
+        }
+
+        $chartKelas = $queryKelas
             ->select('kelas.nama_kelas', DB::raw('count(*) as total'))
             ->groupBy('kelas.nama_kelas')
             ->orderByDesc('total')
@@ -131,29 +118,48 @@ class AdminDashboardController extends Controller
 
         // 5. STATISTIK
         $totalSiswa = Siswa::count();
-        $totalKasus = $daftarKasus->count();
+        $totalKasus = $daftarKasus->count(); // Untuk table count jika perlu
         $kasusAktif = TindakLanjut::forPembina('Waka Kesiswaan')
             ->whereIn('status', ['Baru', 'Menunggu Persetujuan', 'Disetujui', 'Ditangani'])
             ->count();
         $butuhPersetujuan = TindakLanjut::forPembina('Waka Kesiswaan')
             ->where('status', 'Menunggu Persetujuan')
             ->count();
-
-        // Hitung total pelanggaran filtered
         $pelanggaranFiltered = $statistikPelanggaran->sum('total');
+
+        // AJAX Response for Live Filtering including Charts
+        if ($request->ajax()) {
+            return response()->json([
+                'stats' => view('dashboards._waka_stats', compact(
+                    'totalSiswa', 'pelanggaranFiltered', 'kasusAktif', 'butuhPersetujuan'
+                ))->render(),
+                'table' => view('dashboards._waka_table', compact('daftarKasus'))->render(),
+                'charts' => [
+                    'pelanggaran' => [
+                        'labels' => $chartLabels,
+                        'data' => $chartData
+                    ],
+                    'kelas' => [
+                        'labels' => $chartKelasLabels,
+                        'data' => $chartKelasData
+                    ]
+                ]
+            ]);
+        }
+
+        $allJurusan = Jurusan::all();
+        $allKelas = Kelas::all();
 
         return view('dashboards.waka', compact(
             'totalSiswa', 
             'pelanggaranFiltered', 
             'kasusAktif', 
             'butuhPersetujuan',
-            'totalKasus',
             'daftarKasus', 
             'chartLabels', 
             'chartData',
             'chartKelasLabels',
             'chartKelasData',
-            'chartType',
             'allJurusan', 
             'allKelas', 
             'startDate', 

@@ -37,12 +37,17 @@ class PoinDisplayHelper
         }
         
         // Frequency-based: calculate position
-        // Count violations BEFORE or AT this one (by tanggal_kejadian)
-        $frequency = RiwayatPelanggaran::where('siswa_id', $riwayat->siswa_id)
-            ->where('jenis_pelanggaran_id', $riwayat->jenis_pelanggaran_id)
-            ->where('tanggal_kejadian', '<=', $riwayat->tanggal_kejadian)
-            ->where('id', '<=', $riwayat->id) // Include same timestamp, use ID as tiebreaker
-            ->count();
+        if (isset($riwayat->calculated_frequency)) {
+            // OPTIMIZATION: Use pre-calculated frequency from subquery
+            $frequency = $riwayat->calculated_frequency;
+        } else {
+            // Count violations BEFORE or AT this one (by tanggal_kejadian)
+            $frequency = RiwayatPelanggaran::where('siswa_id', $riwayat->siswa_id)
+                ->where('jenis_pelanggaran_id', $riwayat->jenis_pelanggaran_id)
+                ->where('tanggal_kejadian', '<=', $riwayat->tanggal_kejadian)
+                ->where('id', '<=', $riwayat->id) // Include same timestamp, use ID as tiebreaker
+                ->count();
+        }
         
         // Check if this frequency matches any rule
         $matchedRule = $jenis->frequencyRules->first(function ($rule) use ($frequency) {

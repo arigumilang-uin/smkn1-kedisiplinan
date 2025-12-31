@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="siswaArsipPage()">
     {{-- Info Banner --}}
     <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl">
         <div class="flex gap-3">
@@ -32,127 +32,79 @@
     </div>
 
     {{-- Filter Card --}}
-    <div class="card">
-        <div class="card-body">
-            <form action="{{ route('siswa.deleted') }}" method="GET" class="flex flex-wrap gap-4 items-end">
-                <div class="form-group flex-1 min-w-[150px]">
+    <div class="card" x-data="{ expanded: {{ request()->hasAny(['search', 'kelas_id', 'alasan_keluar']) ? 'true' : 'false' }} }">
+        <div class="card-header cursor-pointer" @click="expanded = !expanded">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                <span class="card-title">Filter Arsip</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500" x-show="isLoading">Memuat...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="card-body" x-show="expanded" x-collapse>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="form-group md:col-span-2">
                     <label for="search" class="form-label">Cari</label>
-                    <input type="text" id="search" name="search" value="{{ $filters['search'] ?? '' }}" class="form-input" placeholder="Nama atau NISN...">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="search" 
+                            x-model.debounce.500ms="filters.search" 
+                            class="form-input pr-10 w-full" 
+                            placeholder="Nama atau NISN..."
+                        >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" x-show="isLoading">
+                            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group min-w-[150px]">
+                
+                <div class="form-group">
                     <label for="alasan_keluar" class="form-label">Alasan Keluar</label>
-                    <select id="alasan_keluar" name="alasan_keluar" class="form-input form-select">
+                    <select id="alasan_keluar" x-model="filters.alasan_keluar" class="form-input form-select w-full">
                         <option value="">Semua Alasan</option>
                         @foreach($alasanOptions ?? [] as $alasan)
-                            <option value="{{ $alasan }}" {{ ($filters['alasan_keluar'] ?? '') == $alasan ? 'selected' : '' }}>{{ $alasan }}</option>
+                            <option value="{{ $alasan }}">{{ $alasan }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="form-group min-w-[150px]">
+                
+                <div class="form-group">
                     <label for="kelas_id" class="form-label">Kelas</label>
-                    <select id="kelas_id" name="kelas_id" class="form-input form-select">
+                    <select id="kelas_id" x-model="filters.kelas_id" class="form-input form-select w-full">
                         <option value="">Semua Kelas</option>
                         @foreach($allKelas ?? [] as $k)
-                            <option value="{{ $k->id }}" {{ ($filters['kelas_id'] ?? '') == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}</option>
+                            <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{{ route('siswa.deleted') }}" class="btn btn-secondary">Reset</a>
-            </form>
+                
+                <div class="md:col-span-4 flex justify-end">
+                    <button type="button" @click="resetFilters()" class="btn btn-secondary text-xs">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+                        </svg>
+                        <span>Reset Filter</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    {{-- Data Table --}}
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th class="w-12">No</th>
-                    <th>NISN</th>
-                    <th>Nama Siswa</th>
-                    <th>Kelas Terakhir</th>
-                    <th>Alasan Keluar</th>
-                    <th>Tanggal Dihapus</th>
-                    <th class="w-40 text-center">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($deletedSiswa ?? [] as $index => $s)
-                    <tr>
-                        <td class="text-gray-500">{{ ($deletedSiswa->currentPage() - 1) * $deletedSiswa->perPage() + $index + 1 }}</td>
-                        <td>
-                            <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded-md">{{ $s->nisn }}</span>
-                        </td>
-                        <td class="font-medium text-gray-800">{{ $s->nama_siswa }}</td>
-                        <td>
-                            <span class="badge badge-neutral">{{ $s->kelas->nama_kelas ?? '-' }}</span>
-                        </td>
-                        <td>
-                            @php
-                                $alasanColors = [
-                                    'Alumni' => 'badge-success',
-                                    'Dikeluarkan' => 'badge-danger',
-                                    'Pindah Sekolah' => 'badge-warning',
-                                    'Lainnya' => 'badge-neutral',
-                                ];
-                            @endphp
-                            <span class="badge {{ $alasanColors[$s->alasan_keluar] ?? 'badge-neutral' }}">{{ $s->alasan_keluar ?? '-' }}</span>
-                            @if($s->keterangan_keluar)
-                                <p class="text-xs text-gray-500 mt-1">{{ Str::limit($s->keterangan_keluar, 30) }}</p>
-                            @endif
-                        </td>
-                        <td class="text-gray-500 text-sm">{{ $s->deleted_at ? $s->deleted_at->format('d M Y H:i') : '-' }}</td>
-                        <td>
-                            <div class="flex items-center justify-center gap-1">
-                                {{-- Restore Button --}}
-                                <form action="{{ route('siswa.restore', $s->id) }}" method="POST" class="inline" onsubmit="return confirm('Restore siswa ini ke daftar aktif?')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-icon btn-outline text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200" title="Restore">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
-                                        </svg>
-                                    </button>
-                                </form>
-                                
-                                {{-- Permanent Delete Button --}}
-                                <button 
-                                    type="button" 
-                                    class="btn btn-icon btn-outline text-red-600 hover:bg-red-50 hover:border-red-200" 
-                                    title="Hapus Permanen"
-                                    @click="$dispatch('open-permanent-delete-modal', { id: {{ $s->id }}, nama: '{{ addslashes($s->nama_siswa) }}', nisn: '{{ $s->nisn }}' })"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
-                                </svg>
-                                <h3 class="empty-state-title">Tidak Ada Data Arsip</h3>
-                                <p class="empty-state-description">Tidak ada siswa yang telah dihapus.</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+    {{-- Data Table Container --}}
+    <div id="siswa-deleted-table-container" class="transition-opacity duration-200" :class="{ 'opacity-50': isLoading }">
+        @include('siswa._table_deleted')
     </div>
-
-    {{-- Pagination --}}
-    @if(method_exists($deletedSiswa ?? [], 'hasPages') && $deletedSiswa->hasPages())
-        <div class="flex justify-between items-center">
-            <p class="text-sm text-gray-500">Menampilkan {{ $deletedSiswa->firstItem() }} - {{ $deletedSiswa->lastItem() }} dari {{ $deletedSiswa->total() }}</p>
-            {{ $deletedSiswa->links() }}
-        </div>
-    @endif
 </div>
 
 {{-- Permanent Delete Modal --}}
@@ -273,3 +225,92 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('siswaArsipPage', () => ({
+            isLoading: false,
+            filters: {
+                search: '{{ request('search') }}',
+                kelas_id: '{{ request('kelas_id') }}',
+                alasan_keluar: '{{ request('alasan_keluar') }}'
+            },
+
+            init() {
+                // Watcher Pattern
+                this.$watch('filters.search', () => this.fetchData());
+                this.$watch('filters.kelas_id', () => this.fetchData());
+                this.$watch('filters.alasan_keluar', () => this.fetchData());
+
+                window.addEventListener('popstate', (event) => {
+                    this.fetchData(window.location.href, false);
+                });
+
+                const container = document.getElementById('siswa-deleted-table-container');
+                if (container) {
+                     container.addEventListener('click', (e) => {
+                        const link = e.target.closest('.pagination a');
+                        if (link) {
+                            e.preventDefault();
+                            this.fetchData(link.href);
+                        }
+                    });
+                }
+            },
+
+            async fetchData(url = null, updatePushState = true) {
+                this.isLoading = true;
+                
+                if (!url) {
+                    const params = new URLSearchParams();
+                    if (this.filters.search) params.append('search', this.filters.search);
+                    if (this.filters.kelas_id) params.append('kelas_id', this.filters.kelas_id);
+                    if (this.filters.alasan_keluar) params.append('alasan_keluar', this.filters.alasan_keluar);
+                    
+                    url = `{{ route('siswa.deleted') }}?${params.toString()}`;
+                    
+                    if (updatePushState) {
+                        window.history.pushState({}, '', url);
+                    }
+                    
+                    params.append('render_partial', '1');
+                    fetchUrl = `{{ route('siswa.deleted') }}?${params.toString()}`;
+                } else {
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.append('render_partial', '1');
+                    fetchUrl = urlObj.toString();
+                    
+                    if (updatePushState) {
+                         window.history.pushState({}, '', url);
+                    }
+                }
+
+                try {
+                    const response = await fetch(fetchUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const html = await response.text();
+                        document.getElementById('siswa-deleted-table-container').innerHTML = html;
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            resetFilters() {
+                this.filters.search = '';
+                this.filters.kelas_id = '';
+                this.filters.alasan_keluar = '';
+            }
+        }));
+    });
+</script>
+@endpush

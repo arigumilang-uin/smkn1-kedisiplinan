@@ -63,6 +63,18 @@ class WaliKelasDashboardController extends Controller
             ->whereDate('tanggal_kejadian', '>=', $startDate)
             ->whereDate('tanggal_kejadian', '<=', $endDate)
             ->count();
+        if ($request->ajax()) {
+            return response()->json([
+                'stats' => view('dashboards._walikelas_stats', compact('totalSiswa', 'totalPelanggaran', 'totalKasus'))->render(),
+                'table' => view('dashboards._walikelas_table', compact('kasusBaru'))->render(),
+                'charts' => [
+                    'pelanggaran' => [
+                        'labels' => $chartLabels,
+                        'data' => $chartData
+                    ]
+                ]
+            ]);
+        }
 
         return view('dashboards.walikelas', compact(
             'kelas', 

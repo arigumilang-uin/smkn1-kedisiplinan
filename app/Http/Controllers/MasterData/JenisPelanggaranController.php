@@ -31,17 +31,11 @@ class JenisPelanggaranController extends Controller
     ) {}
 
     /**
-     * Tampilkan daftar jenis pelanggaran dengan fitur pencarian
-     * 
-     * REFACTORED from 12 lines to 6 lines
+     * Redirect to frequency-rules.index (consolidated page)
      */
-    public function index(Request $request)
+    public function index()
     {
-        $searchTerm = $request->filled('cari') ? $request->cari : null;
-        
-        $jenisPelanggaran = $this->jenisPelanggaranService->getPaginated($searchTerm, 10);
-
-        return view('jenis_pelanggaran.index', compact('jenisPelanggaran'));
+        return redirect()->route('frequency-rules.index');
     }
 
     /**

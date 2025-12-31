@@ -14,106 +14,167 @@
 @endsection
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="userManagementPage()">
     {{-- Filter --}}
-    <div class="card">
-        <div class="card-body">
-            <form action="{{ route('users.index') }}" method="GET" class="flex flex-wrap gap-4 items-end">
-                <div class="form-group flex-1 min-w-[200px]">
+    <div class="card" x-data="{ expanded: {{ request()->hasAny(['search', 'role', 'status']) ? 'true' : 'false' }} }">
+        <div class="card-header cursor-pointer" @click="expanded = !expanded">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                <span class="card-title">Filter Data</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500" x-show="isLoading">Memuat...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="card-body" x-show="expanded" x-collapse>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="form-group md:col-span-2">
                     <label for="search" class="form-label">Cari</label>
-                    <input type="text" id="search" name="search" value="{{ request('search') }}" class="form-input" placeholder="Username atau email...">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="search" 
+                            x-model.debounce.500ms="filters.search" 
+                            class="form-input pr-10 w-full" 
+                            placeholder="Username atau email..."
+                        >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" x-show="isLoading">
+                            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group min-w-[150px]">
+                
+                <div class="form-group">
                     <label for="role" class="form-label">Role</label>
-                    <select id="role" name="role" class="form-input form-select">
+                    <select id="role" x-model="filters.role_id" class="form-input form-select w-full">
                         <option value="">Semua Role</option>
                         @foreach($roles ?? [] as $role)
-                            <option value="{{ $role->id }}" {{ request('role') == $role->id ? 'selected' : '' }}>{{ $role->nama_role }}</option>
+                            <option value="{{ $role->id }}">{{ $role->nama_role }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="form-group min-w-[120px]">
+                
+                <div class="form-group">
                     <label for="status" class="form-label">Status</label>
-                    <select id="status" name="status" class="form-input form-select">
+                    <select id="status" x-model="filters.is_active" class="form-input form-select w-full">
                         <option value="">Semua</option>
-                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                        <option value="active">Aktif</option>
+                        <option value="inactive">Nonaktif</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{{ route('users.index') }}" class="btn btn-secondary">Reset</a>
-            </form>
+                
+                <div class="md:col-span-4 flex justify-end">
+                    <button type="button" @click="resetFilters()" class="btn btn-secondary text-xs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+                        </svg>
+                        <span>Reset Filter</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     
     {{-- Table --}}
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Login Terakhir</th>
-                    <th class="w-32 text-center">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($users ?? [] as $user)
-                    <tr>
-                        <td class="font-medium text-gray-800">{{ $user->username }}</td>
-                        <td class="text-gray-500">{{ $user->email ?? '-' }}</td>
-                        <td>
-                            <span class="badge badge-primary">{{ $user->role->nama_role ?? '-' }}</span>
-                        </td>
-                        <td>
-                            @if($user->is_active)
-                                <span class="badge badge-success">Aktif</span>
-                            @else
-                                <span class="badge badge-danger">Nonaktif</span>
-                            @endif
-                        </td>
-                        <td class="text-gray-500 text-sm">{{ $user->last_login_at ? $user->last_login_at->diffForHumans() : '-' }}</td>
-                        <td>
-                            <div class="flex items-center justify-center gap-1">
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                </a>
-                                <form action="{{ route('users.toggle-active', $user->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-icon btn-outline {{ $user->is_active ? 'text-amber-500' : 'text-green-500' }}" title="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                        @if($user->is_active)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
-                                        @else
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                                        @endif
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                                <h3 class="empty-state-title">Tidak Ada User</h3>
-                                <p class="empty-state-description">Belum ada user yang terdaftar.</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+    <div id="users-table-container" class="transition-opacity duration-200" :class="{ 'opacity-50': isLoading }">
+        @include('users._table')
     </div>
-    
-    @if(method_exists($users, 'hasPages') && $users->hasPages())
-        <div class="flex justify-between items-center">
-            <p class="text-sm text-gray-500">Menampilkan {{ $users->firstItem() }} - {{ $users->lastItem() }} dari {{ $users->total() }}</p>
-            {{ $users->links() }}
-        </div>
-    @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('userManagementPage', () => ({
+            isLoading: false,
+            filters: {
+                search: '{{ request('search') }}',
+                role_id: '{{ request('role_id') }}',
+                is_active: '{{ request('is_active') }}'
+            },
+
+            init() {
+                this.$watch('filters.search', () => this.fetchData());
+                this.$watch('filters.role_id', () => this.fetchData());
+                this.$watch('filters.is_active', () => this.fetchData());
+
+                window.addEventListener('popstate', (event) => {
+                    this.fetchData(window.location.href, false);
+                });
+
+                const container = document.getElementById('users-table-container');
+                if (container) {
+                     container.addEventListener('click', (e) => {
+                        const link = e.target.closest('.pagination a');
+                        if (link) {
+                            e.preventDefault();
+                            this.fetchData(link.href);
+                        }
+                    });
+                }
+            },
+
+            async fetchData(url = null, updatePushState = true) {
+                this.isLoading = true;
+                
+                if (!url) {
+                    const params = new URLSearchParams();
+                    if (this.filters.search) params.append('search', this.filters.search);
+                    if (this.filters.role_id) params.append('role_id', this.filters.role_id);
+                    if (this.filters.is_active) params.append('is_active', this.filters.is_active);
+                    
+                    url = `{{ route('users.index') }}?${params.toString()}`;
+                    
+                    if (updatePushState) {
+                        window.history.pushState({}, '', url);
+                    }
+                    
+                    params.append('render_partial', '1');
+                    fetchUrl = `{{ route('users.index') }}?${params.toString()}`;
+                } else {
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.append('render_partial', '1');
+                    fetchUrl = urlObj.toString();
+                    
+                    if (updatePushState) {
+                         window.history.pushState({}, '', url);
+                    }
+                }
+
+                try {
+                    const response = await fetch(fetchUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const html = await response.text();
+                        document.getElementById('users-table-container').innerHTML = html;
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            resetFilters() {
+                this.filters.search = '';
+                this.filters.role_id = '';
+                this.filters.is_active = '';
+            }
+        }));
+    });
+</script>
+@endpush
