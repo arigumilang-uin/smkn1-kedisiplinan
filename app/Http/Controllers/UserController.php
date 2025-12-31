@@ -311,10 +311,14 @@ class UserController extends Controller
      */
     public function bulkActivate(Request $request): RedirectResponse
     {
-        // TODO: Implement bulk activate
+        $request->validate(['ids' => 'required|string']);
+        $ids = explode(',', $request->input('ids'));
+        
+        $this->userService->bulkActivate($ids);
+
         return redirect()
             ->back()
-            ->with('success', 'Users berhasil diaktifkan.');
+            ->with('success', count($ids) . ' user berhasil diaktifkan.');
     }
 
     /**
@@ -322,10 +326,14 @@ class UserController extends Controller
      */
     public function bulkDeactivate(Request $request): RedirectResponse
     {
-        // TODO: Implement bulk deactivate
+        $request->validate(['ids' => 'required|string']);
+        $ids = explode(',', $request->input('ids'));
+
+        $this->userService->bulkDeactivate($ids);
+
         return redirect()
             ->back()
-            ->with('success', 'Users berhasil dinonaktifkan.');
+            ->with('success', count($ids) . ' user berhasil dinonaktifkan.');
     }
 
     /**
@@ -333,10 +341,14 @@ class UserController extends Controller
      */
     public function bulkDelete(Request $request): RedirectResponse
     {
-        // TODO: Implement bulk delete
+        $request->validate(['ids' => 'required|string']);
+        $ids = explode(',', $request->input('ids'));
+
+        $this->userService->bulkDelete($ids);
+
         return redirect()
             ->back()
-            ->with('success', 'Users berhasil dihapus.');
+            ->with('success', count($ids) . ' user berhasil dihapus.');
     }
 
     /**

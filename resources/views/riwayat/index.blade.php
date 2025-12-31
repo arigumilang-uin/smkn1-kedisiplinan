@@ -14,9 +14,9 @@
 @endsection
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="riwayatPage()">
     {{-- Filter Card --}}
-    <div class="card" x-data="{ expanded: true }">
+    <div class="card" x-data="{ expanded: {{ request()->hasAny(['search', 'jurusan_id', 'kelas_id']) ? 'true' : 'false' }} }">
         <div class="card-header cursor-pointer" @click="expanded = !expanded">
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
@@ -24,224 +24,247 @@
                 </svg>
                 <span class="card-title">Filter Data</span>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
-                <path d="m6 9 6 6 6-6"/>
-            </svg>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500" x-show="isLoading">Memuat...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
         </div>
         
-        <div class="card-body" x-show="expanded" x-collapse>
-            <form action="{{ route('riwayat.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div class="form-group">
-                    <label for="start_date" class="form-label">Dari Tanggal</label>
-                    <input type="date" id="start_date" name="start_date" value="{{ request('start_date') }}" class="form-input">
-                </div>
-                
-                <div class="form-group">
-                    <label for="end_date" class="form-label">Sampai</label>
-                    <input type="date" id="end_date" name="end_date" value="{{ request('end_date') }}" class="form-input">
-                </div>
-                
-                <div class="form-group">
-                    <label for="jurusan_id" class="form-label">Jurusan</label>
-                    <select id="jurusan_id" name="jurusan_id" class="form-input form-select">
-                        <option value="">Semua Jurusan</option>
-                        @foreach($allJurusan ?? [] as $j)
-                            <option value="{{ $j->id }}" {{ request('jurusan_id') == $j->id ? 'selected' : '' }}>{{ $j->nama_jurusan }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="kelas_id" class="form-label">Kelas</label>
-                    <select id="kelas_id" name="kelas_id" class="form-input form-select">
-                        <option value="">Semua Kelas</option>
-                        @foreach($allKelas ?? [] as $k)
-                            <option value="{{ $k->id }}" {{ request('kelas_id') == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="form-group flex items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-1">Filter</button>
-                    <a href="{{ route('riwayat.index') }}" class="btn btn-secondary">Reset</a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    {{-- Stats --}}
-    <div class="flex justify-between items-center">
-        <span class="text-sm text-gray-500">
-            Total: <b class="text-blue-600">{{ $riwayat->total() }}</b> data
-        </span>
-    </div>
-    
-    {{-- Data Table --}}
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Waktu</th>
-                    <th>Siswa</th>
-                    <th class="">Kelas</th>
-                    <th>Pelanggaran</th>
-                    <th class="text-center">Poin</th>
-                    <th class="">Dicatat Oleh</th>
-                    <th class="text-center">Bukti</th>
-                    <th class="w-24 text-center">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($riwayat as $r)
-                    <tr>
-                        {{-- Waktu (Tanggal + Jam) --}}
-                        <td class="whitespace-nowrap">
-                            <div class="font-medium text-gray-800">{{ $r->tanggal_kejadian->format('d M Y') }}</div>
-                            <div class="text-xs text-gray-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                {{ $r->tanggal_kejadian->format('H:i') }} WIB
-                            </div>
-                        </td>
-                        
-                        {{-- Siswa --}}
-                        <td>
-                            <a href="{{ route('siswa.show', $r->siswa->id ?? 0) }}" class="font-medium text-gray-800 hover:text-blue-600">
-                                {{ $r->siswa->nama_siswa ?? '-' }}
-                            </a>
-                        </td>
-                        
-                        {{-- Kelas --}}
-                        <td class="">
-                            <span class="badge badge-primary">{{ $r->siswa->kelas->nama_kelas ?? '-' }}</span>
-                        </td>
-                        
-                        {{-- Pelanggaran --}}
-                        <td class="max-w-xs">
-                            <p class="font-medium text-gray-800">{{ $r->jenisPelanggaran->nama_pelanggaran ?? '-' }}</p>
-                            <p class="text-xs text-gray-400">{{ $r->jenisPelanggaran->kategoriPelanggaran->nama_kategori ?? '' }}</p>
-                            @if($r->keterangan)
-                                <p class="text-sm text-gray-500 truncate mt-1 italic">"{{ Str::limit($r->keterangan, 40) }}"</p>
-                            @endif
-                        </td>
-                        
-                        {{-- Poin --}}
-                        <td class="text-center">
-                            @php
-                                // Gunakan helper untuk kalkulasi poin berdasarkan frequency rules
-                                $poinInfo = \App\Helpers\PoinDisplayHelper::getPoinForRiwayat($r);
-                            @endphp
-                            @if($poinInfo['matched'] && $poinInfo['poin'] > 0)
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700" 
-                                      title="{{ \App\Helpers\PoinDisplayHelper::getFrequencyText($r) }}">
-                                    +{{ $poinInfo['poin'] }}
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-400">
-                                    +0
-                                </span>
-                            @endif
-                            @if(!empty($poinInfo['frequency']))
-                                <div class="text-[10px] text-gray-400 mt-1">{{ $poinInfo['frequency'] }}× Kejadian</div>
-                            @endif
-                        </td>
-                        
-                        {{-- Dicatat Oleh --}}
-                        <td class="text-sm">
-                            @if($r->guruPencatat)
-                                <div class="font-medium text-gray-700">{{ $r->guruPencatat->username }}</div>
-                                <div class="text-[10px] text-gray-400 uppercase">{{ $r->guruPencatat->role->nama_role ?? 'Staff' }}</div>
-                            @else
-                                <span class="text-gray-400 italic text-xs">Sistem</span>
-                            @endif
-                        </td>
-                        
-                        {{-- Bukti Foto --}}
-                        <td class="text-center">
-                            @if($r->bukti_foto_path)
-                                <a href="{{ asset('storage/' . $r->bukti_foto_path) }}" target="_blank" 
-                                   class="btn btn-icon btn-outline" title="Lihat Bukti">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                                        <polyline points="21 15 16 10 5 21"/>
-                                    </svg>
-                                </a>
-                            @else
-                                <span class="text-gray-300">-</span>
-                            @endif
-                        </td>
-                        
-                        {{-- Aksi --}}
-                        <td>
-                            {{-- Desktop: Icon buttons --}}
-                            <div class="action-buttons-desktop">
-                                <a href="{{ route('riwayat.edit', $r->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                                    </svg>
-                                </a>
-                                <form action="{{ route('riwayat.destroy', $r->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus riwayat pelanggaran ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-icon btn-outline text-red-500 hover:bg-red-50 hover:border-red-200" title="Hapus">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                        </svg>
-                                    </button>
-                                </form>
-                            </div>
-                            
-                            {{-- Mobile: Dropdown --}}
-                            <div class="action-dropdown-mobile" x-data="{ open: false }">
-                                <button @click="open = !open" @click.away="open = false" class="action-dropdown-trigger">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                                    </svg>
-                                </button>
-                                <div x-show="open" x-transition class="action-dropdown-menu">
-                                    <a href="{{ route('riwayat.edit', $r->id) }}" class="action-dropdown-item action-dropdown-item--edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                        Edit
-                                    </a>
-                                    <div class="action-dropdown-divider"></div>
-                                    <form action="{{ route('riwayat.destroy', $r->id) }}" method="POST" onsubmit="return confirm('Hapus riwayat pelanggaran ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="action-dropdown-item action-dropdown-item--delete">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                            Hapus
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+        <div x-show="expanded" x-collapse.duration.300ms x-cloak>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {{-- Search --}}
+                    <div class="form-group md:col-span-4">
+                        <label for="search" class="form-label">Cari</label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="search" 
+                                x-model.debounce.500ms="filters.search" 
+                                class="form-input pr-10 w-full" 
+                                placeholder="Cari nama siswa, NISN, jenis pelanggaran, atau pencatat..."
+                            >
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" x-show="isLoading">
+                                <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <h3 class="empty-state-title">Tidak Ada Data</h3>
-                                <p class="empty-state-description">Belum ada riwayat pelanggaran yang dicatat.</p>
-                                <a href="{{ route('riwayat.create') }}" class="btn btn-primary">Catat Pelanggaran</a>
                             </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </div>
+                    </div>
+                    
+                    {{-- Dari Tanggal --}}
+                    <div class="form-group">
+                        <label for="start_date" class="form-label">Dari Tanggal</label>
+                        <input 
+                            type="date" 
+                            id="start_date" 
+                            x-model="filters.start_date"
+                            @change="fetchData()"
+                            class="form-input w-full"
+                        >
+                    </div>
+                    
+                    {{-- Sampai Tanggal --}}
+                    <div class="form-group">
+                        <label for="end_date" class="form-label">Sampai Tanggal</label>
+                        <input 
+                            type="date" 
+                            id="end_date" 
+                            x-model="filters.end_date"
+                            @change="fetchData()"
+                            class="form-input w-full"
+                        >
+                    </div>
+                    
+                    {{-- Jurusan Dropdown --}}
+                    <div class="form-group">
+                        <label for="jurusan_id" class="form-label">Jurusan</label>
+                        <select id="jurusan_id" x-model="filters.jurusan_id" @change="onJurusanChange()" class="form-input form-select w-full">
+                            <option value="">Semua Jurusan</option>
+                            @foreach($allJurusan ?? [] as $j)
+                                <option value="{{ $j->id }}">{{ $j->nama_jurusan }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    {{-- Kelas Dropdown (Dynamic) --}}
+                    <div class="form-group">
+                        <label for="kelas_id" class="form-label">Kelas</label>
+                        <select id="kelas_id" x-model="filters.kelas_id" class="form-input form-select w-full" :disabled="loadingKelas">
+                            <option value="">Semua Kelas</option>
+                            <template x-for="kelas in kelasList" :key="kelas.id">
+                                <option :value="kelas.id" x-text="kelas.nama_kelas"></option>
+                            </template>
+                        </select>
+                        <p class="text-xs text-blue-500 mt-1" x-show="loadingKelas">Memuat kelas...</p>
+                    </div>
+                    
+                    {{-- Reset Button --}}
+                    <div class="md:col-span-4 flex justify-end">
+                        <button type="button" @click="resetFilters()" class="btn btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+                            </svg>
+                            <span>Reset Filter</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
-    {{-- Pagination --}}
-    @if($riwayat->hasPages())
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p class="text-sm text-gray-500">
-                Menampilkan {{ $riwayat->firstItem() }} - {{ $riwayat->lastItem() }} dari {{ $riwayat->total() }}
-            </p>
-            {{ $riwayat->links() }}
-        </div>
-    @endif
+    {{-- Table Container --}}
+    <div id="riwayat-table-container" class="transition-opacity duration-200" :class="{ 'opacity-50': isLoading }">
+        @include('riwayat._table')
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('riwayatPage', () => ({
+            isLoading: false,
+            loadingKelas: false,
+            filters: {
+                search: '{{ request('search') }}',
+                jurusan_id: '{{ request('jurusan_id') }}',
+                kelas_id: '{{ request('kelas_id') }}',
+                start_date: '{{ request('start_date') }}',
+                end_date: '{{ request('end_date') }}'
+            },
+            kelasList: @json($allKelas ?? []),
+            allKelasOriginal: @json($allKelas ?? []),
+            
+            // Selection State
+            selectionMode: false,
+            selected: [],
+            selectAll: false,
+
+            toggleSelectionMode() {
+                this.selectionMode = !this.selectionMode;
+                if (!this.selectionMode) {
+                    this.selected = [];
+                    this.selectAll = false;
+                }
+            },
+            
+            // Toggle Select All logic will be handled within the table component or updated here
+            // We'll trust the child component to push/splice 'selected' array.
+
+            init() {
+                this.$watch('filters.search', () => this.fetchData());
+                this.$watch('filters.kelas_id', () => this.fetchData());
+
+                // Handle browser back/forward
+                window.addEventListener('popstate', (event) => {
+                    this.fetchData(window.location.href, false);
+                });
+
+                // Handle pagination clicks
+                const container = document.getElementById('riwayat-table-container');
+                if (container) {
+                    container.addEventListener('click', (e) => {
+                        const link = e.target.closest('.pagination a');
+                        if (link) {
+                            e.preventDefault();
+                            this.fetchData(link.href);
+                        }
+                    });
+                }
+
+                // Load filtered kelas if jurusan already selected
+                if (this.filters.jurusan_id) {
+                    this.loadKelasByJurusan(this.filters.jurusan_id);
+                }
+            },
+
+            onJurusanChange() {
+                this.filters.kelas_id = ''; // Reset kelas selection
+                if (this.filters.jurusan_id) {
+                    this.loadKelasByJurusan(this.filters.jurusan_id);
+                } else {
+                    this.kelasList = this.allKelasOriginal;
+                }
+                this.fetchData();
+            },
+
+            async loadKelasByJurusan(jurusanId) {
+                this.loadingKelas = true;
+                try {
+                    const response = await fetch(`/api/kelas-by-jurusan?jurusan_id=${jurusanId}`);
+                    if (response.ok) {
+                        this.kelasList = await response.json();
+                    }
+                } catch (error) {
+                    console.error('Error loading kelas:', error);
+                    this.kelasList = this.allKelasOriginal;
+                } finally {
+                    this.loadingKelas = false;
+                }
+            },
+
+            async fetchData(url = null, updatePushState = true) {
+                this.isLoading = true;
+                let fetchUrl;
+                
+                if (!url) {
+                    const params = new URLSearchParams();
+                    if (this.filters.search) params.append('search', this.filters.search);
+                    if (this.filters.jurusan_id) params.append('jurusan_id', this.filters.jurusan_id);
+                    if (this.filters.kelas_id) params.append('kelas_id', this.filters.kelas_id);
+                    if (this.filters.start_date) params.append('start_date', this.filters.start_date);
+                    if (this.filters.end_date) params.append('end_date', this.filters.end_date);
+                    
+                    url = `{{ route('riwayat.index') }}?${params.toString()}`;
+                    
+                    if (updatePushState) {
+                        window.history.pushState({}, '', url);
+                    }
+                    
+                    params.append('render_partial', '1');
+                    fetchUrl = `{{ route('riwayat.index') }}?${params.toString()}`;
+                } else {
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.append('render_partial', '1');
+                    fetchUrl = urlObj.toString();
+                    
+                    if (updatePushState) {
+                        window.history.pushState({}, '', url);
+                    }
+                }
+
+                try {
+                    const response = await fetch(fetchUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const html = await response.text();
+                        document.getElementById('riwayat-table-container').innerHTML = html;
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            resetFilters() {
+                this.filters.search = '';
+                this.filters.jurusan_id = '';
+                this.filters.kelas_id = '';
+                this.filters.start_date = '';
+                this.filters.end_date = '';
+                this.kelasList = this.allKelasOriginal;
+            }
+        }));
+    });
+</script>
+@endpush

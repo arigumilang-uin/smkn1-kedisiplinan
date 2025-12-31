@@ -19,7 +19,8 @@ class JurusanRepository
      */
     public function getAllWithCounts(): Collection
     {
-        return Jurusan::withCount(['kelas', 'siswa'])
+        return Jurusan::withCount(['kelas', 'siswa', 'konsentrasi'])
+            ->with('kaprodi')
             ->orderBy('nama_jurusan')
             ->get();
     }
@@ -29,8 +30,14 @@ class JurusanRepository
      */
     public function getWithRelationships(int $id): ?Jurusan
     {
-        return Jurusan::with(['kaprodi', 'kelas.siswa'])
-            ->find($id);
+        return Jurusan::with([
+            'kaprodi', 
+            'konsentrasi.kelas', 
+            'kelas.konsentrasi',
+            'kelas.waliKelas', 
+            'kelas.siswa',
+            'siswa'
+        ])->find($id);
     }
     
     /**

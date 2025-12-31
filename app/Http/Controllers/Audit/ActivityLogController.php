@@ -55,9 +55,15 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->sampai_tanggal);
         }
 
-        // Search in description
+        // Search in description or user
         if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('description', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('causer', function($q2) use ($request) {
+                      $q2->where('nama', 'like', '%' . $request->search . '%')
+                         ->orWhere('username', 'like', '%' . $request->search . '%');
+                  });
+            });
         }
 
         $logs = $query->with('causer')
@@ -162,6 +168,15 @@ class ActivityLogController extends Controller
         // Filter by role
         if ($request->filled('role_id')) {
             $query->where('role_id', $request->role_id);
+        }
+
+        // Filter by date range (Last Login)
+        if ($request->filled('dari_tanggal')) {
+            $query->whereDate('last_login_at', '>=', $request->dari_tanggal);
+        }
+
+        if ($request->filled('sampai_tanggal')) {
+            $query->whereDate('last_login_at', '<=', $request->sampai_tanggal);
         }
 
         // Search by name/username/email

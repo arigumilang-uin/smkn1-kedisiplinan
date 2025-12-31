@@ -5,12 +5,10 @@
 @section('page-header', true)
 
 @section('actions')
-    @can('create', App\Models\Kelas::class)
     <a href="{{ route('kelas.create') }}" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         <span>Tambah Kelas</span>
     </a>
-    @endcan
 @endsection
 
 @section('content')
@@ -50,9 +48,10 @@
                 <tr>
                     <th class="w-12">No</th>
                     <th>Nama Kelas</th>
-                    <th class="">Jurusan</th>
-                    <th class="">Wali Kelas</th>
-                    <th class="text-center">Jumlah Siswa</th>
+                    <th>Jurusan</th>
+                    <th>Konsentrasi</th>
+                    <th>Wali Kelas</th>
+                    <th class="text-center">Siswa</th>
                     <th class="w-32 text-center">Aksi</th>
                 </tr>
             </thead>
@@ -60,29 +59,23 @@
                 @forelse($kelasList ?? [] as $index => $k)
                     <tr>
                         <td class="text-gray-500">{{ $loop->iteration }}</td>
+                        <td class="font-medium text-gray-800">{{ $k->nama_kelas }}</td>
                         <td>
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shadow-sm border border-orange-100">
-                                    {{ substr($k->nama_kelas, 0, 1) }}
-                                </div>
-                                <div>
-                                    <div class="font-medium text-gray-800">{{ $k->nama_kelas }}</div>
-                                    <div class="text-xs text-gray-400 font-mono">ID: {{ $k->id }}</div>
-                                </div>
-                            </div>
+                            <span class="font-mono text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+                                {{ $k->jurusan->kode_jurusan ?? strtoupper(substr($k->jurusan->nama_jurusan ?? '-', 0, 3)) }}
+                            </span>
                         </td>
-                        <td class=""><span class="badge badge-primary">{{ $k->jurusan->nama_jurusan ?? '-' }}</span></td>
-                        <td class="">
-                            @if($k->waliKelas)
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-100">
-                                        {{ strtoupper(substr($k->waliKelas->username, 0, 1)) }}
-                                    </div>
-                                    <span class="text-gray-600">{{ $k->waliKelas->username }}</span>
-                                </div>
+                        <td>
+                            @if($k->konsentrasi)
+                                <span class="font-mono text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
+                                    {{ $k->konsentrasi->kode_konsentrasi ?? strtoupper(substr($k->konsentrasi->nama_konsentrasi, 0, 3)) }}
+                                </span>
                             @else
-                                <span class="text-gray-300 italic text-sm">Belum ditentukan</span>
+                                <span class="text-gray-300 text-sm">-</span>
                             @endif
+                        </td>
+                        <td class="text-gray-600">
+                            {{ $k->waliKelas->username ?? '-' }}
                         </td>
                         <td class="text-center">
                             <span class="badge badge-info">{{ $k->siswa_count ?? $k->siswa()->count() }}</span>
@@ -144,7 +137,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                     <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/>

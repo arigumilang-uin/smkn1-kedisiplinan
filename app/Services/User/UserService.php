@@ -500,4 +500,54 @@ class UserService
     {
         return $this->userRepo->emailExists($email, $excludeUserId);
     }
+
+    /**
+     * Bulk activate users.
+     *
+     * @param array $ids
+     * @return void
+     */
+    public function bulkActivate(array $ids): void
+    {
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                // Gunakan toggleActivation jika ingin trigger events, atau create specific repo method
+                // Untuk efisiensi bisa whereIn update via model, tapi clean arch via repo
+                // Asumsi repo punya method update atau toggle
+                
+                // Disini kita loop update via repo update untuk aman
+                $this->userRepo->update($id, ['is_active' => true]);
+            }
+        });
+    }
+
+    /**
+     * Bulk deactivate users.
+     *
+     * @param array $ids
+     * @return void
+     */
+    public function bulkDeactivate(array $ids): void
+    {
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                $this->userRepo->update($id, ['is_active' => false]);
+            }
+        });
+    }
+
+    /**
+     * Bulk delete users.
+     *
+     * @param array $ids
+     * @return void
+     */
+    public function bulkDelete(array $ids): void
+    {
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                $this->deleteUser($id);
+            }
+        });
+    }
 }

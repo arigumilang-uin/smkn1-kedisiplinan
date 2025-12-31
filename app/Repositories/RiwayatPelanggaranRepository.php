@@ -208,11 +208,24 @@ class RiwayatPelanggaranRepository extends BaseRepository implements RiwayatPela
             $query->whereDate('tanggal_kejadian', '<=', $filters->tanggal_sampai);
         }
 
-        // Apply search filter (nama siswa or NISN)
+        // Apply search filter (nama siswa, NISN, jenis pelanggaran, atau pencatat)
         if ($filters->search) {
-            $query->whereHas('siswa', function ($q) use ($filters) {
-                $q->where('nama_siswa', 'like', "%{$filters->search}%")
-                    ->orWhere('nisn', 'like', "%{$filters->search}%");
+            $searchTerm = $filters->search;
+            $query->where(function ($q) use ($searchTerm) {
+                // Search by student name or NISN
+                $q->whereHas('siswa', function ($sub) use ($searchTerm) {
+                    $sub->where('nama_siswa', 'like', "%{$searchTerm}%")
+                        ->orWhere('nisn', 'like', "%{$searchTerm}%");
+                })
+                // Search by violation type name
+                ->orWhereHas('jenisPelanggaran', function ($sub) use ($searchTerm) {
+                    $sub->where('nama_pelanggaran', 'like', "%{$searchTerm}%");
+                })
+                // Search by recorder username or nama
+                ->orWhereHas('guruPencatat', function ($sub) use ($searchTerm) {
+                    $sub->where('username', 'like', "%{$searchTerm}%")
+                        ->orWhere('nama', 'like', "%{$searchTerm}%");
+                });
             });
         }
 

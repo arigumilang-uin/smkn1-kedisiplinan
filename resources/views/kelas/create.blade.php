@@ -23,16 +23,27 @@
                   x-data="{ 
                       tingkat: '{{ old('tingkat', '') }}',
                       jurusanId: '{{ old('jurusan_id', '') }}',
+                      konsentrasiId: '{{ old('konsentrasi_id', '') }}',
                       rombel: '{{ old('rombel', '1') }}',
                       createWali: false,
                       jurusanMap: {{ json_encode($jurusanMap) }},
+                      konsentrasiList: [],
+                      konsentrasiMap: {},
+                      loadingKonsentrasi: false,
                       
                       getKodeJurusan() {
                           return this.jurusanMap[this.jurusanId] || '';
                       },
+                      getKodeKonsentrasi() {
+                          return this.konsentrasiMap[this.konsentrasiId] || '';
+                      },
                       generateNamaKelas() {
                           if (!this.tingkat || !this.jurusanId) return '';
-                          const kode = this.getKodeJurusan();
+                          // Prioritize konsentrasi code if selected, otherwise use jurusan code
+                          let kode = this.getKodeJurusan();
+                          if (this.konsentrasiId && this.getKodeKonsentrasi()) {
+                              kode = this.getKodeKonsentrasi();
+                          }
                           const rombelNum = this.rombel || '1';
                           return this.tingkat + ' ' + kode + ' ' + rombelNum;
                       },
@@ -42,8 +53,31 @@
                           const tingkat = this.tingkat.toLowerCase();
                           const rombel = this.rombel || '1';
                           return kode + '_' + tingkat + '_' + rombel + '_wali';
+                      },
+                      async loadKonsentrasi() {
+                          this.konsentrasiId = '';
+                          this.konsentrasiList = [];
+                          this.konsentrasiMap = {};
+                          
+                          if (!this.jurusanId) return;
+                          
+                          this.loadingKonsentrasi = true;
+                          try {
+                              const response = await fetch('{{ route('api.konsentrasi.by-jurusan') }}?jurusan_id=' + this.jurusanId);
+                              const data = await response.json();
+                              this.konsentrasiList = data;
+                              // Build map for quick code lookup
+                              data.forEach(k => {
+                                  this.konsentrasiMap[k.id] = k.kode_konsentrasi || k.nama_konsentrasi.substring(0, 3).toUpperCase();
+                              });
+                          } catch (error) {
+                              console.error('Failed to load konsentrasi:', error);
+                          } finally {
+                              this.loadingKonsentrasi = false;
+                          }
                       }
                   }"
+                  x-init="if(jurusanId) loadKonsentrasi()"
             >
                 @csrf
                 
@@ -81,8 +115,9 @@
                 
                 {{-- Jurusan Selection --}}
                 <div class="form-group">
-                    <label for="jurusan_id" class="form-label form-label-required">Jurusan / Kompetensi</label>
+                    <label for="jurusan_id" class="form-label form-label-required">Jurusan / Program Keahlian</label>
                     <select id="jurusan_id" name="jurusan_id" x-model="jurusanId"
+                            @change="loadKonsentrasi()"
                             class="form-input form-select @error('jurusan_id') error @enderror" required>
                         <option value="">-- Pilih Jurusan --</option>
                         @foreach($jurusanList ?? [] as $j)
@@ -92,6 +127,25 @@
                         @endforeach
                     </select>
                     @error('jurusan_id')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                {{-- Konsentrasi Selection --}}
+                <div class="form-group" x-show="jurusanId" x-transition>
+                    <label for="konsentrasi_id" class="form-label">Konsentrasi Keahlian</label>
+                    <select id="konsentrasi_id" name="konsentrasi_id" x-model="konsentrasiId"
+                            class="form-input form-select @error('konsentrasi_id') error @enderror"
+                            :disabled="!jurusanId || konsentrasiList.length === 0">
+                        <option value="">-- Pilih Konsentrasi (Opsional) --</option>
+                        <template x-for="k in konsentrasiList" :key="k.id">
+                            <option :value="k.id" x-text="k.nama_konsentrasi + (k.kode_konsentrasi ? ' (' + k.kode_konsentrasi + ')' : '')"></option>
+                        </template>
+                    </select>
+                    <p class="form-help" x-show="!jurusanId">Pilih jurusan terlebih dahulu untuk melihat konsentrasi.</p>
+                    <p class="form-help" x-show="jurusanId && konsentrasiList.length === 0 && !loadingKonsentrasi">Tidak ada konsentrasi untuk jurusan ini. <a href="{{ route('konsentrasi.create') }}" class="text-blue-600 hover:underline">Tambah konsentrasi</a></p>
+                    <p class="form-help text-blue-600" x-show="loadingKonsentrasi">Memuat konsentrasi...</p>
+                    @error('konsentrasi_id')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
                 </div>

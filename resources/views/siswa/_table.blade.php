@@ -9,12 +9,29 @@
                     <th>Nama Siswa</th>
                     <th>Kelas</th>
                     <th>Kontak Wali</th>
-                    <th class="w-32 text-center">Aksi</th>
+                    <th class="w-20 text-center cursor-pointer select-none hover:bg-gray-100 transition-colors group" @click="toggleSelectionMode()" title="Klik untuk memilih data">
+                        <div class="flex items-center justify-center">
+                            <template x-if="!selectionMode">
+                                <div class="flex items-center justify-center gap-2 text-gray-400 group-hover:text-indigo-600 transition-colors p-1">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Pilih</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="9" y1="12" x2="15" y2="12"></line> 
+                                    </svg>
+                                </div>
+                            </template>
+                            <template x-if="selectionMode">
+                                <div class="flex items-center justify-center">
+                                    <input type="checkbox" x-model="selectAll" @change="toggleSelectAll()" @click.stop class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" title="Pilih Semua">
+                                </div>
+                            </template>
+                        </div>
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($siswa as $index => $s)
-                    <tr>
+                    <tr :class="{ 'bg-indigo-50/40': selected.includes('{{ $s->id }}') }">
                         <td class="text-gray-500">{{ $siswa->firstItem() + $index }}</td>
                         <td>
                             <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded-md">
@@ -43,58 +60,114 @@
                                 <span class="text-gray-400 text-sm">-</span>
                             @endif
                         </td>
-                        <td>
-                            {{-- Desktop: Icon buttons --}}
-                            <div class="action-buttons-desktop">
-                                <a href="{{ route('siswa.show', $s->id) }}" class="btn btn-icon btn-outline" title="Detail">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </a>
-                                @can('update', $s)
-                                    <a href="{{ route('siswa.edit', $s->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                                        </svg>
-                                    </a>
-                                @endcan
-                                @can('delete', $s)
-                                    <button type="button" class="btn btn-icon btn-outline text-red-500 hover:bg-red-50 hover:border-red-200" title="Hapus"
-                                        @click="$dispatch('open-delete-modal', { id: {{ $s->id }}, nama: '{{ $s->nama_siswa }}', nisn: '{{ $s->nisn }}' })">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                        </svg>
-                                    </button>
-                                @endcan
+                        <td class="text-center relative">
+                            {{-- Selection Mode: Checkbox --}}
+                            <div x-show="selectionMode" style="display: none;">
+                                <input type="checkbox" value="{{ $s->id }}" x-model="selected" class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
                             </div>
-                            
-                            {{-- Mobile: Dropdown --}}
-                            <div class="action-dropdown-mobile" x-data="{ open: false }">
-                                <button @click="open = !open" @click.away="open = false" class="action-dropdown-trigger">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                                    </svg>
+
+                            {{-- Normal Mode: Kebab Dropdown --}}
+                            {{-- Normal Mode: Kebab Dropdown --}}
+                            <div x-show="!selectionMode" 
+                                 x-data="{
+                                     open: false,
+                                     timer: null,
+                                     isLongPress: false,
+                                     
+                                     startPress() {
+                                         this.isLongPress = false;
+                                         this.timer = setTimeout(() => {
+                                             this.isLongPress = true;
+                                             // Trigger Selection Mode
+                                             this.toggleSelectionMode();
+                                             // Add this row to selected
+                                             if (!this.selected.includes('{{ $s->id }}')) {
+                                                 this.selected.push('{{ $s->id }}');
+                                             }
+                                             // Haptic feedback
+                                             if (navigator.vibrate) navigator.vibrate(50);
+                                         }, 500);
+                                     },
+                                     
+                                     endPress() {
+                                         clearTimeout(this.timer);
+                                     },
+                                     
+                                     toggle() {
+                                         if (this.isLongPress) return;
+                                         if (this.open) { this.open = false; return; }
+                                         this.open = true;
+                                         this.$nextTick(() => {
+                                             const trigger = this.$refs.trigger.getBoundingClientRect();
+                                             const menu = this.$refs.menu;
+                                             
+                                             // Calculate Right Alignment
+                                             let left = trigger.right - menu.offsetWidth;
+                                             let top = trigger.bottom + 2; 
+                                             
+                                             // Check bottom overflow
+                                             if (window.innerHeight - trigger.bottom < menu.offsetHeight + 20) {
+                                                 top = trigger.top - menu.offsetHeight - 2;
+                                             }
+                                             
+                                             menu.style.top = `${top}px`;
+                                             menu.style.left = `${left}px`;
+                                         });
+                                     }
+                                 }" 
+                                 @scroll.window="open = false"
+                                 @resize.window="open = false"
+                                 class="relative inline-block text-left"
+                            >
+                                <button 
+                                    x-ref="trigger" 
+                                    @click="toggle()" 
+                                    @mousedown="startPress()"
+                                    @touchstart="startPress()"
+                                    @mouseup="endPress()"
+                                    @mouseleave="endPress()"
+                                    @touchend="endPress()"
+                                    type="button" 
+                                    class="p-1.5 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                                 </button>
-                                <div x-show="open" x-transition class="action-dropdown-menu">
-                                    <a href="{{ route('siswa.show', $s->id) }}" class="action-dropdown-item action-dropdown-item--view">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        Detail
-                                    </a>
-                                    @can('update', $s)
-                                    <a href="{{ route('siswa.edit', $s->id) }}" class="action-dropdown-item action-dropdown-item--edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                        Edit
-                                    </a>
-                                    @endcan
-                                    @can('delete', $s)
-                                    <div class="action-dropdown-divider"></div>
-                                    <button type="button" class="action-dropdown-item action-dropdown-item--delete"
-                                            @click="$dispatch('open-delete-modal', { id: {{ $s->id }}, nama: '{{ $s->nama_siswa }}', nisn: '{{ $s->nisn }}' })">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                        Hapus
-                                    </button>
-                                    @endcan
-                                </div>
+                                
+                                <template x-teleport="body">
+                                    <div x-show="open" 
+                                         x-ref="menu"
+                                         @click.outside="open = false"
+                                         style="position: fixed; z-index: 9999; display: none;"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="transform opacity-0 scale-95"
+                                         x-transition:enter-end="transform opacity-100 scale-100"
+                                         x-transition:leave="transition ease-in duration-75"
+                                         x-transition:leave-start="transform opacity-100 scale-100"
+                                         x-transition:leave-end="transform opacity-0 scale-95"
+                                         class="w-36 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-100"
+                                    >
+                                        <div class="py-1">
+                                            <a href="{{ route('siswa.show', $s->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                Detail
+                                            </a>
+                                            @can('update', $s)
+                                            <a href="{{ route('siswa.edit', $s->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                                Edit
+                                            </a>
+                                            @endcan
+                                            @can('delete', $s)
+                                            <div class="border-t border-gray-100 my-1"></div>
+                                            <button type="button" class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                                    @click="open = false; $dispatch('open-delete-modal', { id: {{ $s->id }}, nama: '{{ $s->nama_siswa }}', nisn: '{{ $s->nisn }}' })">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                Hapus
+                                            </button>
+                                            @endcan
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </td>
                     </tr>

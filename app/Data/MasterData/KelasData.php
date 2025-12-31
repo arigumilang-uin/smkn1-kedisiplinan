@@ -16,6 +16,7 @@ class KelasData extends Data
         public ?int $id,
         public string $tingkat,
         public int $jurusan_id,
+        public ?int $konsentrasi_id,
         public ?int $wali_kelas_user_id,
         public ?string $nama_kelas, // Can be auto-generated or manual
         

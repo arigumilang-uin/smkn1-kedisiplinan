@@ -623,4 +623,36 @@ class SiswaController extends Controller
                 ->with('error', 'Gagal bulk permanent delete: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Bulk delete selected siswa (Checkbox selection).
+     */
+    public function bulkDeleteSelection(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|string',
+            'alasan_keluar' => 'required|in:Alumni,Dikeluarkan,Pindah Sekolah,Lainnya',
+            'keterangan_keluar' => 'nullable|string|max:500',
+        ]);
+
+        $ids = explode(',', $validated['ids']);
+        $count = 0;
+
+        foreach ($ids as $id) {
+            $siswa = \App\Models\Siswa::find($id);
+            if ($siswa) {
+                $siswa->alasan_keluar = $validated['alasan_keluar'];
+                $siswa->keterangan_keluar = $validated['keterangan_keluar'];
+                $siswa->save();
+                
+                // Soft delete via service
+                $this->siswaService->deleteSiswa($id);
+                $count++;
+            }
+        }
+
+        return redirect()
+            ->route('siswa.index')
+            ->with('success', "Berhasil menghapus {$count} siswa terpilih dengan alasan: {$validated['alasan_keluar']}.");
+    }
 }

@@ -91,6 +91,11 @@ class RiwayatPelanggaranController extends Controller
         // Panggil service untuk get filtered riwayat
         $riwayat = $this->pelanggaranService->getFilteredRiwayat($filters);
 
+        // Return partial view if AJAX request
+        if ($request->ajax() || $request->has('render_partial')) {
+            return view('riwayat._table', compact('riwayat'));
+        }
+
         // Panggil service untuk master data dropdown filter
         $allJurusan = $this->pelanggaranService->getAllJurusanForFilter();
         $allKelas = $this->pelanggaranService->getAllKelasForFilter();

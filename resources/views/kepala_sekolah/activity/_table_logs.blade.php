@@ -11,7 +11,7 @@
                     <tr>
                         <th class="w-44">Waktu & Tanggal</th>
                         <th class="w-32 text-center">Jenis</th>
-                        <th class="w-64">Pelaku (User)</th>
+                        <th class="w-64">User</th>
                         <th>Keterangan Aktivitas</th>
                         <th class="w-24 text-center">Aksi</th>
                     </tr>
@@ -27,8 +27,8 @@
                                 <span class="badge badge-info">{{ $log->log_name }}</span>
                             </td>
                             <td>
-                                <div class="font-medium text-gray-700">{{ $log->causer->nama ?? 'System' }}</div>
-                                <div class="text-[10px] text-gray-400 uppercase">{{ $log->causer->role->nama_role ?? '-' }}</div>
+                                <div class="font-bold text-gray-700">{{ $log->causer->username ?? 'System' }}</div>
+                                <div class="text-xs text-gray-500">{{ $log->causer->nama ?? '-' }}</div>
                             </td>
                             <td class="max-w-md">
                                 <p class="text-xs text-gray-600 italic truncate">"{{ $log->description }}"</p>

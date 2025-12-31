@@ -47,6 +47,18 @@
                         @endforeach
                     </select>
                 </div>
+
+                {{-- Dari --}}
+                <div class="form-group md:col-span-2">
+                    <label class="form-label">Dari Tanggal</label>
+                    <input type="date" x-model="filters.dari_tanggal" class="form-input w-full">
+                </div>
+
+                {{-- Sampai --}}
+                <div class="form-group md:col-span-2">
+                    <label class="form-label">Sampai Tanggal</label>
+                    <input type="date" x-model="filters.sampai_tanggal" class="form-input w-full">
+                </div>
                 
                 {{-- Actions --}}
                 <div class="md:col-span-4 flex justify-end">
@@ -75,12 +87,16 @@
             filters: {
                 search: '{{ request('search') }}',
                 role_id: '{{ request('role_id') }}',
+                dari_tanggal: '{{ request('dari_tanggal') }}',
+                sampai_tanggal: '{{ request('sampai_tanggal') }}',
             },
 
             init() {
                 // Watchers
                 this.$watch('filters.search', () => this.fetchData());
                 this.$watch('filters.role_id', () => this.fetchData());
+                this.$watch('filters.dari_tanggal', () => this.fetchData());
+                this.$watch('filters.sampai_tanggal', () => this.fetchData());
 
                 window.addEventListener('popstate', (event) => {
                     this.fetchData(window.location.href, false);
@@ -107,6 +123,8 @@
                     
                     if (this.filters.search) params.append('search', this.filters.search);
                     if (this.filters.role_id) params.append('role_id', this.filters.role_id);
+                    if (this.filters.dari_tanggal) params.append('dari_tanggal', this.filters.dari_tanggal);
+                    if (this.filters.sampai_tanggal) params.append('sampai_tanggal', this.filters.sampai_tanggal);
                     
                     url = `{{ route('audit.activity.index') }}?${params.toString()}`;
                     
@@ -151,6 +169,8 @@
             resetFilters() {
                 this.filters.search = '';
                 this.filters.role_id = '';
+                this.filters.dari_tanggal = '';
+                this.filters.sampai_tanggal = '';
             }
         }));
     });

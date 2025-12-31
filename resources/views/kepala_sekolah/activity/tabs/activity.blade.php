@@ -20,7 +20,7 @@
         <div class="card-body" x-show="expanded" x-collapse>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="form-group md:col-span-2">
-                    <label class="form-label">Cari Deskripsi</label>
+                    <label class="form-label">Cari Deskripsi / User</label>
                     <div class="relative">
                         <input 
                             type="text" 

@@ -31,7 +31,7 @@
                 @endif
             </button>
             
-            <div class="dropdown-menu" style="width: 320px;" @click.away="close()" x-show="open" x-transition>
+            <div class="dropdown-menu" style="width: 320px;" @click.away="close()" x-show="open" x-transition x-cloak>
                 <div class="px-4 py-3 border-b border-gray-100">
                     <h4 class="font-semibold text-gray-800">Notifikasi</h4>
                     <p class="text-xs text-gray-500">{{ $unreadCount }} belum dibaca</p>
@@ -83,7 +83,7 @@
             </svg>
         </button>
         
-        <div class="dropdown-menu" @click.away="close()" x-show="open" x-transition>
+        <div class="dropdown-menu" @click.away="close()" x-show="open" x-transition x-cloak>
             <div class="px-4 py-3 border-b border-gray-100">
                 <p class="font-medium text-gray-800">{{ Auth::user()->username ?? 'User' }}</p>
                 <p class="text-xs text-gray-500">{{ Auth::user()->effectiveRoleName() ?? Auth::user()->role?->nama_role ?? 'User' }}</p>

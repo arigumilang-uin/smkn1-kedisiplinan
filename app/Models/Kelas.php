@@ -29,6 +29,7 @@ class Kelas extends Model
      */
     protected $fillable = [
         'jurusan_id',
+        'konsentrasi_id',
         'wali_kelas_user_id',
         'nama_kelas',
         'tingkat',
@@ -45,6 +46,16 @@ class Kelas extends Model
     public function jurusan(): BelongsTo
     {
         return $this->belongsTo(Jurusan::class, 'jurusan_id');
+    }
+
+    /**
+     * Relasi Opsional: SATU Kelas DIMILIKI OLEH SATU Konsentrasi.
+     * (Foreign Key: konsentrasi_id)
+     * Nullable: Kelas X umumnya belum masuk konsentrasi.
+     */
+    public function konsentrasi(): BelongsTo
+    {
+        return $this->belongsTo(Konsentrasi::class, 'konsentrasi_id');
     }
 
     /**

@@ -21,7 +21,8 @@ class KelasRepository
      */
     public function getAllWithRelationships(): Collection
     {
-        return Kelas::with('jurusan', 'waliKelas')
+        return Kelas::with('jurusan', 'konsentrasi', 'waliKelas')
+            ->withCount('siswa')
             ->orderBy('nama_kelas')
             ->get();
     }
@@ -78,16 +79,24 @@ class KelasRepository
     }
     
     /**
-     * Get existing kelas names for a jurusan with base name pattern
+     * Get existing kelas names for a jurusan/konsentrasi with base name pattern
      * 
-     * EXACT LOGIC from KelasController (lines 74-77)
+     * @param int $jurusanId
+     * @param string $basePattern
+     * @param int|null $konsentrasiId
+     * @return array
      */
-    public function getExistingKelasNames(int $jurusanId, string $basePattern): array
+    public function getExistingKelasNames(int $jurusanId, string $basePattern, ?int $konsentrasiId = null): array
     {
-        return Kelas::where('jurusan_id', $jurusanId)
-            ->where('nama_kelas', 'like', $basePattern . '%')
-            ->pluck('nama_kelas')
-            ->toArray();
+        $query = Kelas::where('jurusan_id', $jurusanId)
+            ->where('nama_kelas', 'like', $basePattern . '%');
+        
+        // If konsentrasi is specified, filter by it for accurate sequential numbering
+        if ($konsentrasiId !== null) {
+            $query->where('konsentrasi_id', $konsentrasiId);
+        }
+        
+        return $query->pluck('nama_kelas')->toArray();
     }
     
     /**

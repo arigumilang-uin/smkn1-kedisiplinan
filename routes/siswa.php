@@ -49,6 +49,10 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
             ->name('bulk-delete')
             ->middleware('can:bulkDelete,App\Models\Siswa');
 
+        Route::post('/bulk-delete-selection', [SiswaController::class, 'bulkDeleteSelection'])
+            ->name('bulk-delete-selection')
+            ->middleware('can:bulkDelete,App\Models\Siswa');
+
         // Restore Operations
         Route::get('/deleted', [SiswaController::class, 'showDeleted'])
             ->name('deleted')

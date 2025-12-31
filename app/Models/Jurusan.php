@@ -57,6 +57,15 @@ class Jurusan extends Model
     }
 
     /**
+     * Relasi: SATU Jurusan MEMILIKI BANYAK Konsentrasi.
+     * (Foreign Key di tabel 'konsentrasi': jurusan_id)
+     */
+    public function konsentrasi(): HasMany
+    {
+        return $this->hasMany(Konsentrasi::class, 'jurusan_id');
+    }
+
+    /**
      * Relasi Lanjutan (Advanced): Mengambil semua siswa di jurusan ini
      * melalui tabel perantara 'kelas'.
      * * SATU Jurusan MEMILIKI BANYAK Siswa MELALUI Kelas.

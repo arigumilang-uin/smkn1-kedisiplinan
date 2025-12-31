@@ -46,6 +46,21 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
         Route::get('/siswa/{siswa}/statistics', [RiwayatPelanggaranController::class, 'siswaStatistics'])
             ->name('siswa.statistics');
     });
+    
+    // API: Get kelas by jurusan
+    Route::get('/api/kelas-by-jurusan', function (\Illuminate\Http\Request $request) {
+        $jurusanId = $request->input('jurusan_id');
+        
+        if (!$jurusanId) {
+            return response()->json(\App\Models\Kelas::orderBy('nama_kelas')->get(['id', 'nama_kelas']));
+        }
+        
+        return response()->json(
+            \App\Models\Kelas::where('jurusan_id', $jurusanId)
+                ->orderBy('nama_kelas')
+                ->get(['id', 'nama_kelas'])
+        );
+    });
 
     // ===================================================================
     // JENIS PELANGGARAN ROUTES (Master Data)

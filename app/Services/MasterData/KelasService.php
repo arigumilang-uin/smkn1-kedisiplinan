@@ -67,35 +67,49 @@ class KelasService
     /**
      * Create new kelas with auto-generated nama_kelas and optional wali user creation
      * 
-     * EXACT LOGIC from KelasController::store() (lines 46-129)
-     * 
      * @param KelasData $data
      * @return array ['kelas' => Kelas, 'nama_kelas' => string]
      */
     public function createKelas(KelasData $data): array
     {
-        // STEP 1: Get jurusan and determine kode (lines 55-69)
+        // STEP 1: Get jurusan
         $jurusan = $this->kelasRepository->getJurusan($data->jurusan_id);
+        
+        // STEP 2: Determine kode - prioritize konsentrasi if selected
         $kode = $this->determineJurusanKode($jurusan);
         
-        // STEP 2: Generate base nama_kelas (line 71)
+        if ($data->konsentrasi_id) {
+            // Use konsentrasi code if available
+            $konsentrasi = \App\Models\Konsentrasi::find($data->konsentrasi_id);
+            if ($konsentrasi) {
+                $kode = $this->determineKonsentrasiKode($konsentrasi);
+            }
+        }
+        
+        // STEP 3: Generate base nama_kelas
         $base = $data->tingkat . ' ' . $kode;
         
-        // STEP 3: Find next sequential number (lines 74-86)
-        $next = $this->findNextSequentialNumber($jurusan->id, $base);
+        // STEP 4: Find next sequential number
+        $next = $this->findNextSequentialNumber($jurusan->id, $base, $data->konsentrasi_id);
         
-        // STEP 4: Set auto-generated nama_kelas (line 87)
+        // STEP 5: Set auto-generated nama_kelas
         $namaKelas = $base . ' ' . $next;
         
-        // STEP 5: Create kelas (line 90)
+        // STEP 6: Disconnect wali kelas from other class if already assigned
+        if ($data->wali_kelas_user_id) {
+            $this->disconnectWaliFromOtherKelas($data->wali_kelas_user_id);
+        }
+        
+        // STEP 7: Create kelas
         $kelas = $this->kelasRepository->create([
             'tingkat' => $data->tingkat,
             'jurusan_id' => $data->jurusan_id,
+            'konsentrasi_id' => $data->konsentrasi_id,
             'wali_kelas_user_id' => $data->wali_kelas_user_id,
             'nama_kelas' => $namaKelas,
         ]);
         
-        // STEP 6: Auto-create Wali Kelas user if requested (lines 93-126)
+        // STEP 8: Auto-create Wali Kelas user if requested
         if ($data->create_wali) {
             $this->createWaliKelasUser($kelas, $jurusan, $kode, $next);
         }
@@ -137,15 +151,21 @@ class KelasService
                 $currentNumber = intval($m[1]);
             }
             
-            // Generate new nama_kelas with same number but new tingkat/kode
+        // Generate new nama_kelas with same number but new tingkat/kode
             $namaKelas = $data->tingkat . ' ' . $kode . ' ' . $currentNumber;
         }
         
-        // STEP 2: Update kelas (line 160)
+        // STEP 2: Disconnect wali kelas from other class if changing to a different wali
+        if ($data->wali_kelas_user_id && $data->wali_kelas_user_id !== $kelas->wali_kelas_user_id) {
+            $this->disconnectWaliFromOtherKelas($data->wali_kelas_user_id, $kelas->id);
+        }
+        
+        // STEP 3: Update kelas
         $this->kelasRepository->update($kelas, [
             'nama_kelas' => $namaKelas, // Use auto-generated if tingkat/jurusan changed
             'tingkat' => $data->tingkat,
             'jurusan_id' => $data->jurusan_id,
+            'konsentrasi_id' => $data->konsentrasi_id,
             'wali_kelas_user_id' => $data->wali_kelas_user_id,
         ]);
         
@@ -189,6 +209,29 @@ class KelasService
     // ========================================================================
     // PRIVATE HELPER METHODS (Business Logic Extracted from Controller)
     // ========================================================================
+    
+    /**
+     * Disconnect a wali kelas from any other class they're currently assigned to
+     * 
+     * This ensures a wali kelas can only be assigned to one class at a time.
+     * When reassigning, the old class will have wali_kelas_user_id set to null.
+     * 
+     * @param int $waliUserId The wali kelas user ID to disconnect
+     * @param int|null $excludeKelasId Exclude this kelas from disconnection (used in update)
+     * @return void
+     */
+    private function disconnectWaliFromOtherKelas(int $waliUserId, ?int $excludeKelasId = null): void
+    {
+        $query = Kelas::where('wali_kelas_user_id', $waliUserId);
+        
+        // If updating a specific kelas, exclude it from disconnection
+        if ($excludeKelasId !== null) {
+            $query->where('id', '!=', $excludeKelasId);
+        }
+        
+        // Disconnect wali from all other classes
+        $query->update(['wali_kelas_user_id' => null]);
+    }
     
     /**
      * Generate kode from nama (abbreviation logic)
@@ -249,18 +292,47 @@ class KelasService
     }
     
     /**
-     * Find next sequential number for kelas nama
+     * Determine konsentrasi kode (prefer kode_konsentrasi, fallback to abbreviation)
      * 
-     * EXACT LOGIC from KelasController::store() (lines 74-86)
+     * @param \App\Models\Konsentrasi $konsentrasi
+     * @return string
+     */
+    private function determineKonsentrasiKode(\App\Models\Konsentrasi $konsentrasi): string
+    {
+        $kode = null;
+        
+        // Check if kode_konsentrasi exists and has value
+        if ($konsentrasi->kode_konsentrasi) {
+            $kode = $konsentrasi->kode_konsentrasi;
+        } else {
+            // Fallback: build abbreviation from nama_konsentrasi (take first letters of words, up to 3 chars)
+            $words = preg_split('/\s+/', trim($konsentrasi->nama_konsentrasi));
+            $abbr = '';
+            
+            foreach ($words as $w) {
+                if ($w === '') continue;
+                $abbr .= mb_strtoupper(mb_substr($w, 0, 1));
+                if (mb_strlen($abbr) >= 3) break;
+            }
+            
+            $kode = $abbr ?: strtoupper(substr(preg_replace('/[^A-Z]/', '', $konsentrasi->nama_konsentrasi), 0, 3));
+        }
+        
+        return $kode;
+    }
+    
+    /**
+     * Find next sequential number for kelas nama
      * 
      * @param int $jurusanId
      * @param string $base
+     * @param int|null $konsentrasiId
      * @return int
      */
-    private function findNextSequentialNumber(int $jurusanId, string $base): int
+    private function findNextSequentialNumber(int $jurusanId, string $base, ?int $konsentrasiId = null): int
     {
         // Find existing kelas with same base and extract numeric suffixes
-        $existing = $this->kelasRepository->getExistingKelasNames($jurusanId, $base);
+        $existing = $this->kelasRepository->getExistingKelasNames($jurusanId, $base, $konsentrasiId);
         
         $max = 0;
         foreach ($existing as $name) {
