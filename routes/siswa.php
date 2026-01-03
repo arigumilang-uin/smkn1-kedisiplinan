@@ -31,6 +31,21 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
             ->name('bulk-store')
             ->middleware('can:create,App\Models\Siswa');
 
+        // ===================================================================
+        // KENAIKAN KELAS / PINDAH KELAS (Transfer)
+        // ===================================================================
+        Route::get('/transfer', [SiswaController::class, 'transferForm'])
+            ->name('transfer')
+            ->middleware('can:bulkTransfer,App\Models\Siswa');
+
+        Route::get('/transfer/siswa', [SiswaController::class, 'getTransferSiswa'])
+            ->name('transfer.siswa')
+            ->middleware('can:bulkTransfer,App\Models\Siswa');
+
+        Route::post('/bulk-transfer', [SiswaController::class, 'bulkTransfer'])
+            ->name('bulk-transfer')
+            ->middleware('can:bulkTransfer,App\Models\Siswa');
+
         // Export/Import
         Route::get('/export', [SiswaController::class, 'export'])
             ->name('export')

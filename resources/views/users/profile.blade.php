@@ -106,15 +106,11 @@
                                    class="flex items-center justify-between w-full px-4 py-3 bg-white border-2 border-dashed border-gray-200 rounded-xl text-gray-600 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 transition-all group">
                                     <div class="flex items-center gap-2">
                                         <div class="p-1 bg-gray-100 rounded-md group-hover:bg-amber-100 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                            </svg>
+                                                <x-ui.icon name="lock" size="16" />
                                         </div>
                                         <span class="text-sm font-bold">Ganti Password</span>
                                     </div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <path d="m9 18 6-6-6-6"/>
-                                    </svg>
+                                    <x-ui.icon name="chevron-right" size="16" class="opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </a>
                             </div>
 
@@ -124,9 +120,7 @@
                         @if($userRoleName == 'Wali Murid')
                         <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
                             <div class="flex items-start gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500 shrink-0 mt-0.5">
-                                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                                </svg>
+                                <x-ui.icon name="info" size="18" class="text-blue-500 shrink-0 mt-0.5" />
                                 <p class="text-xs text-blue-700">
                                     Nomor telepon Wali Murid disinkronisasi otomatis dari data siswa. Hubungi admin jika ada kesalahan.
                                 </p>
@@ -138,9 +132,7 @@
                         <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
                             <a href="{{ route('dashboard') }}" class="btn btn-secondary">Batal</a>
                             <button type="submit" class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                                </svg>
+                                <x-ui.icon name="save" size="18" />
                                 <span>Simpan Perubahan</span>
                             </button>
                         </div>

@@ -6,28 +6,30 @@
 
 @section('actions')
     <a href="{{ route('konsentrasi.index') }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <x-ui.icon name="layers" size="18" />
         <span>Kelola Konsentrasi</span>
     </a>
     <a href="{{ route('jurusan.create') }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <x-ui.icon name="plus" size="18" />
         <span>Tambah Jurusan</span>
     </a>
 @endsection
 
 @section('content')
-<div x-data="{ selectionMode: false, selected: [] }">
+<div x-data="{ selectionMode: false, selected: [], selectAll: false }">
     {{-- Bulk Action Toolbar --}}
-    <div x-show="selected.length > 0" x-transition class="bg-indigo-50 p-3 flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 rounded-xl border border-indigo-100 shadow-sm">
+    <div x-show="selected.length > 0" x-transition x-cloak class="bg-indigo-50 p-3 flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 rounded-xl border border-indigo-100 shadow-sm">
         <div class="flex items-center gap-2">
             <span class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold" x-text="selected.length"></span>
             <span class="text-sm font-medium text-indigo-900">Jurusan Terpilih</span>
         </div>
         <div class="flex flex-wrap gap-2">
-            {{-- Placeholder Bulk Action --}}
-            <button type="button" onclick="alert('Fitur hapus massal untuk Jurusan belum tersedia.')" class="btn btn-sm btn-white text-red-600 border-red-200 hover:bg-red-50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            <button type="button" @click="if(confirm('Hapus ' + selected.length + ' jurusan terpilih?')) { alert('Fitur bulk delete sedang dalam pengembangan.'); }" class="btn btn-sm btn-white text-red-600 border-red-200 hover:bg-red-50">
+                <x-ui.icon name="trash" size="14" />
                 Hapus Massal
+            </button>
+            <button type="button" @click="selected = []; selectionMode = false;" class="btn btn-sm btn-white">
+                Batal
             </button>
         </div>
     </div>
@@ -47,15 +49,17 @@
                             <template x-if="!selectionMode">
                                 <div class="flex items-center justify-center gap-2 text-gray-400 group-hover:text-indigo-600 transition-colors p-1">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Pilih</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="9" y1="12" x2="15" y2="12"></line> 
-                                    </svg>
+                                    <x-ui.icon name="check-square" size="16" />
                                 </div>
                             </template>
                             <template x-if="selectionMode">
-                                <div class="flex items-center text-indigo-600 justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <div class="flex items-center justify-center gap-1">
+                                    <input type="checkbox" x-model="selectAll"
+                                        @change="selectAll ? selected = {{ Js::from($jurusanList->pluck('id')->map(fn($id) => (string)$id)->values()) }} : selected = []"
+                                        @click.stop class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" title="Pilih Semua">
+                                    <button type="button" @click.stop="selectionMode = false; selected = []; selectAll = false;" class="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Batalkan Pilih">
+                                        <x-ui.icon name="x" size="14" />
+                                    </button>
                                 </div>
                             </template>
                         </div>
@@ -138,7 +142,7 @@
                                     type="button" 
                                     class="p-1.5 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                                    <x-ui.icon name="more-horizontal" size="18" />
                                 </button>
                                 
                                 <template x-teleport="body">
@@ -156,11 +160,11 @@
                                     >
                                         <div class="py-1">
                                             <a href="{{ route('jurusan.show', $j->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                <x-ui.icon name="info" size="14" />
                                                 Detail
                                             </a>
                                             <a href="{{ route('jurusan.edit', $j->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                                <x-ui.icon name="edit" size="14" />
                                                 Edit
                                             </a>
                                             <div class="border-t border-gray-100 my-1"></div>
@@ -168,7 +172,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                    <x-ui.icon name="trash" size="14" />
                                                     Hapus
                                                 </button>
                                             </form>
@@ -186,11 +190,18 @@
                 @empty
                     <tr>
                         <td colspan="7">
-                            <div class="empty-state">
-                                <h3 class="empty-state-title">Tidak Ada Data</h3>
-                                <p class="empty-state-description">Belum ada jurusan yang terdaftar.</p>
-                                <a href="{{ route('jurusan.create') }}" class="btn btn-primary">Tambah Jurusan</a>
-                            </div>
+                            <x-ui.empty-state 
+                                title="Tidak Ada Data" 
+                                description="Belum ada jurusan yang terdaftar." 
+                                icon="hexagon"
+                            >
+                                <x-slot:action>
+                                    <a href="{{ route('jurusan.create') }}" class="btn btn-primary">
+                                        <x-ui.icon name="plus" size="18" />
+                                        <span>Tambah Jurusan</span>
+                                    </a>
+                                </x-slot:action>
+                            </x-ui.empty-state>
                         </td>
                     </tr>
                 @endforelse

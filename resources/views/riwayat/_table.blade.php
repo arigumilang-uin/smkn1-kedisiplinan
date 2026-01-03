@@ -6,6 +6,23 @@
     </span>
 </div>
 
+{{-- Bulk Action Toolbar --}}
+<div x-show="selected.length > 0" x-cloak x-transition 
+     class="bg-indigo-50 p-3 flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 rounded-xl border border-indigo-100 shadow-sm relative z-10">
+    <div class="flex items-center gap-2">
+        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold" x-text="selected.length"></span>
+        <span class="text-sm font-medium text-indigo-900">Data Terpilih</span>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <button type="button" 
+                @click="if(confirm('Apakah Anda yakin ingin menghapus ' + selected.length + ' data pelanggaran terpilih? Tindakan ini tidak dapat dibatalkan.')) { alert('Fitur bulk delete sedang dalam pengembangan.'); }" 
+                class="btn btn-sm btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors">
+            <x-ui.icon name="trash" size="14" />
+            <span>Hapus Terpilih</span>
+        </button>
+    </div>
+</div>
+
 {{-- Data Table --}}
 <div class="table-container">
     <table class="table">
@@ -23,17 +40,17 @@
                         <template x-if="!selectionMode">
                             <div class="flex items-center justify-center gap-2 text-gray-400 group-hover:text-indigo-600 transition-colors p-1">
                                 <span class="text-[10px] font-bold uppercase tracking-wider">Pilih</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="9" y1="12" x2="15" y2="12"></line> 
-                                </svg>
+                                <x-ui.icon name="check-square" size="16" />
                             </div>
                         </template>
                         <template x-if="selectionMode">
-                            <div class="flex items-center justify-center">
+                            <div class="flex items-center justify-center gap-1">
                                 <input type="checkbox" x-model="selectAll" 
                                     @change="selectAll ? selected = ['{{ $riwayat->pluck('id')->implode("','") }}'] : selected = []" 
                                     @click.stop class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" title="Pilih Semua">
+                                <button type="button" @click.stop="selectionMode = false" class="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Batalkan Pilih">
+                                    <x-ui.icon name="x" size="14" />
+                                </button>
                             </div>
                         </template>
                     </div>
@@ -47,7 +64,7 @@
                     <td class="whitespace-nowrap">
                         <div class="font-medium text-gray-800">{{ $r->tanggal_kejadian->format('d M Y') }}</div>
                         <div class="text-xs text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <x-ui.icon name="clock" size="12" class="inline mr-1" />
                             {{ $r->tanggal_kejadian->format('H:i') }} WIB
                         </div>
                     </td>
@@ -109,11 +126,7 @@
                         @if($r->bukti_foto_path)
                             <a href="{{ asset('storage/' . $r->bukti_foto_path) }}" target="_blank" 
                                class="btn btn-icon btn-outline" title="Lihat Bukti">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                                    <polyline points="21 15 16 10 5 21"/>
-                                </svg>
+                                <x-ui.icon name="image" size="16" />
                             </a>
                         @else
                             <span class="text-gray-300">-</span>
@@ -132,17 +145,13 @@
                             {{-- Desktop Buttons --}}
                             <div class="hidden md:flex justify-center gap-1">
                                 <a href="{{ route('riwayat.edit', $r->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                                    </svg>
+                                    <x-ui.icon name="edit" size="16" />
                                 </a>
                                 <form action="{{ route('riwayat.destroy', $r->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus riwayat pelanggaran ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-icon btn-outline text-red-500 hover:bg-red-50 hover:border-red-200" title="Hapus">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                        </svg>
+                                        <x-ui.icon name="trash" size="16" />
                                     </button>
                                 </form>
                             </div>
@@ -200,9 +209,7 @@
                                     @touchend="endPress()"
                                     class="p-1.5 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                                    </svg>
+                                    <x-ui.icon name="more-horizontal" size="18" />
                                 </button>
 
                                 <template x-teleport="body">
@@ -215,7 +222,7 @@
                                     >
                                         <div class="py-1">
                                             <a href="{{ route('riwayat.edit', $r->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                                <x-ui.icon name="edit" size="14" />
                                                 Edit
                                             </a>
                                             <div class="border-t border-gray-100 my-1"></div>
@@ -223,7 +230,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                    <x-ui.icon name="trash" size="14" />
                                                     Hapus
                                                 </button>
                                             </form>
@@ -237,14 +244,15 @@
             @empty
                 <tr>
                     <td colspan="8">
-                        <div class="empty-state">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
-                            </svg>
-                            <h3 class="empty-state-title">Tidak Ada Data</h3>
-                            <p class="empty-state-description">Belum ada riwayat pelanggaran yang dicatat.</p>
-                            <a href="{{ route('riwayat.create') }}" class="btn btn-primary">Catat Pelanggaran</a>
-                        </div>
+                        <x-ui.empty-state 
+                            icon="rotate-ccw" 
+                            title="Tidak Ada Data" 
+                            description="Belum ada riwayat pelanggaran yang dicatat." 
+                        >
+                            <x-slot:action>
+                                <a href="{{ route('riwayat.create') }}" class="btn btn-primary">Catat Pelanggaran</a>
+                            </x-slot:action>
+                        </x-ui.empty-state>
                     </td>
                 </tr>
             @endforelse

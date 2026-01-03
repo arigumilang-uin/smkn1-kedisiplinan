@@ -23,54 +23,47 @@
         </div>
     @endif
     
-    {{-- Student Info Card --}}
-    <div class="relative rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 overflow-hidden text-white">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-20 -mt-20"></div>
+    {{-- Student Info Card (Custom Banner) --}}
+    <div class="relative rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 p-6 overflow-hidden text-white shadow-xl shadow-amber-900/10">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 w-40 h-40 bg-yellow-300 opacity-10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
         
         <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div class="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border border-white/20">
+            <div class="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border border-white/20 text-white shadow-inner">
                 {{ strtoupper(substr($siswa->nama_siswa ?? 'S', 0, 1)) }}
             </div>
             
             <div class="flex-1">
                 <h2 class="text-2xl font-bold">{{ $siswa->nama_siswa }}</h2>
-                <p class="text-blue-100 mt-1">NISN: {{ $siswa->nisn }} • {{ $siswa->kelas->nama_kelas ?? '-' }}</p>
+                <p class="text-amber-50 mt-1 font-medium opacity-90">NISN: {{ $siswa->nisn }} • {{ $siswa->kelas->nama_kelas ?? '-' }}</p>
             </div>
             
-            <div class="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+            <div class="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 shadow-lg min-w-[120px]">
                 <p class="text-4xl font-bold">{{ $totalPoin ?? 0 }}</p>
-                <p class="text-sm text-blue-100">Poin Kumulatif</p>
+                <p class="text-sm text-amber-50 font-medium">Poin Kumulatif</p>
             </div>
         </div>
     </div>
     
     {{-- Pembinaan Alert (if active) --}}
     @if($pembinaanAktif)
-        <div class="alert alert-warning">
-            <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
-            </svg>
-            <div class="alert-content">
-                <p class="alert-title">Status Pembinaan Aktif</p>
-                <p class="alert-message">
-                    Anak Anda saat ini dalam masa pembinaan: <strong>{{ $pembinaanAktif->rule->nama_rule ?? 'Pembinaan Internal' }}</strong>
-                    @if($pembinaanAktif->dibinaOleh)
-                        dibina oleh {{ $pembinaanAktif->dibinaOleh->username }}
-                    @endif
-                </p>
-            </div>
-        </div>
+        <x-ui.alert type="warning" title="Status Pembinaan Aktif" dismissible="false">
+            Anak Anda saat ini dalam masa pembinaan: <strong>{{ $pembinaanAktif->rule->nama_rule ?? 'Pembinaan Internal' }}</strong>
+            @if($pembinaanAktif->dibinaOleh)
+                dibina oleh {{ $pembinaanAktif->dibinaOleh->username }}
+            @endif
+        </x-ui.alert>
     @endif
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Riwayat Pelanggaran --}}
-        <div class="card">
+        <div class="card h-full">
             <div class="card-header">
                 <h3 class="card-title">Riwayat Pelanggaran</h3>
             </div>
             <div class="card-body p-0">
                 @forelse($riwayat as $r)
-                    <div class="flex items-start gap-4 p-4 border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-start gap-4 p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
                         <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                             <span class="font-bold text-sm">{{ $r->poin ?? 0 }}</span>
                         </div>
@@ -78,37 +71,33 @@
                             <p class="font-medium text-gray-800">{{ $r->jenisPelanggaran->nama_pelanggaran ?? 'Tidak diketahui' }}</p>
                             <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($r->tanggal_kejadian)->format('d M Y') }}</p>
                             @if($r->catatan)
-                                <p class="text-sm text-gray-600 mt-1">{{ $r->catatan }}</p>
+                                <p class="text-sm text-gray-600 mt-1 italic">"{{ $r->catatan }}"</p>
                             @endif
                         </div>
                     </div>
                 @empty
-                    <div class="empty-state py-8">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
-                        </svg>
-                        <h3 class="empty-state-title">Tidak Ada Pelanggaran</h3>
-                        <p class="empty-state-description">Anak Anda belum memiliki catatan pelanggaran.</p>
-                    </div>
+                    <x-ui.empty-state 
+                        icon="check-circle" 
+                        title="Tidak Ada Pelanggaran" 
+                        description="Anak Anda belum memiliki catatan pelanggaran."
+                    />
                 @endforelse
             </div>
         </div>
         
         {{-- Kasus / Tindak Lanjut --}}
-        <div class="card">
+        <div class="card h-full">
             <div class="card-header">
                 <h3 class="card-title">Tindak Lanjut & Surat</h3>
             </div>
             <div class="card-body p-0">
                 @forelse($kasus as $k)
-                    <div class="flex items-start gap-4 p-4 border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-start gap-4 p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
                         <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                            </svg>
+                            <x-ui.icon name="file-text" size="18" />
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-wrap">
                                 <p class="font-medium text-gray-800">{{ $k->jenis_tindak_lanjut ?? 'Tindak Lanjut' }}</p>
                                 @php
                                     $statusColors = [
@@ -123,35 +112,31 @@
                             </div>
                             <p class="text-sm text-gray-500">{{ $k->created_at->format('d M Y') }}</p>
                             @if($k->catatan)
-                                <p class="text-sm text-gray-600 mt-1">{{ $k->catatan }}</p>
+                                <p class="text-sm text-gray-600 mt-1 italic">"{{ $k->catatan }}"</p>
                             @endif
                         </div>
                     </div>
                 @empty
-                    <div class="empty-state py-8">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                        <h3 class="empty-state-title">Tidak Ada Tindak Lanjut</h3>
-                        <p class="empty-state-description">Belum ada surat panggilan atau tindak lanjut.</p>
-                    </div>
+                    <x-ui.empty-state 
+                        icon="inbox" 
+                        title="Tidak Ada Tindak Lanjut" 
+                        description="Belum ada surat panggilan atau tindak lanjut."
+                    />
                 @endforelse
             </div>
         </div>
     </div>
     
     {{-- Info Contact --}}
-    <div class="card bg-blue-50 border-blue-100">
+    <div class="card bg-slate-50 border-slate-200">
         <div class="card-body">
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
+                <div class="w-12 h-12 rounded-xl bg-white text-primary-600 flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
+                    <x-ui.icon name="help-circle" size="24" />
                 </div>
                 <div>
-                    <h3 class="font-semibold text-blue-800">Butuh Bantuan?</h3>
-                    <p class="text-blue-700 text-sm mt-1">
+                    <h3 class="font-semibold text-slate-800">Butuh Bantuan?</h3>
+                    <p class="text-slate-600 text-sm mt-1">
                         Jika Anda memiliki pertanyaan mengenai kedisiplinan anak Anda, silakan hubungi Wali Kelas atau bagian Kesiswaan sekolah.
                     </p>
                 </div>

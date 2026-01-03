@@ -35,6 +35,7 @@ class KepsekDashboardController extends Controller
             ->whereDate('created_at', '>=', $startDate)
             ->whereDate('created_at', '<=', $endDate)
             ->latest()
+            ->limit(10)
             ->get();
 
         // 3. KASUS MENUNGGU (Action Required)
@@ -48,6 +49,7 @@ class KepsekDashboardController extends Controller
                 });
             })
             ->latest()
+            ->limit(10)
             ->get();
             
         // 4. CHART PELANGGARAN POPULER

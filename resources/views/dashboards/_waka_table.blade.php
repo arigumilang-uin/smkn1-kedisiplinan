@@ -44,21 +44,17 @@
                             <td class="text-gray-600 text-sm">{{ $kasus->created_at->format('d M Y') }}</td>
                             <td class="text-center">
                                 <a href="{{ route('tindak-lanjut.show', $kasus->id) }}" class="btn btn-icon btn-outline" title="Detail Kasus">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
-                                    </svg>
+                                    <x-ui.icon name="eye" size="16" />
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5">
-                                <div class="empty-state">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
-                                    </svg>
-                                    <p class="empty-state-description">Tidak ada kasus dalam periode yang dipilih.</p>
-                                </div>
+                                <x-ui.empty-state 
+                                    icon="clock" 
+                                    description="Tidak ada kasus dalam periode yang dipilih." 
+                                />
                             </td>
                         </tr>
                     @endforelse

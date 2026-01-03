@@ -34,21 +34,20 @@
                                 <p class="text-xs text-gray-600 italic truncate">"{{ $log->description }}"</p>
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('audit.activity.show', $log->id) }}" class="btn btn-icon btn-outline" title="Detail">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <a href="{{ route('audit.activity.show', $log->id) }}" class="btn btn-sm btn-outline text-indigo-600 border-indigo-200 hover:bg-indigo-50">
+                                    <x-ui.icon name="eye" size="14" />
+                                    <span>Lihat</span>
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5">
-                                <div class="empty-state">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
-                                    </svg>
-                                    <h3 class="empty-state-title">Data Log Tidak Ditemukan</h3>
-                                    <p class="empty-state-description">Belum ada log aktivitas yang tercatat di sistem.</p>
-                                </div>
+                                <x-ui.empty-state 
+                                    icon="clock" 
+                                    title="Data Log Tidak Ditemukan" 
+                                    description="Belum ada log aktivitas yang tercatat di sistem." 
+                                />
                             </td>
                         </tr>
                     @endforelse
@@ -63,22 +62,22 @@
                 {{-- Previous --}}
                 @if($logs->onFirstPage())
                     <span class="pagination-btn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                        <x-ui.icon name="chevron-left" size="16" />
                     </span>
                 @else
                     <a href="{{ $logs->previousPageUrl() }}" class="pagination-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                        <x-ui.icon name="chevron-left" size="16" />
                     </a>
                 @endif
                 
                 {{-- Next --}}
                 @if($logs->hasMorePages())
                     <a href="{{ $logs->nextPageUrl() }}" class="pagination-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                        <x-ui.icon name="chevron-right" size="16" />
                     </a>
                 @else
                     <span class="pagination-btn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                        <x-ui.icon name="chevron-right" size="16" />
                     </span>
                 @endif
             </div>

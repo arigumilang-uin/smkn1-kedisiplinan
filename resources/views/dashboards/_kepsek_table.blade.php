@@ -2,9 +2,7 @@
         <div class="card border-amber-200 bg-amber-50/50">
             <div class="card-header border-b border-amber-200/50">
                 <h3 class="card-title text-amber-800 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
+                    <x-ui.icon name="clock" size="18" />
                     Menunggu Persetujuan Anda
                 </h3>
                 <a href="{{ route('kepala-sekolah.approvals.index') }}" class="btn btn-sm btn-outline text-amber-700 border-amber-300 hover:bg-amber-100">

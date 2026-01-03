@@ -403,6 +403,63 @@ class PelanggaranService
     }
 
     /**
+     * Search siswa untuk dropdown AJAX (Server-side Filtering).
+     * Mengatasi masalah performa load ribuan data siswa.
+     */
+    public function searchSiswa(?string $query, int $limit = 20)
+    {
+        return DB::table('siswa')
+            ->join('kelas', 'siswa.kelas_id', '=', 'kelas.id')
+            ->whereNull('siswa.deleted_at')
+            ->where(function ($q) use ($query) {
+                if ($query) {
+                    $q->where('siswa.nama_siswa', 'like', "%{$query}%")
+                      ->orWhere('siswa.nisn', 'like', "%{$query}%")
+                      ->orWhere('kelas.nama_kelas', 'like', "%{$query}%");
+                }
+            })
+            ->limit($limit)
+            ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nisn', 'kelas.nama_kelas')
+            ->orderBy('siswa.nama_siswa')
+            ->get();
+    }
+
+    /**
+     * Search pelanggaran untuk dropdown AJAX.
+     * Poin diambil dari frequency_rules (frekuensi pertama/1x) bukan dari jenis_pelanggaran.poin
+     */
+    public function searchPelanggaran(?string $query, int $limit = 20)
+    {
+        // Subquery untuk mendapatkan poin dari frequency_rules (frekuensi pertama)
+        $poinSubquery = DB::table('pelanggaran_frequency_rules')
+            ->select('jenis_pelanggaran_id', 'poin')
+            ->where('frequency_min', 1) // Frekuensi pertama (1x pelanggaran)
+            ->groupBy('jenis_pelanggaran_id', 'poin');
+
+        return DB::table('jenis_pelanggaran')
+            ->leftJoin('kategori_pelanggaran', 'jenis_pelanggaran.kategori_id', '=', 'kategori_pelanggaran.id')
+            ->leftJoinSub($poinSubquery, 'freq_rules', function ($join) {
+                $join->on('jenis_pelanggaran.id', '=', 'freq_rules.jenis_pelanggaran_id');
+            })
+            ->where('jenis_pelanggaran.is_active', true)
+            ->where(function ($q) use ($query) {
+                 if ($query) {
+                    $q->where('jenis_pelanggaran.nama_pelanggaran', 'like', "%{$query}%")
+                      ->orWhere('kategori_pelanggaran.nama_kategori', 'like', "%{$query}%");
+                 }
+            })
+            ->limit($limit)
+            ->select(
+                'jenis_pelanggaran.id', 
+                'jenis_pelanggaran.nama_pelanggaran', 
+                DB::raw('COALESCE(freq_rules.poin, 0) as poin'), // Ambil dari frequency_rules, default 0
+                'kategori_pelanggaran.nama_kategori as kategori'
+            )
+            ->orderBy('jenis_pelanggaran.nama_pelanggaran')
+            ->get();
+    }
+
+    /**
      * Check if pembinaan notification should be sent.
      * 
      * Only send when range changes (level up), not every time.

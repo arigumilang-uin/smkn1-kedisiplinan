@@ -6,17 +6,13 @@
 
 @section('actions')
     <a href="{{ route('jurusan.edit', $jurusan->id) }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-        </svg>
+        <x-ui.icon name="edit" size="18" />
         <span>Edit Jurusan</span>
     </a>
-    <a href="{{ route('jurusan.index') }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6"/>
-        </svg>
+    <button type="button" onclick="history.back()" class="btn btn-secondary">
+        <x-ui.icon name="chevron-left" size="18" />
         <span>Kembali</span>
-    </a>
+    </button>
 @endsection
 
 @section('content')
@@ -80,7 +76,7 @@
         <div class="card-header">
             <h3 class="card-title">Konsentrasi Keahlian</h3>
             <a href="{{ route('konsentrasi.create', ['jurusan_id' => $jurusan->id]) }}" class="btn btn-sm btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                <x-ui.icon name="plus" size="14" />
                 Tambah
             </a>
         </div>
@@ -98,7 +94,7 @@
                                     <p class="text-xs text-gray-400">{{ $konsentrasi->kelas->count() }} Kelas</p>
                                 </div>
                                 <a href="{{ route('konsentrasi.edit', $konsentrasi->id) }}" class="text-gray-400 hover:text-blue-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                    <x-ui.icon name="edit" size="16" />
                                 </a>
                             </div>
                         </div>
@@ -118,7 +114,7 @@
         <div class="card-header">
             <h3 class="card-title">Daftar Kelas</h3>
             <a href="{{ route('kelas.create', ['jurusan_id' => $jurusan->id]) }}" class="btn btn-sm btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                <x-ui.icon name="plus" size="14" />
                 Tambah
             </a>
         </div>
@@ -156,7 +152,7 @@
                                     </td>
                                     <td class="text-center">
                                         <a href="{{ route('kelas.show', $kelas->id) }}" class="btn btn-icon btn-outline" title="Detail">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            <x-ui.icon name="eye" size="16" />
                                         </a>
                                     </td>
                                 </tr>

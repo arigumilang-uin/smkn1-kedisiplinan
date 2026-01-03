@@ -5,12 +5,12 @@
 @section('page-header', true)
 
 @section('actions')
-    <a href="{{ route('frequency-rules.index') }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    <button type="button" onclick="history.back()" class="btn btn-secondary">
+        <x-ui.icon name="chevron-left" size="18" />
         <span>Kembali</span>
-    </a>
+    </button>
     <a href="{{ route('jenis-pelanggaran.edit', $jenisPelanggaran->id) }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        <x-ui.icon name="edit" size="18" />
         <span>Edit Info</span>
     </a>
 @endsection
@@ -38,7 +38,7 @@
                 </div>
             </div>
             <button type="button" @click="openAddModal()" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                <x-ui.icon name="plus" size="18" />
                 <span>Tambah Rule</span>
             </button>
         </div>
@@ -48,7 +48,7 @@
     @if($jenisPelanggaran->frequencyRules->count() == 0)
     <div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-xl">
         <div class="flex items-start gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <x-ui.icon name="info" size="20" class="text-blue-500 shrink-0" />
             <p class="text-sm text-blue-800">
                 <strong>Belum ada rule:</strong> Sistem akan menggunakan poin default 
                 <strong>({{ $jenisPelanggaran->poin }} poin)</strong> setiap kali tercatat.
@@ -95,7 +95,7 @@
                     <td class="text-center">
                         @if($rule->trigger_surat)
                             <span class="badge badge-warning">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                <x-ui.icon name="mail" size="12" />
                                 Ya
                             </span>
                         @else
@@ -123,13 +123,13 @@
                                         'display_order' => $rule->display_order,
                                     ]) }})" 
                                     class="btn btn-icon btn-outline" title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                <x-ui.icon name="edit" size="16" />
                             </button>
                             <form action="{{ route('frequency-rules.destroy', $rule->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus rule ini?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-icon btn-outline text-red-500 hover:bg-red-50" title="Hapus">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    <x-ui.icon name="trash" size="16" />
                                 </button>
                             </form>
                         </div>
@@ -138,15 +138,15 @@
                 @empty
                 <tr>
                     <td colspan="7">
-                        <div class="empty-state py-8">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                            <h3 class="empty-state-title">Belum Ada Rules</h3>
-                            <p class="empty-state-description">Tambahkan frequency rules untuk mengatur poin dan sanksi berdasarkan frekuensi pelanggaran.</p>
-                            <button type="button" @click="openAddModal()" class="btn btn-primary">Tambah Rule Pertama</button>
-                        </div>
+                        <x-ui.empty-state 
+                            icon="settings" 
+                            title="Belum Ada Rules" 
+                            description="Tambahkan frequency rules untuk mengatur poin dan sanksi berdasarkan frekuensi pelanggaran." 
+                        >
+                            <x-slot:action>
+                                <button type="button" @click="openAddModal()" class="btn btn-primary">Tambah Rule Pertama</button>
+                            </x-slot:action>
+                        </x-ui.empty-state>
                     </td>
                 </tr>
                 @endforelse

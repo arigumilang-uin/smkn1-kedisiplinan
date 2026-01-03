@@ -33,13 +33,11 @@
                     @empty
                         <tr>
                             <td colspan="3">
-                                <div class="empty-state">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="22" y2="11"/>
-                                    </svg>
-                                    <h3 class="empty-state-title">Tidak Ada Data</h3>
-                                    <p class="empty-state-description">Tidak ada data pengguna ditemukan.</p>
-                                </div>
+                                <x-ui.empty-state 
+                                    icon="users" 
+                                    title="Tidak Ada Data" 
+                                    description="Tidak ada data pengguna ditemukan." 
+                                />
                             </td>
                         </tr>
                     @endforelse

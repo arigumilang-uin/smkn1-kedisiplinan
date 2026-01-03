@@ -114,56 +114,49 @@
                 </div>
                 
                 {{-- Jurusan Selection --}}
-                <div class="form-group">
-                    <label for="jurusan_id" class="form-label form-label-required">Jurusan / Program Keahlian</label>
-                    <select id="jurusan_id" name="jurusan_id" x-model="jurusanId"
-                            @change="loadKonsentrasi()"
-                            class="form-input form-select @error('jurusan_id') error @enderror" required>
-                        <option value="">-- Pilih Jurusan --</option>
-                        @foreach($jurusanList ?? [] as $j)
-                            <option value="{{ $j->id }}" {{ old('jurusan_id') == $j->id ? 'selected' : '' }}>
-                                {{ $j->nama_jurusan }} ({{ $j->kode_jurusan ?? strtoupper(substr($j->nama_jurusan, 0, 3)) }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('jurusan_id')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-forms.select 
+                    name="jurusan_id" 
+                    label="Jurusan / Program Keahlian" 
+                    required 
+                    x-model="jurusanId"
+                    @change="loadKonsentrasi()"
+                    :options="$jurusanList"
+                    optionValue="id"
+                    optionLabel="nama_jurusan"
+                    :selected="old('jurusan_id')"
+                    placeholder="-- Pilih Jurusan --"
+                />
                 
                 {{-- Konsentrasi Selection --}}
-                <div class="form-group" x-show="jurusanId" x-transition>
-                    <label for="konsentrasi_id" class="form-label">Konsentrasi Keahlian</label>
-                    <select id="konsentrasi_id" name="konsentrasi_id" x-model="konsentrasiId"
-                            class="form-input form-select @error('konsentrasi_id') error @enderror"
-                            :disabled="!jurusanId || konsentrasiList.length === 0">
-                        <option value="">-- Pilih Konsentrasi (Opsional) --</option>
+                <div x-show="jurusanId" x-transition>
+                    <x-forms.select 
+                        name="konsentrasi_id" 
+                        label="Konsentrasi Keahlian" 
+                        x-model="konsentrasiId"
+                        ::disabled="!jurusanId || konsentrasiList.length === 0"
+                        placeholder="-- Pilih Konsentrasi (Opsional) --"
+                    >
                         <template x-for="k in konsentrasiList" :key="k.id">
                             <option :value="k.id" x-text="k.nama_konsentrasi + (k.kode_konsentrasi ? ' (' + k.kode_konsentrasi + ')' : '')"></option>
                         </template>
-                    </select>
+                    </x-forms.select>
                     <p class="form-help" x-show="!jurusanId">Pilih jurusan terlebih dahulu untuk melihat konsentrasi.</p>
                     <p class="form-help" x-show="jurusanId && konsentrasiList.length === 0 && !loadingKonsentrasi">Tidak ada konsentrasi untuk jurusan ini. <a href="{{ route('konsentrasi.create') }}" class="text-blue-600 hover:underline">Tambah konsentrasi</a></p>
                     <p class="form-help text-blue-600" x-show="loadingKonsentrasi">Memuat konsentrasi...</p>
-                    @error('konsentrasi_id')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
                 </div>
                 
                 {{-- Rombel Number --}}
-                <div class="form-group">
-                    <label for="rombel" class="form-label form-label-required">Nomor Rombel</label>
-                    <select id="rombel" name="rombel" x-model="rombel"
-                            class="form-input form-select @error('rombel') error @enderror" required>
-                        @for($i = 1; $i <= 10; $i++)
-                            <option value="{{ $i }}" {{ old('rombel', '1') == $i ? 'selected' : '' }}>{{ $i }}</option>
-                        @endfor
-                    </select>
-                    <p class="form-help">Nomor urut rombongan belajar (1, 2, 3...)</p>
-                    @error('rombel')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-forms.select 
+                    name="rombel" 
+                    label="Nomor Rombel" 
+                    required 
+                    x-model="rombel"
+                    help="Nomor urut rombongan belajar (1, 2, 3...)"
+                >
+                    @for($i = 1; $i <= 10; $i++)
+                        <option value="{{ $i }}" {{ old('rombel', '1') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                    @endfor
+                </x-forms.select>
                 
                 {{-- Preview Nama Kelas --}}
                 <div class="p-4 bg-blue-50 rounded-xl border border-blue-100"
@@ -174,9 +167,7 @@
                         <div class="flex-1 p-3 bg-white rounded-lg border border-blue-200">
                             <span class="text-xl font-bold text-blue-800" x-text="generateNamaKelas()"></span>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-400">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
-                        </svg>
+                        <x-ui.icon name="check-circle" size="24" class="text-blue-400" />
                     </div>
                     <input type="hidden" name="nama_kelas" :value="generateNamaKelas()">
                 </div>
@@ -184,20 +175,15 @@
                 <hr class="border-gray-100">
                 
                 {{-- Wali Kelas Selection --}}
-                <div class="form-group">
-                    <label for="wali_kelas_user_id" class="form-label">Wali Kelas (Opsional)</label>
-                    <select id="wali_kelas_user_id" name="wali_kelas_user_id" class="form-input form-select @error('wali_kelas_user_id') error @enderror">
-                        <option value="">-- Pilih dari Guru yang Ada --</option>
-                        @foreach($waliList ?? [] as $w)
-                            <option value="{{ $w->id }}" {{ old('wali_kelas_user_id') == $w->id ? 'selected' : '' }}>
-                                {{ $w->nama ?? $w->username }} ({{ $w->username }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('wali_kelas_user_id')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-forms.select 
+                    name="wali_kelas_user_id" 
+                    label="Wali Kelas (Opsional)" 
+                    :options="$waliList"
+                    optionValue="id"
+                    optionLabel="username"
+                    :selected="old('wali_kelas_user_id')"
+                    placeholder="-- Pilih dari Guru yang Ada --"
+                />
                 
                 {{-- Create Wali Option --}}
                 <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -218,14 +204,14 @@
                                 <div>
                                     <span class="text-xs text-gray-400">Username</span>
                                     <div class="flex items-center gap-2 bg-gray-50 p-2 rounded border mt-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                        <x-ui.icon name="user" size="14" class="text-gray-400" />
                                         <span class="font-mono font-bold text-gray-700 text-sm" x-text="generateWaliUsername()"></span>
                                     </div>
                                 </div>
                                 <div>
                                     <span class="text-xs text-gray-400">Password Awal</span>
                                     <div class="flex items-center gap-2 bg-gray-50 p-2 rounded border mt-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <x-ui.icon name="lock" size="14" class="text-gray-400" />
                                         <span class="font-mono font-bold text-rose-500 text-sm">(Auto-generated)</span>
                                     </div>
                                 </div>
@@ -237,7 +223,7 @@
                 {{-- Actions --}}
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
                     <button type="submit" class="btn btn-primary" :disabled="!tingkat || !jurusanId">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        <x-ui.icon name="save" size="18" />
                         <span>Simpan Data</span>
                     </button>
                     <a href="{{ route('kelas.index') }}" class="btn btn-secondary">Batal</a>

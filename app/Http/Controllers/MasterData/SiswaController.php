@@ -655,4 +655,120 @@ class SiswaController extends Controller
             ->route('siswa.index')
             ->with('success', "Berhasil menghapus {$count} siswa terpilih dengan alasan: {$validated['alasan_keluar']}.");
     }
+
+    // ===================================================================
+    // KENAIKAN KELAS / PINDAH KELAS FEATURE
+    // ===================================================================
+
+    /**
+     * Tampilkan halaman transfer/pindah kelas.
+     * 
+     * Operator bisa memilih siswa dari satu kelas dan memindahkan
+     * mereka ke kelas lain (kenaikan kelas, pindah konsentrasi, dll).
+     * 
+     * OPTIMIZED: Initial load tanpa siswa, siswa di-load via AJAX.
+     */
+    public function transferForm(Request $request): View
+    {
+        // Get all kelas for dropdowns (single optimized query)
+        $allKelas = $this->siswaService->getAllKelas();
+
+        return view('siswa.transfer', compact('allKelas'));
+    }
+
+    /**
+     * API: Get siswa by kelas for transfer (AJAX).
+     * 
+     * Returns JSON with siswa list and kelas info for dynamic loading.
+     */
+    public function getTransferSiswa(Request $request)
+    {
+        $kelasId = $request->input('kelas_id');
+        
+        if (!$kelasId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kelas ID diperlukan',
+            ], 400);
+        }
+
+        // Get kelas info (single query with eager load)
+        $kelas = \App\Models\Kelas::with('jurusan', 'waliKelas')
+            ->find($kelasId);
+        
+        if (!$kelas) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kelas tidak ditemukan',
+            ], 404);
+        }
+
+        // Get siswa with optimized query (total_poin calculated in subquery)
+        $siswaList = $this->siswaService->getSiswaForTransfer((int) $kelasId);
+
+        return response()->json([
+            'success' => true,
+            'kelas' => [
+                'id' => $kelas->id,
+                'nama_kelas' => $kelas->nama_kelas,
+                'jurusan' => $kelas->jurusan->nama_jurusan ?? '-',
+                'wali_kelas' => $kelas->waliKelas->nama ?? '-',
+                'jumlah_siswa' => $siswaList->count(),
+            ],
+            'siswa' => $siswaList->map(fn($s) => [
+                'id' => $s->id,
+                'nisn' => $s->nisn,
+                'nama_siswa' => $s->nama_siswa,
+                'nomor_hp_wali_murid' => $s->nomor_hp_wali_murid ?? '-',
+                'total_poin' => (int) $s->total_poin,
+            ])->values(),
+        ]);
+    }
+
+    /**
+     * Proses bulk transfer siswa ke kelas lain.
+     * 
+     * ALUR:
+     * 1. Validasi input (siswa_ids, target_kelas_id)
+     * 2. Panggil service->bulkTransferSiswa()
+     * 3. Return dengan success/error message
+     */
+    public function bulkTransfer(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'siswa_ids' => 'required|array|min:1',
+            'siswa_ids.*' => 'integer|exists:siswa,id',
+            'target_kelas_id' => 'required|integer|exists:kelas,id',
+            'confirm_transfer' => 'required|accepted',
+        ], [
+            'siswa_ids.required' => 'Pilih minimal 1 siswa untuk dipindahkan.',
+            'target_kelas_id.required' => 'Pilih kelas tujuan.',
+            'confirm_transfer.accepted' => 'Anda harus mengkonfirmasi perpindahan kelas.',
+        ]);
+
+        try {
+            $result = $this->siswaService->bulkTransferSiswa(
+                $validated['siswa_ids'],
+                $validated['target_kelas_id']
+            );
+
+            $message = "Berhasil memindahkan {$result['success_count']} siswa ke kelas {$result['target_kelas']}.";
+            
+            if ($result['failed_count'] > 0) {
+                $message .= " {$result['failed_count']} siswa gagal dipindahkan (sudah di kelas tujuan atau tidak ditemukan).";
+            }
+
+            return redirect()
+                ->route('siswa.transfer')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            \Log::error('Bulk transfer siswa error: ' . $e->getMessage());
+            
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal memindahkan siswa: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
 }

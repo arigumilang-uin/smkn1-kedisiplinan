@@ -405,4 +405,24 @@ class RiwayatPelanggaranController extends Controller
 
         return view('riwayat.my_index', compact('riwayat'));
     }
+
+    /**
+     * AJAX search endpoint for Siswa Dropdown.
+     */
+    public function ajaxSearchSiswa(\Illuminate\Http\Request $request) 
+    {
+        $query = $request->input('q');
+        $data = $this->pelanggaranService->searchSiswa($query);
+        return response()->json($data);
+    }
+
+    /**
+     * AJAX search endpoint for Pelanggaran Dropdown.
+     */
+    public function ajaxSearchPelanggaran(\Illuminate\Http\Request $request) 
+    {
+        $query = $request->input('q');
+        $data = $this->pelanggaranService->searchPelanggaran($query);
+        return response()->json($data);
+    }
 }

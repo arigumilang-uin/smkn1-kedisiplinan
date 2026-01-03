@@ -4,31 +4,36 @@
 @section('subtitle', 'Kelola akun pengguna sistem.')
 @section('page-header', true)
 
-@section('actions')
-    <a href="{{ route('users.create') }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14"/><path d="M12 5v14"/>
-        </svg>
-        <span>Tambah User</span>
-    </a>
-@endsection
-
 @section('content')
-<div class="space-y-6" x-data="userManagementPage()">
+@php
+    $tableConfig = [
+        'endpoint' => route('users.index'),
+        'filters' => [
+            'search' => request('search'),
+            'role_id' => request('role_id')
+        ],
+        'containerId' => 'users-table-container'
+    ];
+@endphp
+
+<div class="space-y-6" x-data='dataTable(@json($tableConfig))'>
+    {{-- Action Button --}}
+    <div class="flex justify-end">
+        <a href="{{ route('users.create') }}" class="btn btn-primary">
+            <x-ui.icon name="plus" size="18" />
+            <span>Tambah User</span>
+        </a>
+    </div>
     {{-- Filter --}}
     <div class="card" x-data="{ expanded: {{ request()->hasAny(['search', 'role_id']) ? 'true' : 'false' }} }">
         <div class="card-header cursor-pointer" @click="expanded = !expanded">
             <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                </svg>
+                <x-ui.icon name="filter" size="18" class="text-gray-400" />
                 <span class="card-title">Filter Data</span>
             </div>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-gray-500" x-show="isLoading">Memuat...</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }">
-                    <path d="m6 9 6 6 6-6"/>
-                </svg>
+                <x-ui.icon name="chevron-down" size="20" class="text-gray-400 transition-transform" ::class="{ 'rotate-180': expanded }" />
             </div>
         </div>
         
@@ -46,10 +51,7 @@
                                 placeholder="Cari username atau keterangan..."
                             >
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" x-show="isLoading">
-                                <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
+                                <x-ui.icon name="loader" size="16" class="animate-spin text-gray-400" />
                             </div>
                         </div>
                     </div>
@@ -66,9 +68,7 @@
                     
                     <div class="md:col-span-3 flex justify-end">
                         <button type="button" @click="resetFilters()" class="btn btn-secondary text-xs">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
-                            </svg>
+                            <x-ui.icon name="refresh-cw" size="14" />
                             <span>Reset Filter</span>
                         </button>
                     </div>
@@ -83,119 +83,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('userManagementPage', () => ({
-            isLoading: false,
-            selectionMode: false,
-            selectAll: false,
-            selected: [],
-            filters: {
-                search: '{{ request('search') }}',
-                role_id: '{{ request('role_id') }}'
-            },
-
-            init() {
-                this.$watch('filters.search', () => this.fetchData());
-                this.$watch('filters.role_id', () => this.fetchData());
-                
-                // Watch selection mode change
-                this.$watch('selectionMode', (value) => {
-                    if (!value) {
-                        this.selected = []; // Clear selection when exiting mode
-                        this.selectAll = false;
-                    }
-                });
-
-                window.addEventListener('popstate', (event) => {
-                    this.fetchData(window.location.href, false);
-                });
-
-                const container = document.getElementById('users-table-container');
-                if (container) {
-                     container.addEventListener('click', (e) => {
-                        const link = e.target.closest('.pagination a');
-                        if (link) {
-                            e.preventDefault();
-                            this.fetchData(link.href);
-                        }
-                    });
-                }
-            },
-
-            async fetchData(url = null, updatePushState = true) {
-                this.isLoading = true;
-                
-                if (!url) {
-                    const params = new URLSearchParams();
-                    if (this.filters.search) params.append('search', this.filters.search);
-                    if (this.filters.role_id) params.append('role_id', this.filters.role_id);
-                    
-                    url = `{{ route('users.index') }}?${params.toString()}`;
-                    
-                    if (updatePushState) {
-                        window.history.pushState({}, '', url);
-                    }
-                    
-                    params.append('render_partial', '1');
-                    fetchUrl = `{{ route('users.index') }}?${params.toString()}`;
-                } else {
-                    const urlObj = new URL(url);
-                    urlObj.searchParams.append('render_partial', '1');
-                    fetchUrl = urlObj.toString();
-                    
-                    if (updatePushState) {
-                         window.history.pushState({}, '', url);
-                    }
-                }
-
-                try {
-                    const response = await fetch(fetchUrl, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'text/html'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const html = await response.text();
-                        document.getElementById('users-table-container').innerHTML = html;
-                        // Clear selection on page change/filter
-                        this.selected = [];
-                        this.selectAll = false;
-                    }
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                } finally {
-                    this.isLoading = false;
-                }
-            },
-            
-            toggleSelectionMode() {
-                this.selectionMode = !this.selectionMode;
-            },
-            
-            toggleSelectAll() {
-                // Get all checkboxes in the table
-                const checkboxes = document.querySelectorAll('#users-table-container input[type="checkbox"][value]');
-                const ids = Array.from(checkboxes).map(cb => cb.value);
-                
-                if (this.selectAll) {
-                    // Select all
-                    this.selected = ids;
-                } else {
-                    // Deselect all
-                    this.selected = [];
-                }
-            },
-
-            resetFilters() {
-                this.filters.search = '';
-                this.filters.role_id = '';
-            }
-        }));
-    });
-</script>
-@endpush

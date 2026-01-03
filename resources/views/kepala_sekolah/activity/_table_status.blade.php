@@ -41,17 +41,17 @@
                                                 class="btn btn-outline text-xs w-full {{ $user->is_active ? 'hover:bg-red-50 hover:text-red-600 hover:border-red-200' : 'hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' }}"
                                                 onclick="return confirm('Yakin ingin {{ $user->is_active ? 'menonaktifkan' : 'mengaktifkan' }} akun {{ $user->nama }}?')">
                                             @if($user->is_active)
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>
+                                                <x-ui.icon name="user-x" size="14" class="mr-1" />
                                                 Suspend
                                             @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg>
+                                                <x-ui.icon name="user-check" size="14" class="mr-1" />
                                                 Activate
                                             @endif
                                         </button>
                                     </form>
                                 @else
                                     <div class="px-3 py-2 rounded-xl bg-indigo-50 text-indigo-400 text-[10px] font-bold uppercase">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                                        <x-ui.icon name="shield" size="12" class="inline mr-1" />
                                         My Account
                                     </div>
                                 @endif
@@ -60,13 +60,11 @@
                     @empty
                         <tr>
                             <td colspan="4">
-                                <div class="empty-state">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M12 17v4"/><path d="M8 21h8"/>
-                                    </svg>
-                                    <h3 class="empty-state-title">Tidak Ada Data</h3>
-                                    <p class="empty-state-description">Tidak ada data pengguna ditemukan.</p>
-                                </div>
+                                <x-ui.empty-state 
+                                    icon="users" 
+                                    title="Tidak Ada Data" 
+                                    description="Tidak ada data pengguna ditemukan." 
+                                />
                             </td>
                         </tr>
                     @endforelse

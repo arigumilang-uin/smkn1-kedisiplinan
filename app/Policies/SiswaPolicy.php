@@ -122,4 +122,14 @@ class SiswaPolicy
     {
         return $user->hasRole('Operator Sekolah');
     }
+
+    /**
+     * Determine if user can bulk transfer siswa (kenaikan kelas).
+     * 
+     * Hanya Operator Sekolah yang boleh memindahkan siswa antar kelas.
+     */
+    public function bulkTransfer(User $user): bool
+    {
+        return $user->hasRole('Operator Sekolah');
+    }
 }

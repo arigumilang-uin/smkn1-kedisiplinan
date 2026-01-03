@@ -20,6 +20,10 @@ Route::middleware(['auth', 'profile.completed'])->group(function () {
     // ===================================================================
     // RIWAYAT PELANGGARAN ROUTES
     // ===================================================================
+
+    // AJAX Select Routes (Load first to avoid conflict with resource parameter)
+    Route::get('/riwayat/ajax/siswa', [RiwayatPelanggaranController::class, 'ajaxSearchSiswa'])->name('riwayat.ajax.siswa');
+    Route::get('/riwayat/ajax/pelanggaran', [RiwayatPelanggaranController::class, 'ajaxSearchPelanggaran'])->name('riwayat.ajax.pelanggaran');
     
     Route::resource('riwayat', RiwayatPelanggaranController::class)
         ->names([

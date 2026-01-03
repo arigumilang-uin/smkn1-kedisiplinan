@@ -23,52 +23,42 @@
                 @method('PUT')
                 
                 {{-- Jenis Pelanggaran --}}
-                <div class="form-group">
-                    <label for="jenis_pelanggaran_id" class="form-label form-label-required">Jenis Pelanggaran</label>
-                    <select id="jenis_pelanggaran_id" name="jenis_pelanggaran_id" class="form-input form-select @error('jenis_pelanggaran_id') error @enderror" required>
-                        @foreach($jenisPelanggaran ?? [] as $p)
-                            <option value="{{ $p->id }}" {{ old('jenis_pelanggaran_id', $riwayat->jenis_pelanggaran_id) == $p->id ? 'selected' : '' }}>
-                                {{ $p->nama_pelanggaran }} ({{ $p->poin }} poin)
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('jenis_pelanggaran_id')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-forms.select 
+                    name="jenis_pelanggaran_id" 
+                    label="Jenis Pelanggaran" 
+                    required 
+                    :selected="$riwayat->jenis_pelanggaran_id"
+                >
+                    @foreach($jenisPelanggaran ?? [] as $p)
+                        <option value="{{ $p->id }}" {{ old('jenis_pelanggaran_id', $riwayat->jenis_pelanggaran_id) == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama_pelanggaran }} ({{ $p->poin }} poin)
+                        </option>
+                    @endforeach
+                </x-forms.select>
                 
                 {{-- Tanggal & Waktu --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="tanggal_kejadian" class="form-label form-label-required">Tanggal Kejadian</label>
-                        <input type="date" id="tanggal_kejadian" name="tanggal_kejadian" 
-                               value="{{ old('tanggal_kejadian', \Carbon\Carbon::parse($riwayat->tanggal_kejadian)->format('Y-m-d')) }}"
-                               class="form-input @error('tanggal_kejadian') error @enderror" required>
-                        @error('tanggal_kejadian')
-                            <p class="form-error">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-forms.date 
+                        name="tanggal_kejadian" 
+                        label="Tanggal Kejadian" 
+                        :value="\Carbon\Carbon::parse($riwayat->tanggal_kejadian)->format('Y-m-d')"
+                        required 
+                    />
                     
-                    <div class="form-group">
-                        <label for="waktu_kejadian" class="form-label">Waktu Kejadian</label>
-                        <input type="time" id="waktu_kejadian" name="waktu_kejadian" 
-                               value="{{ old('waktu_kejadian', \Carbon\Carbon::parse($riwayat->tanggal_kejadian)->format('H:i')) }}"
-                               class="form-input @error('waktu_kejadian') error @enderror">
-                        @error('waktu_kejadian')
-                            <p class="form-error">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-forms.input 
+                        type="time" 
+                        name="waktu_kejadian" 
+                        label="Waktu Kejadian" 
+                        :value="\Carbon\Carbon::parse($riwayat->tanggal_kejadian)->format('H:i')"
+                    />
                 </div>
                 
                 {{-- Keterangan --}}
-                <div class="form-group">
-                    <label for="keterangan" class="form-label">Keterangan</label>
-                    <textarea id="keterangan" name="keterangan" rows="3" 
-                              class="form-input form-textarea @error('keterangan') error @enderror">{{ old('keterangan', $riwayat->keterangan) }}</textarea>
-                    @error('keterangan')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
-                </div>
+                <x-forms.textarea 
+                    name="keterangan" 
+                    label="Keterangan" 
+                    :value="$riwayat->keterangan" 
+                />
                 
                 {{-- Bukti Foto --}}
                 <div class="form-group">
@@ -90,12 +80,13 @@
                 {{-- Actions --}}
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
                     <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                        </svg>
+                        <x-ui.icon name="save" size="18" />
                         <span>Simpan Perubahan</span>
                     </button>
-                    <a href="{{ route('riwayat.index') }}" class="btn btn-secondary">Batal</a>
+                    <a href="{{ route('riwayat.index') }}" class="btn btn-secondary">
+                        <x-ui.icon name="x" size="18" />
+                        <span>Batal</span>
+                    </a>
                 </div>
             </form>
         </div>

@@ -7,15 +7,15 @@
         </div>
         <div class="flex flex-wrap gap-2">
             <button type="button" @click="submitBulkAction('{{ route('users.bulk-activate') }}', 'Aktifkan user terpilih?')" class="btn btn-sm btn-white text-emerald-600 border-emerald-200 hover:bg-emerald-50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                <x-ui.icon name="user-check" size="14" />
                 Aktifkan
             </button>
             <button type="button" @click="submitBulkAction('{{ route('users.bulk-deactivate') }}', 'Nonaktifkan user terpilih?')" class="btn btn-sm btn-white text-orange-600 border-orange-200 hover:bg-orange-50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+                <x-ui.icon name="user-x" size="14" />
                 Suspend
             </button>
             <button type="button" @click="submitBulkAction('{{ route('users.bulk-delete') }}', 'Hapus user terpilih? Tindakan ini tidak dapat dibatalkan!')" class="btn btn-sm btn-white text-red-600 border-red-200 hover:bg-red-50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <x-ui.icon name="trash" size="14" />
                 Hapus
             </button>
         </div>
@@ -41,15 +41,15 @@
                             <template x-if="!selectionMode">
                                 <div class="flex items-center justify-center gap-2 text-gray-400 group-hover:text-indigo-600 transition-colors p-1">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Pilih</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="9" y1="12" x2="15" y2="12"></line> 
-                                    </svg>
+                                    <x-ui.icon name="check-square" size="16" />
                                 </div>
                             </template>
                             <template x-if="selectionMode">
-                                <div class="flex items-center justify-center">
+                                <div class="flex items-center justify-center gap-1">
                                     <input type="checkbox" x-model="selectAll" @change="toggleSelectAll()" @click.stop class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" title="Pilih Semua">
+                                    <button type="button" @click.stop="selectionMode = false" class="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Batalkan Pilih">
+                                        <x-ui.icon name="x" size="14" />
+                                    </button>
                                 </div>
                             </template>
                         </div>
@@ -129,7 +129,7 @@
                                     type="button" 
                                     class="p-1.5 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                                    <x-ui.icon name="more-horizontal" size="18" />
                                 </button>
                                 
                                 <template x-teleport="body">
@@ -147,7 +147,7 @@
                                     >
                                         <div class="py-1">
                                             <a href="{{ route('users.edit', $user->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                                <x-ui.icon name="edit" size="14" />
                                                 Edit
                                             </a>
                                             <div class="border-t border-gray-100 my-1"></div>
@@ -155,7 +155,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                    <x-ui.icon name="trash" size="14" />
                                                     Hapus
                                                 </button>
                                             </form>
@@ -173,11 +173,11 @@
                 @empty
                     <tr>
                         <td colspan="5">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                                <h3 class="empty-state-title">Tidak Ada User</h3>
-                                <p class="empty-state-description">Belum ada user yang terdaftar.</p>
-                            </div>
+                            <x-ui.empty-state 
+                                icon="users" 
+                                title="Tidak Ada User" 
+                                message="Belum ada user yang terdaftar." 
+                            />
                         </td>
                     </tr>
                 @endforelse
@@ -193,30 +193,22 @@
                 {{-- Previous --}}
                 @if($users->onFirstPage())
                     <span class="pagination-btn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m15 18-6-6 6-6"/>
-                        </svg>
+                        <x-ui.icon name="chevron-left" size="16" />
                     </span>
                 @else
                     <a href="{{ $users->previousPageUrl() }}" class="pagination-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m15 18-6-6 6-6"/>
-                        </svg>
+                        <x-ui.icon name="chevron-left" size="16" />
                     </a>
                 @endif
                 
                 {{-- Next --}}
                 @if($users->hasMorePages())
                     <a href="{{ $users->nextPageUrl() }}" class="pagination-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m9 18 6-6-6-6"/>
-                        </svg>
+                        <x-ui.icon name="chevron-right" size="16" />
                     </a>
                 @else
                     <span class="pagination-btn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m9 18 6-6-6-6"/>
-                        </svg>
+                        <x-ui.icon name="chevron-right" size="16" />
                     </span>
                 @endif
             </div>

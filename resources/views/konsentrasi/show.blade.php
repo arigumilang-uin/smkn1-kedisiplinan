@@ -6,7 +6,7 @@
 
 @section('actions')
     <a href="{{ route('konsentrasi.edit', $konsentrasi->id) }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        <x-ui.icon name="edit" size="18" />
         <span>Edit</span>
     </a>
 @endsection
@@ -105,9 +105,12 @@
                         </tbody>
                     </table>
                 @else
-                    <div class="empty-state py-10">
-                        <h3 class="empty-state-title">Belum Ada Kelas</h3>
-                        <p class="empty-state-description">Konsentrasi ini belum memiliki kelas terdaftar.</p>
+                    <div class="px-6 pb-6">
+                        <x-ui.empty-state 
+                            icon="layers" 
+                            title="Belum Ada Kelas" 
+                            description="Konsentrasi ini belum memiliki kelas terdaftar." 
+                        />
                     </div>
                 @endif
             </div>
@@ -116,9 +119,9 @@
 </div>
 
 <div class="mt-6">
-    <a href="{{ route('konsentrasi.index') }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    <button type="button" onclick="history.back()" class="btn btn-secondary">
+        <x-ui.icon name="chevron-left" size="18" />
         Kembali
-    </a>
+    </button>
 </div>
 @endsection

@@ -6,9 +6,7 @@
 
 @section('actions')
     <a href="{{ route('riwayat.create') }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14"/><path d="M12 5v14"/>
-        </svg>
+        <x-ui.icon name="plus" size="18" />
         <span>Catat Pelanggaran</span>
     </a>
 @endsection
@@ -52,9 +50,7 @@
                         <td>
                             <div class="flex items-center justify-center gap-1">
                                 <a href="{{ route('my-riwayat.edit', $r->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                                    </svg>
+                                    <x-ui.icon name="edit" size="16" />
                                 </a>
                             </div>
                         </td>
@@ -62,14 +58,15 @@
                 @empty
                     <tr>
                         <td colspan="6">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/>
-                                </svg>
-                                <h3 class="empty-state-title">Belum Ada Catatan</h3>
-                                <p class="empty-state-description">Anda belum mencatat pelanggaran apapun.</p>
-                                <a href="{{ route('riwayat.create') }}" class="btn btn-primary">Catat Pelanggaran</a>
-                            </div>
+                            <x-ui.empty-state 
+                                icon="clipboard" 
+                                title="Belum Ada Catatan" 
+                                description="Anda belum mencatat pelanggaran apapun." 
+                            >
+                                <x-slot:action>
+                                    <a href="{{ route('riwayat.create') }}" class="btn btn-primary">Catat Pelanggaran</a>
+                                </x-slot:action>
+                            </x-ui.empty-state>
                         </td>
                     </tr>
                 @endforelse

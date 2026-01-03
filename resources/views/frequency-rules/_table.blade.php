@@ -1,4 +1,21 @@
 
+    {{-- Bulk Action Toolbar --}}
+    <div x-show="selected.length > 0" x-cloak x-transition 
+         class="bg-indigo-50 p-3 flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 rounded-xl border border-indigo-100 shadow-sm relative z-10 transition-all duration-300">
+        <div class="flex items-center gap-2">
+            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold" x-text="selected.length"></span>
+            <span class="text-sm font-medium text-indigo-900">Data Terpilih</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" 
+                    @click="if(confirm('Hapus ' + selected.length + ' data terpilih?')) { alert('Fitur bulk delete sedang dalam pengembangan.'); }" 
+                    class="btn btn-sm btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors">
+                <x-ui.icon name="trash" size="14" />
+                <span>Hapus Terpilih</span>
+            </button>
+        </div>
+    </div>
+
     {{-- Table --}}
     <div class="table-container">
         <table class="table">
@@ -8,12 +25,31 @@
                     <th>Nama Pelanggaran</th>
                     <th class="w-[40%]">Rules (Frekuensi, Poin & Sanksi)</th>
                     <th class="text-center">Status</th>
-                    <th class="w-32 text-center">Aksi</th>
+                    <th class="w-32 text-center cursor-pointer select-none hover:bg-gray-50 transition-colors group" @click="toggleSelectionMode()" title="Klik untuk memilih data">
+                        <div class="flex items-center justify-center">
+                            <template x-if="!selectionMode">
+                                <div class="flex items-center justify-center gap-2 text-gray-400 group-hover:text-indigo-600 transition-colors p-1">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Pilih</span>
+                                    <x-ui.icon name="square" size="16" />
+                                </div>
+                            </template>
+                            <template x-if="selectionMode">
+                                <div class="flex items-center justify-center gap-1">
+                                    <input type="checkbox" x-model="selectAll" 
+                                        @change="selectAll ? selected = ['{{ $jenisPelanggaran->pluck('id')->implode("','") }}'] : selected = []" 
+                                        @click.stop class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" title="Pilih Semua">
+                                    <button type="button" @click.stop="selectionMode = false" class="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Batalkan Pilih">
+                                        <x-ui.icon name="x" size="14" />
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($jenisPelanggaran ?? [] as $jp)
-                    <tr>
+                    <tr :class="{ 'bg-indigo-50/50': selected.includes('{{ $jp->id }}') }">
                         {{-- Kategori --}}
                         <td>
                             @php
@@ -53,7 +89,7 @@
                                             <span class="px-2 py-0.5 rounded bg-red-100 text-red-700 font-bold">{{ $rule->poin }} Poin</span>
                                             @if($rule->trigger_surat)
                                                 <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-bold flex items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                                    <x-ui.icon name="mail" size="10" />
                                                     SURAT
                                                 </span>
                                             @endif
@@ -89,66 +125,135 @@
                             @endif
                         </td>
 
-                        {{-- Actions --}}
-                        <td>
-                            {{-- Desktop: Icon buttons --}}
-                            <div class="action-buttons-desktop">
+                    {{-- Actions --}}
+                    <td class="text-center relative">
+                        {{-- Selection Mode --}}
+                        <div x-show="selectionMode" style="display: none;">
+                            <input type="checkbox" value="{{ $jp->id }}" x-model="selected" class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                        </div>
+
+                        {{-- Normal Mode --}}
+                        <div x-show="!selectionMode">
+                            {{-- Desktop --}}
+                             <div class="hidden md:hidden" style="display: none;">
                                 <a href="{{ route('frequency-rules.show', $jp->id) }}" class="btn btn-icon btn-outline" title="Kelola Rules">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <x-ui.icon name="settings" size="16" />
                                 </a>
                                 <a href="{{ route('jenis-pelanggaran.edit', $jp->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                    <x-ui.icon name="edit" size="16" />
                                 </a>
                                 <form action="{{ route('jenis-pelanggaran.destroy', $jp->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus jenis pelanggaran ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-icon btn-outline text-red-500 hover:bg-red-50" title="Hapus">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        <x-ui.icon name="trash" size="16" />
                                     </button>
                                 </form>
                             </div>
                             
-                            {{-- Mobile: Dropdown --}}
-                            <div class="action-dropdown-mobile" x-data="{ open: false }">
-                                <button @click="open = !open" @click.away="open = false" class="action-dropdown-trigger">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                                    </svg>
+                            {{-- Mobile: Dropdown with Teleport --}}
+                            <div class="relative inline-block text-left"
+                                 x-data="{
+                                     open: false,
+                                     timer: null,
+                                     isLongPress: false,
+                                     
+                                     startPress() {
+                                         this.isLongPress = false;
+                                         this.timer = setTimeout(() => {
+                                             this.isLongPress = true;
+                                             this.toggleSelectionMode();
+                                             if (!this.selected.includes('{{ $jp->id }}')) {
+                                                 this.selected.push('{{ $jp->id }}');
+                                             }
+                                             if (navigator.vibrate) navigator.vibrate(50);
+                                         }, 500);
+                                     },
+                                     
+                                     endPress() {
+                                         clearTimeout(this.timer);
+                                     },
+                                     
+                                     toggle() {
+                                         if (this.isLongPress) return;
+                                         if (this.open) { this.open = false; return; }
+                                         this.open = true;
+                                         this.$nextTick(() => {
+                                             const trigger = this.$refs.trigger.getBoundingClientRect();
+                                             const menu = this.$refs.menu;
+                                             // Position menu to the left of trigger
+                                             let left = trigger.right - menu.offsetWidth;
+                                             let top = trigger.bottom + 2; 
+                                             
+                                             // Check bottom overflow
+                                             if (window.innerHeight - trigger.bottom < menu.offsetHeight + 20) {
+                                                 top = trigger.top - menu.offsetHeight - 2;
+                                             }
+                                             menu.style.top = `${top}px`;
+                                             menu.style.left = `${left}px`;
+                                         });
+                                     }
+                                 }"
+                                 @scroll.window="open = false"
+                                 @resize.window="open = false"
+                            >
+                                <button 
+                                    x-ref="trigger" 
+                                    @click="toggle()"
+                                    @mousedown="startPress()"
+                                    @touchstart="startPress()"
+                                    @mouseup="endPress()"
+                                    @mouseleave="endPress()"
+                                    @touchend="endPress()"
+                                    class="p-1.5 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                                >
+                                    <x-ui.icon name="more-horizontal" size="18" />
                                 </button>
-                                <div x-show="open" x-transition class="action-dropdown-menu">
-                                    <a href="{{ route('frequency-rules.show', $jp->id) }}" class="action-dropdown-item action-dropdown-item--view">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        Kelola Rules
-                                    </a>
-                                    <a href="{{ route('jenis-pelanggaran.edit', $jp->id) }}" class="action-dropdown-item action-dropdown-item--edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                        Edit
-                                    </a>
-                                    <div class="action-dropdown-divider"></div>
-                                    <form action="{{ route('jenis-pelanggaran.destroy', $jp->id) }}" method="POST" onsubmit="return confirm('Hapus jenis pelanggaran ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="action-dropdown-item action-dropdown-item--delete">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                            Hapus
-                                        </button>
-                                    </form>
-                                </div>
+
+                                <template x-teleport="body">
+                                    <div x-show="open" 
+                                         x-ref="menu"
+                                         @click.outside="open = false"
+                                         style="position: fixed; z-index: 9999; display: none;"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         class="w-48 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-100"
+                                    >
+                                        <div class="py-1">
+                                            <a href="{{ route('frequency-rules.show', $jp->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                                                <x-ui.icon name="settings" size="14" />
+                                                Kelola Rules
+                                            </a>
+                                            <a href="{{ route('jenis-pelanggaran.edit', $jp->id) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                                                <x-ui.icon name="edit" size="14" />
+                                                Edit
+                                            </a>
+                                            <div class="border-t border-gray-100 my-1"></div>
+                                            <form action="{{ route('jenis-pelanggaran.destroy', $jp->id) }}" method="POST" onsubmit="return confirm('Hapus jenis pelanggaran ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                    <x-ui.icon name="trash" size="14" />
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
-                        </td>
+                        </div>
+                    </td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="5">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                </svg>
-                                <h3 class="empty-state-title">Belum Ada Data</h3>
-                                <p class="empty-state-description">Tidak ada jenis pelanggaran yang terdaftar.</p>
-                                <a href="{{ route('jenis-pelanggaran.create') }}" class="btn btn-primary">Tambah Jenis Pelanggaran</a>
-                            </div>
+                            <x-ui.empty-state 
+                                icon="file" 
+                                title="Belum Ada Data" 
+                                description="Tidak ada jenis pelanggaran yang terdaftar." 
+                            >
+                                <x-slot:action>
+                                    <a href="{{ route('jenis-pelanggaran.create') }}" class="btn btn-primary">Tambah Jenis Pelanggaran</a>
+                                </x-slot:action>
+                            </x-ui.empty-state>
                         </td>
                     </tr>
                 @endforelse

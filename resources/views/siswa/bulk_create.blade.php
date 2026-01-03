@@ -6,9 +6,7 @@
 
 @section('actions')
     <a href="{{ route('siswa.index') }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
-        </svg>
+        <x-ui.icon name="chevron-left" size="18" />
         <span>Kembali</span>
     </a>
 @endsection
@@ -18,9 +16,7 @@
     {{-- Info Banner --}}
     <div class="p-4 bg-blue-50 border border-blue-100 rounded-xl">
         <div class="flex gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600 shrink-0 mt-0.5">
-                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-            </svg>
+            <x-ui.icon name="info" class="text-blue-600 shrink-0 mt-0.5" size="20" />
             <div>
                 <p class="font-medium text-blue-800">Format File CSV/Excel</p>
                 <p class="text-sm text-blue-700 mt-1">
@@ -37,9 +33,7 @@
     @if(session('bulk_errors'))
         <div class="p-4 bg-red-50 border border-red-100 rounded-xl">
             <div class="flex gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-600 shrink-0 mt-0.5">
-                    <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-                </svg>
+                <x-ui.icon name="alert-circle" class="text-red-600 shrink-0 mt-0.5" size="20" />
                 <div class="flex-1">
                     <p class="font-medium text-red-800">Terjadi Error pada Beberapa Baris:</p>
                     <ul class="text-sm text-red-700 mt-2 space-y-1 list-disc pl-4">
@@ -63,19 +57,17 @@
                 
                 {{-- Pilih Kelas --}}
                 <div class="form-group">
-                    <label for="kelas_id" class="form-label form-label-required">Kelas Tujuan</label>
-                    <select id="kelas_id" name="kelas_id" class="form-input form-select @error('kelas_id') error @enderror" required>
-                        <option value="">Pilih Kelas</option>
-                        @foreach($kelas ?? [] as $k)
-                            <option value="{{ $k->id }}" {{ old('kelas_id') == $k->id ? 'selected' : '' }}>
-                                {{ $k->nama_kelas }} {{ $k->nama_jurusan ? '(' . $k->nama_jurusan . ')' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="form-help">Semua siswa yang diimport akan masuk ke kelas ini.</p>
-                    @error('kelas_id')
-                        <p class="form-error">{{ $message }}</p>
-                    @enderror
+                    <x-forms.select 
+                        name="kelas_id" 
+                        label="Kelas Tujuan" 
+                        required
+                        :options="$kelas"
+                        optionValue="id"
+                        optionLabel="nama_kelas"
+                        :selected="old('kelas_id')"
+                        placeholder="Pilih Kelas"
+                        help="Semua siswa yang diimport akan masuk ke kelas ini."
+                    />
                 </div>
                 
                 {{-- Tabs for Upload Method --}}
@@ -106,9 +98,7 @@
                             <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
                                 <input type="file" id="bulk_file" name="bulk_file" accept=".csv,.txt,.xlsx" class="hidden">
                                 <label for="bulk_file" class="cursor-pointer">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-gray-300 mb-3">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
-                                    </svg>
+                                    <x-ui.icon name="upload" size="48" class="mx-auto text-gray-300 mb-3" />
                                     <p class="text-gray-600 font-medium">Klik untuk pilih file atau drag & drop</p>
                                     <p class="text-sm text-gray-400 mt-1">Format: CSV, TXT, XLSX (Maks. 2MB)</p>
                                 </label>
@@ -124,7 +114,7 @@
                             <p class="text-sm font-medium text-gray-700 mb-2">Download Template:</p>
                             <div class="flex gap-2">
                                 <a href="{{ asset('templates/template_import_siswa.csv') }}" download class="btn btn-sm btn-secondary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                    <x-ui.icon name="download" size="16" />
                                     Template CSV
                                 </a>
                             </div>
@@ -134,21 +124,17 @@
                     {{-- Manual Input Tab --}}
                     <div x-show="method === 'manual'" class="space-y-4">
                         <div class="form-group">
-                            <label for="bulk_data" class="form-label">Data Siswa (Format CSV)</label>
-                            <textarea 
-                                id="bulk_data" 
+                            <x-forms.textarea 
                                 name="bulk_data" 
-                                rows="10" 
-                                class="form-input form-textarea font-mono text-sm @error('bulk_data') error @enderror"
+                                label="Data Siswa (Format CSV)" 
+                                rows="10"
+                                class="font-mono text-sm"
                                 placeholder="nisn,nama,nomor_hp
 1234567890,Ahmad Rizki,081234567890
 0987654321,Siti Nurhaliza,081234567891
 1122334455,Budi Santoso,"
-                            >{{ old('bulk_data') }}</textarea>
-                            <p class="form-help">Satu siswa per baris. Format: <code>nisn,nama,nomor_hp</code> (nomor_hp boleh kosong)</p>
-                            @error('bulk_data')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
+                                help="Satu siswa per baris. Format: <code>nisn,nama,nomor_hp</code> (nomor_hp boleh kosong)"
+                            />
                         </div>
                         
                         {{-- Example Data --}}
@@ -182,9 +168,7 @@
                 {{-- Actions --}}
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
                     <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
-                        </svg>
+                        <x-ui.icon name="upload" size="18" />
                         <span>Import Siswa</span>
                     </button>
                     <a href="{{ route('siswa.index') }}" class="btn btn-secondary">Batal</a>

@@ -6,7 +6,7 @@
 
 @section('actions')
     <a href="{{ route('konsentrasi.create') }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <x-ui.icon name="plus" size="18" />
         <span>Tambah Konsentrasi</span>
     </a>
 @endsection
@@ -72,16 +72,16 @@
                         {{-- Desktop: Icon buttons --}}
                         <div class="action-buttons-desktop">
                             <a href="{{ route('konsentrasi.show', $k->id) }}" class="btn btn-icon btn-outline" title="Detail">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <x-ui.icon name="eye" size="16" />
                             </a>
                             <a href="{{ route('konsentrasi.edit', $k->id) }}" class="btn btn-icon btn-outline" title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                <x-ui.icon name="edit" size="16" />
                             </a>
                             <form action="{{ route('konsentrasi.destroy', $k->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus konsentrasi ini?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-icon btn-outline text-red-500 hover:bg-red-50" title="Hapus">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    <x-ui.icon name="trash" size="16" />
                                 </button>
                             </form>
                         </div>
@@ -89,17 +89,15 @@
                         {{-- Mobile: Dropdown --}}
                         <div class="action-dropdown-mobile" x-data="{ open: false }">
                             <button @click="open = !open" @click.away="open = false" class="action-dropdown-trigger">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                                </svg>
+                                <x-ui.icon name="more-horizontal" size="18" />
                             </button>
                             <div x-show="open" x-transition class="action-dropdown-menu">
                                 <a href="{{ route('konsentrasi.show', $k->id) }}" class="action-dropdown-item">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <x-ui.icon name="eye" size="16" />
                                     Detail
                                 </a>
                                 <a href="{{ route('konsentrasi.edit', $k->id) }}" class="action-dropdown-item action-dropdown-item--edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                    <x-ui.icon name="edit" size="16" />
                                     Edit
                                 </a>
                                 <div class="action-dropdown-divider"></div>
@@ -107,7 +105,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="action-dropdown-item action-dropdown-item--delete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        <x-ui.icon name="trash" size="16" />
                                         Hapus
                                     </button>
                                 </form>
@@ -118,11 +116,18 @@
             @empty
                 <tr>
                     <td colspan="7">
-                        <div class="empty-state">
-                            <h3 class="empty-state-title">Tidak Ada Data</h3>
-                            <p class="empty-state-description">Belum ada konsentrasi yang terdaftar.</p>
-                            <a href="{{ route('konsentrasi.create') }}" class="btn btn-primary">Tambah Konsentrasi</a>
-                        </div>
+                        <x-ui.empty-state 
+                            icon="layers" 
+                            title="Tidak Ada Data" 
+                            description="Belum ada konsentrasi yang terdaftar." 
+                        >
+                            <x-slot:action>
+                                <a href="{{ route('konsentrasi.create') }}" class="btn btn-primary">
+                                    <x-ui.icon name="plus" size="18" />
+                                    <span>Tambah Konsentrasi</span>
+                                </a>
+                            </x-slot:action>
+                        </x-ui.empty-state>
                     </td>
                 </tr>
             @endforelse

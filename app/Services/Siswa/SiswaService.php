@@ -688,4 +688,127 @@ DB::beginTransaction();
             throw $e;
         }
     }
+
+    /**
+     * Bulk transfer siswa to another class.
+     * 
+     * FITUR KENAIKAN KELAS / PINDAH KELAS:
+     * - Hanya mengubah kelas_id, semua data historis tetap terjaga
+     * - Riwayat pelanggaran, pembinaan, dan wali murid tidak terpengaruh
+     * - Cocok untuk kenaikan kelas (X → XI → XII) atau pindah konsentrasi
+     *
+     * @param array $siswaIds Array of siswa IDs to transfer
+     * @param int $targetKelasId Target class ID
+     * @return array ['success_count' => int, 'failed_count' => int, 'transferred_names' => array]
+     */
+    public function bulkTransferSiswa(array $siswaIds, int $targetKelasId): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            $successCount = 0;
+            $failedCount = 0;
+            $transferredNames = [];
+            $sourceKelasInfo = null;
+            
+            // Validate target kelas exists
+            $targetKelas = \App\Models\Kelas::with('jurusan')->find($targetKelasId);
+            if (!$targetKelas) {
+                throw new BusinessValidationException('Kelas tujuan tidak ditemukan.');
+            }
+            
+            foreach ($siswaIds as $siswaId) {
+                $siswa = \App\Models\Siswa::find($siswaId);
+                
+                if (!$siswa) {
+                    $failedCount++;
+                    continue;
+                }
+                
+                // Get source kelas info for logging (only once)
+                if (!$sourceKelasInfo && $siswa->kelas) {
+                    $sourceKelasInfo = $siswa->kelas->nama_kelas;
+                }
+                
+                // Skip if already in target class
+                if ($siswa->kelas_id === $targetKelasId) {
+                    $failedCount++;
+                    continue;
+                }
+                
+                // Update only kelas_id - all other data remains intact
+                $siswa->kelas_id = $targetKelasId;
+                $siswa->save();
+                
+                $transferredNames[] = $siswa->nama_siswa;
+                $successCount++;
+            }
+            
+            DB::commit();
+            
+            // Log activity
+            try {
+                activity()
+                    ->causedBy(auth()->user())
+                    ->withProperties([
+                        'source_kelas' => $sourceKelasInfo,
+                        'target_kelas' => $targetKelas->nama_kelas,
+                        'target_kelas_id' => $targetKelasId,
+                        'success_count' => $successCount,
+                        'transferred_names' => $transferredNames,
+                    ])
+                    ->log("Transfer {$successCount} siswa dari {$sourceKelasInfo} ke {$targetKelas->nama_kelas}");
+            } catch (\Exception $logError) {
+                \Log::warning('Activity log failed: ' . $logError->getMessage());
+            }
+            
+            return [
+                'success_count' => $successCount,
+                'failed_count' => $failedCount,
+                'transferred_names' => $transferredNames,
+                'target_kelas' => $targetKelas->nama_kelas,
+            ];
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Get siswa grouped by kelas for transfer UI.
+     * 
+     * OPTIMIZED: Calculate total_poin in single query using subquery
+     * to avoid N+1 problem.
+     * 
+     * @param int|null $kelasId Filter by specific kelas
+     * @return \Illuminate\Support\Collection
+     */
+    public function getSiswaForTransfer(?int $kelasId = null)
+    {
+        $query = \App\Models\Siswa::query()
+            ->select([
+                'siswa.id',
+                'siswa.nisn',
+                'siswa.nama_siswa',
+                'siswa.nomor_hp_wali_murid',
+                'siswa.kelas_id',
+            ])
+            // Calculate total_poin in single query with subquery
+            ->selectSub(
+                \App\Models\RiwayatPelanggaran::query()
+                    ->selectRaw('COALESCE(SUM(jenis_pelanggaran.poin), 0)')
+                    ->join('jenis_pelanggaran', 'riwayat_pelanggaran.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
+                    ->whereColumn('riwayat_pelanggaran.siswa_id', 'siswa.id')
+                    ->whereNull('riwayat_pelanggaran.deleted_at'),
+                'total_poin'
+            )
+            ->orderBy('nama_siswa');
+        
+        if ($kelasId) {
+            $query->where('siswa.kelas_id', $kelasId);
+        }
+        
+        return $query->get();
+    }
 }

@@ -51,29 +51,23 @@
                 {{-- Basic Information --}}
                 <div class="p-4 bg-gray-50 rounded-xl space-y-4">
                     <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                        <x-ui.icon name="user" size="18" class="text-gray-400" />
                         Informasi Dasar
                     </h4>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-group">
-                            <label for="username" class="form-label form-label-required">Username</label>
-                            <input type="text" id="username" name="username" value="{{ old('username') }}"
-                                   class="form-input @error('username') error @enderror" required>
-                            <p class="form-help">Username untuk login</p>
-                            @error('username')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-forms.input 
+                            name="username" 
+                            label="Username" 
+                            required 
+                            help="Username untuk login" 
+                        />
                         
-                        <div class="form-group">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                   class="form-input @error('email') error @enderror">
-                            @error('email')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-forms.input 
+                            type="email" 
+                            name="email" 
+                            label="Email" 
+                        />
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -83,8 +77,8 @@
                                 <input :type="show ? 'text' : 'password'" id="password" name="password"
                                        class="form-input !pr-10 @error('password') error @enderror" required>
                                 <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
-                                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                    <div x-show="!show"><x-ui.icon name="eye" size="18" /></div>
+                                    <div x-show="show"><x-ui.icon name="eye-off" size="18" /></div>
                                 </button>
                             </div>
                             @error('password')
@@ -98,8 +92,8 @@
                                 <input :type="show ? 'text' : 'password'" id="password_confirmation" name="password_confirmation"
                                        class="form-input !pr-10" required>
                                 <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
-                                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                    <div x-show="!show"><x-ui.icon name="eye" size="18" /></div>
+                                    <div x-show="show"><x-ui.icon name="eye-off" size="18" /></div>
                                 </button>
                             </div>
                         </div>
@@ -108,20 +102,18 @@
                 
                 {{-- Role Selection --}}
                 <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <div class="form-group mb-0">
-                        <label for="role_id" class="form-label form-label-required">Role Pengguna</label>
-                        <select id="role_id" name="role_id" x-model="roleId"
-                                class="form-input form-select @error('role_id') error @enderror" required>
-                            <option value="">Pilih Role</option>
-                            @foreach($roles ?? [] as $role)
-                                <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>{{ $role->nama_role }}</option>
-                            @endforeach
-                        </select>
-                        <p class="form-help">Role menentukan hak akses dan fitur yang tersedia.</p>
-                        @error('role_id')
-                            <p class="form-error">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-forms.select 
+                        name="role_id" 
+                        label="Role Pengguna" 
+                        required 
+                        x-model="roleId"
+                        :options="$roles"
+                        optionValue="id"
+                        optionLabel="nama_role"
+                        :selected="old('role_id')"
+                        placeholder="Pilih Role"
+                        help="Role menentukan hak akses dan fitur yang tersedia."
+                    />
                 </div>
                 
                 {{-- NIP & NUPTK (untuk Guru, Waka, Kepala Sekolah, etc) --}}
@@ -131,28 +123,22 @@
                      x-transition:enter-end="opacity-100 transform translate-y-0"
                      class="p-4 bg-amber-50 rounded-xl border border-amber-100 space-y-4">
                     <h4 class="font-semibold text-amber-800 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                        <x-ui.icon name="credit-card" size="18" class="text-amber-600" />
                         Data Kepegawaian
                     </h4>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-group">
-                            <label for="nip" class="form-label">NIP</label>
-                            <input type="text" id="nip" name="nip" value="{{ old('nip') }}"
-                                   class="form-input @error('nip') error @enderror" placeholder="18 digit NIP">
-                            @error('nip')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-forms.input 
+                            name="nip" 
+                            label="NIP" 
+                            placeholder="18 digit NIP" 
+                        />
                         
-                        <div class="form-group">
-                            <label for="nuptk" class="form-label">NUPTK</label>
-                            <input type="text" id="nuptk" name="nuptk" value="{{ old('nuptk') }}"
-                                   class="form-input @error('nuptk') error @enderror" placeholder="16 digit NUPTK">
-                            @error('nuptk')
-                                <p class="form-error">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-forms.input 
+                            name="nuptk" 
+                            label="NUPTK" 
+                            placeholder="16 digit NUPTK" 
+                        />
                     </div>
                 </div>
                 
@@ -193,18 +179,15 @@
                             Jurusan yang Diampu
                             <span x-show="isKaprodi()" class="text-red-500">*</span>
                         </label>
-                        <select id="jurusan_id" name="jurusan_id" class="form-input form-select @error('jurusan_id') error @enderror">
-                            <option value="">-- Pilih Jurusan --</option>
-                            @foreach($jurusan ?? [] as $j)
-                                <option value="{{ $j->id }}" {{ old('jurusan_id') == $j->id ? 'selected' : '' }}>
-                                    {{ $j->nama_jurusan }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-forms.select
+                            name="jurusan_id" 
+                            :options="$jurusan"
+                            optionValue="id"
+                            optionLabel="nama_jurusan"
+                            :selected="old('jurusan_id')"
+                            placeholder="-- Pilih Jurusan --"
+                        />
                         <p class="form-help">Pilih jurusan yang akan menjadi tanggung jawab Kaprodi ini.</p>
-                        @error('jurusan_id')
-                            <p class="form-error">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
                 
@@ -243,14 +226,11 @@
                 
                 {{-- Phone & Status --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="phone" class="form-label">No. Telepon</label>
-                        <input type="text" id="phone" name="phone" value="{{ old('phone') }}"
-                               class="form-input @error('phone') error @enderror" placeholder="08xxxxxxxxxx">
-                        @error('phone')
-                            <p class="form-error">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-forms.input 
+                        name="phone" 
+                        label="No. Telepon" 
+                        placeholder="08xxxxxxxxxx" 
+                    />
                     
                     <div class="form-group flex items-end">
                         <label class="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-lg w-full">
@@ -264,7 +244,7 @@
                 {{-- Actions --}}
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
                     <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        <x-ui.icon name="save" size="18" />
                         <span>Simpan User</span>
                     </button>
                     <a href="{{ route('users.index') }}" class="btn btn-secondary">Batal</a>

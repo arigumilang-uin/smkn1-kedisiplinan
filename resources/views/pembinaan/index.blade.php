@@ -12,7 +12,7 @@
             <div class="flex items-center justify-between mb-3">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Total</span>
                 <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <x-ui.icon name="users" size="20" />
                 </div>
             </div>
             <h3 class="text-2xl font-bold text-gray-800">{{ $stats['total'] ?? 0 }}</h3>
@@ -23,7 +23,7 @@
             <div class="flex items-center justify-between mb-3">
                 <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">Perlu Pembinaan</span>
                 <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    <x-ui.icon name="alert-triangle" size="20" />
                 </div>
             </div>
             <h3 class="text-2xl font-bold text-amber-600">{{ $stats['perlu_pembinaan'] ?? 0 }}</h3>
@@ -34,7 +34,7 @@
             <div class="flex items-center justify-between mb-3">
                 <span class="text-[10px] font-bold text-blue-500 uppercase tracking-wide">Sedang Dibina</span>
                 <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                    <x-ui.icon name="shield" size="20" />
                 </div>
             </div>
             <h3 class="text-2xl font-bold text-blue-600">{{ $stats['sedang_dibina'] ?? 0 }}</h3>
@@ -45,7 +45,7 @@
             <div class="flex items-center justify-between mb-3">
                 <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">Selesai</span>
                 <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                    <x-ui.icon name="check-circle" size="20" />
                 </div>
             </div>
             <h3 class="text-2xl font-bold text-emerald-600">{{ $stats['selesai'] ?? 0 }}</h3>
@@ -57,48 +57,39 @@
     <div class="card">
         <div class="card-header">
             <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                <x-ui.icon name="filter" size="18" class="text-gray-400" />
                 <span class="card-title">Filter & Export</span>
             </div>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ route('pembinaan.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-input form-select">
-                        <option value="">Semua Status</option>
-                        <option value="Perlu Pembinaan" {{ ($statusFilter ?? '') == 'Perlu Pembinaan' ? 'selected' : '' }}>🟡 Perlu Pembinaan</option>
-                        <option value="Sedang Dibina" {{ ($statusFilter ?? '') == 'Sedang Dibina' ? 'selected' : '' }}>🔵 Sedang Dibina</option>
-                        <option value="Selesai" {{ ($statusFilter ?? '') == 'Selesai' ? 'selected' : '' }}>🟢 Selesai</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Range Poin</label>
-                    <select name="rule_id" class="form-input form-select">
-                        <option value="">Semua Range</option>
-                        @foreach($rules ?? [] as $rule)
-                            <option value="{{ $rule->id }}" {{ ($ruleId ?? '') == $rule->id ? 'selected' : '' }}>{{ $rule->getRangeText() }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Kelas</label>
-                    <select name="kelas_id" class="form-input form-select">
-                        <option value="">Semua Kelas</option>
-                        @foreach($kelasList ?? [] as $kelas)
-                            <option value="{{ $kelas->id }}" {{ ($kelasId ?? '') == $kelas->id ? 'selected' : '' }}>{{ $kelas->nama_kelas }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Jurusan</label>
-                    <select name="jurusan_id" class="form-input form-select">
-                        <option value="">Semua Jurusan</option>
-                        @foreach($jurusanList ?? [] as $jurusan)
-                            <option value="{{ $jurusan->id }}" {{ ($jurusanId ?? '') == $jurusan->id ? 'selected' : '' }}>{{ $jurusan->nama_jurusan }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-forms.select name="status" label="Status" :selected="$statusFilter ?? ''">
+                    <option value="">Semua Status</option>
+                    <option value="Perlu Pembinaan">🟡 Perlu Pembinaan</option>
+                    <option value="Sedang Dibina">🔵 Sedang Dibina</option>
+                    <option value="Selesai">🟢 Selesai</option>
+                </x-forms.select>
+
+                <x-forms.select name="rule_id" label="Range Poin" :selected="$ruleId ?? ''">
+                    <option value="">Semua Range</option>
+                    @foreach($rules ?? [] as $rule)
+                        <option value="{{ $rule->id }}">{{ $rule->getRangeText() }}</option>
+                    @endforeach
+                </x-forms.select>
+
+                <x-forms.select name="kelas_id" label="Kelas" :selected="$kelasId ?? ''">
+                    <option value="">Semua Kelas</option>
+                    @foreach($kelasList ?? [] as $kelas)
+                        <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
+                    @endforeach
+                </x-forms.select>
+
+                <x-forms.select name="jurusan_id" label="Jurusan" :selected="$jurusanId ?? ''">
+                    <option value="">Semua Jurusan</option>
+                    @foreach($jurusanList ?? [] as $jurusan)
+                        <option value="{{ $jurusan->id }}">{{ $jurusan->nama_jurusan }}</option>
+                    @endforeach
+                </x-forms.select>
                 <div class="form-group flex items-end gap-2">
                     <button type="submit" class="btn btn-primary flex-1">Filter</button>
                     <a href="{{ route('pembinaan.index') }}" class="btn btn-secondary">Reset</a>
@@ -186,7 +177,7 @@
                                     @csrf
                                     @method('PUT')
                                     <button type="submit" class="btn btn-primary text-xs">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                                        <x-ui.icon name="play" size="14" />
                                         Mulai
                                     </button>
                                 </form>
@@ -194,12 +185,12 @@
                                 <button type="button" 
                                         @click="openModal({{ $item->id }}, {{ json_encode($item->siswa->nama_siswa ?? '') }})" 
                                         class="btn btn-success text-xs">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                                    <x-ui.icon name="check-circle" size="14" />
                                     Selesai
                                 </button>
                             @else
                                 <span class="text-emerald-600 font-bold text-xs flex items-center justify-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                                    <x-ui.icon name="check-circle" size="14" />
                                     Tuntas
                                 </span>
                             @endif
@@ -208,13 +199,11 @@
                 @empty
                     <tr>
                         <td colspan="7">
-                            <div class="empty-state">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                                </svg>
-                                <h3 class="empty-state-title">Tidak Ada Data</h3>
-                                <p class="empty-state-description">Belum ada siswa yang perlu pembinaan atau semua sudah selesai.</p>
-                            </div>
+                            <x-ui.empty-state 
+                                icon="shield" 
+                                title="Tidak Ada Data" 
+                                description="Belum ada siswa yang perlu pembinaan atau semua sudah selesai." 
+                            />
                         </td>
                     </tr>
                 @endforelse
@@ -225,7 +214,7 @@
     {{-- Info Section --}}
     <div class="p-6 bg-blue-50 rounded-xl border border-blue-100">
         <h6 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <x-ui.icon name="info" size="16" />
             Informasi Penting
         </h6>
         <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs text-blue-700/80 ml-4 list-disc">
@@ -246,7 +235,7 @@
                     @method('PUT')
                     <div class="p-6 border-b border-gray-100 bg-emerald-50">
                         <h3 class="text-lg font-bold text-emerald-800 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            <x-ui.icon name="check-circle" size="20" />
                             Selesaikan Pembinaan
                         </h3>
                     </div>
@@ -256,17 +245,18 @@
                             Selesaikan pembinaan untuk: <strong x-text="selectedName" class="text-gray-800"></strong>
                         </p>
                         
-                        <div class="form-group">
-                            <label class="form-label">Hasil Pembinaan</label>
-                            <textarea name="hasil_pembinaan" rows="4" class="form-input form-textarea" 
-                                      placeholder="Tuliskan hasil/catatan pembinaan..."></textarea>
-                        </div>
+                        <x-forms.textarea 
+                            name="hasil_pembinaan" 
+                            label="Hasil Pembinaan" 
+                            rows="4" 
+                            placeholder="Tuliskan hasil/catatan pembinaan..." 
+                        />
                     </div>
                     
                     <div class="p-6 border-t border-gray-100 flex justify-end gap-3">
                         <button type="button" @click="showModal = false" class="btn btn-secondary">Batal</button>
                         <button type="submit" class="btn btn-success">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            <x-ui.icon name="check-circle" size="16" />
                             Selesaikan
                         </button>
                     </div>

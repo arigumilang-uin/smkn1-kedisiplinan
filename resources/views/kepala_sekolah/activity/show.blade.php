@@ -5,10 +5,10 @@
 @section('page-header', true)
 
 @section('actions')
-    <a href="{{ route('audit.activity.index') }}" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        <span>Kembali ke Riwayat</span>
-    </a>
+    <button type="button" onclick="history.back()" class="btn btn-secondary">
+        <x-ui.icon name="arrow-left" size="18" />
+        <span>Kembali</span>
+    </button>
 @endsection
 
 @section('content')
@@ -29,7 +29,7 @@
                         <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Tanggal & Waktu</label>
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <x-ui.icon name="clock" size="20" />
                             </div>
                             <div>
                                 <div class="font-bold text-gray-700">{{ $log->created_at->format('d M Y') }}</div>
@@ -83,7 +83,7 @@
         <div class="card h-full flex flex-col overflow-hidden">
             <div class="px-6 py-4 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wide text-indigo-300">Metadata Properties</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+                <x-ui.icon name="database" size="16" class="text-gray-500" />
             </div>
             
             <div class="flex-1 relative bg-gray-900">
@@ -97,7 +97,7 @@
                 
                 @if(!$hasProperties)
                     <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 p-8 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="opacity-20 mb-3"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                        <x-ui.icon name="code" size="40" strokeWidth="1.5" class="opacity-20 mb-3" />
                         <p class="text-xs font-bold uppercase tracking-wide">No Modified Data</p>
                     </div>
                 @else

@@ -39,6 +39,7 @@ class WaliKelasDashboardController extends Controller
             ->whereHas('suratPanggilan')  // Filter: Harus punya surat
             ->whereIn('status', ['Baru', 'Menunggu Persetujuan', 'Disetujui', 'Ditangani'])
             ->latest()
+            ->limit(10)
             ->get();
 
         // DIAGRAM: Pelanggaran Populer di Kelas Ini (Filter Waktu)
